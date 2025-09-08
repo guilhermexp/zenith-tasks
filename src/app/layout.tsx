@@ -1,0 +1,65 @@
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'Zenith Tasks - Gerenciador de Tarefas Inteligente',
+  description: 'Um gerenciador de tarefas moderno com IA integrada para organizar sua vida de forma inteligente.',
+  keywords: ['tarefas', 'produtividade', 'organização', 'IA', 'gerenciamento'],
+  authors: [{ name: 'Zenith Tasks' }],
+  metadataBase: new URL('http://localhost:3456'),
+  openGraph: {
+    title: 'Zenith Tasks - Gerenciador de Tarefas Inteligente',
+    description: 'Um gerenciador de tarefas moderno com IA integrada para organizar sua vida de forma inteligente.',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Zenith Tasks - Gerenciador de Tarefas Inteligente',
+    description: 'Um gerenciador de tarefas moderno com IA integrada para organizar sua vida de forma inteligente.',
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0f172a',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ClerkProvider>
+      <html lang="pt-BR" className="h-full">
+        <head>
+          <link
+            rel="icon"
+            href={
+              `data:image/svg+xml;utf8,` +
+              encodeURIComponent(
+                `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
+                  <defs>
+                    <linearGradient id='g' x1='0' x2='1'>
+                      <stop offset='0%' stop-color='#8ab4ff'/>
+                      <stop offset='100%' stop-color='#d08bff'/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx='32' cy='32' r='28' fill='url(#g)'/>
+                </svg>`
+              )
+            }
+          />
+        </head>
+        <body className={`${inter.className} h-full antialiased`}>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+  );
+}
