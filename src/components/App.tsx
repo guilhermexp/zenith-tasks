@@ -62,6 +62,23 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewItems, setPreviewItems] = useState<MindFlowItem[] | null>(null);
+  const [detailWidth, setDetailWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 720;
+    try {
+      const raw = localStorage.getItem('detailPanelWidth');
+      const n = raw ? parseInt(raw, 10) : NaN;
+      return Number.isFinite(n) && n >= 420 && n <= 1200 ? n : 720;
+    } catch {
+      return 720;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('detailPanelWidth', String(detailWidth));
+    } catch {}
+  }, [detailWidth]);
 
   // Removido: IA no cliente. Todo consumo de IA é feito via API Routes server-side.
 
@@ -553,6 +570,13 @@ const App: React.FC = () => {
             onDeleteItem={deleteItem}
             onGenerateSubtasks={generateSubtasks}
             onChatWithAI={chatWithAI}
+            width={detailWidth}
+            onResize={(w) => {
+              const min = 420; // px
+              const max = Math.min(1200, Math.max(min, Math.floor(window.innerWidth * 0.92)));
+              const clamped = Math.max(min, Math.min(max, Math.floor(w)));
+              setDetailWidth(clamped);
+            }}
           />
         )}
       </div>
@@ -577,17 +601,146 @@ const App: React.FC = () => {
         <MorphSurface 
           onSubmit={async (message: string) => {
             // Sempre processar via API backend
-            let plan: any
-            try {
-              const res = await fetch('/api/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) })
-              plan = await res.json()
-              if (!res.ok || !plan || !Array.isArray(plan.commands)) {
-                throw new Error(plan?.error || 'assistant planning failed')
+            // Tenta streaming do plano (SSE); cai para JSON se falhar
+            async function fetchPlan(): Promise<{ commands: any[]; reply?: string }> {
+              try {
+                const res = await fetch('/api/assistant?stream=1', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+                  body: JSON.stringify({ message })
+                })
+                const ctype = res.headers.get('content-type') || ''
+                if (res.ok && ctype.includes('text/event-stream') && res.body) {
+                  const reader = res.body.getReader()
+                  const decoder = new TextDecoder()
+                  let buf = ''
+                  let finalObj: any = null
+                  const deadline = Date.now() + 15000
+                  while (true) {
+                    const { value, done } = await reader.read()
+                    if (done) break
+                    buf += decoder.decode(value, { stream: true })
+                    // Parse SSE lines
+                    const parts = buf.split('\n\n')
+                    buf = parts.pop() || ''
+                    for (const part of parts) {
+                      const lines = part.split('\n')
+                      for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                          const jsonStr = line.slice(5).trim()
+                          try {
+                            const data = JSON.parse(jsonStr)
+                            // Heurística: final object em data.object ou no próprio data
+                            const obj = data?.object || data?.data?.object || (Array.isArray(data?.commands) ? data : null)
+                            if (obj && Array.isArray(obj.commands)) {
+                              finalObj = obj
+                            }
+                          } catch {}
+                        }
+                      }
+                    }
+                    if (Date.now() > deadline && finalObj) break
+                  }
+                  if (finalObj) return finalObj
+                }
+                // fallback json
+                const res2 = await fetch('/api/assistant', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) })
+                const planJson = await res2.json()
+                if (!res2.ok) throw new Error(String(planJson?.error || 'assistant error'))
+                if (!planJson || !Array.isArray(planJson.commands)) throw new Error('assistant returned invalid schema')
+                return planJson
+              } catch (e: any) {
+                throw new Error(e?.message || 'planning failed')
               }
-            } catch {
-              return 'Desculpe, não consegui processar isso agora.'
             }
-            const tools: any = {
+
+            async function* streamChatFallback() {
+              try {
+                // Try ACT (tools on server) SSE first
+                let res = await fetch('/api/assistant/act', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+                  body: JSON.stringify({ message })
+                })
+                if (res.ok && res.body) {
+                  const reader = res.body.getReader()
+                  const decoder = new TextDecoder()
+                  let buf = ''
+                  while (true) {
+                    const { value, done } = await reader.read()
+                    if (done) break
+                    buf += decoder.decode(value, { stream: true })
+                    const parts = buf.split('\n\n')
+                    buf = parts.pop() || ''
+                    for (const part of parts) {
+                      const lines = part.split('\n')
+                      for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                          const jsonStr = line.slice(5).trim()
+                          try {
+                            const data = JSON.parse(jsonStr)
+                            if (typeof data?.delta === 'string' && (data.type || '').includes('text')) {
+                              yield data.delta
+                            } else if (typeof data?.text === 'string' && (data.type || '').includes('final')) {
+                              yield data.text
+                            }
+                          } catch {}
+                        }
+                      }
+                    }
+                  }
+                  return
+                }
+                // Fallback to chat SSE
+                res = await fetch('/api/assistant/chat?stream=1', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
+                  body: JSON.stringify({ message })
+                })
+                if (res.ok && res.body) {
+                  const reader = res.body.getReader()
+                  const decoder = new TextDecoder()
+                  let buf = ''
+                  while (true) {
+                    const { value, done } = await reader.read()
+                    if (done) break
+                    buf += decoder.decode(value, { stream: true })
+                    const parts = buf.split('\n\n')
+                    buf = parts.pop() || ''
+                    for (const part of parts) {
+                      const lines = part.split('\n')
+                      for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                          const jsonStr = line.slice(5).trim()
+                          try {
+                            const data = JSON.parse(jsonStr)
+                            if (typeof data?.delta === 'string' && (data.type || '').includes('text')) {
+                              yield data.delta
+                            } else if (typeof data?.text === 'string' && (data.type || '').includes('final')) {
+                              yield data.text
+                            }
+                          } catch {}
+                        }
+                      }
+                    }
+                  }
+                  return
+                }
+                // Final fallback: JSON chat
+                res = await fetch('/api/assistant/chat', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                  body: JSON.stringify({ message })
+                })
+                const data = await res.json().catch(()=>({}))
+                if (res.ok && typeof data?.text === 'string') yield data.text
+                else yield String(data?.error || 'Não foi possível contatar o assistente agora.')
+              } catch {
+                yield 'Não foi possível contatar o assistente agora.'
+              }
+            }
+
+            const tools: Tools = {
               createItem: async ({ title, type, summary, dueDateISO }: any) => {
                 const item = await addItemToDb({
                   title,
@@ -600,15 +753,15 @@ const App: React.FC = () => {
                 return item || { 
                   id: Date.now().toString(),
                   title,
-                  type: type || 'Tarefa',
+                  type: (type || 'Tarefa') as any,
                   completed: false,
                   createdAt: new Date().toISOString()
                 };
               },
-              updateItem: async (id: any, updates: any) => await updateItemInDb(id, updates),
+              updateItem: async (id: string, updates: any) => { await updateItemInDb(id, updates) },
               listItems: () => items,
-              setDueDate: async (id: any, iso: any) => await setDueDateInDb(id, iso ? new Date(iso) : null),
-              generateSubtasks: async (id: any, force: any) => await generateSubtasks(id, { force }),
+              setDueDate: async (id: string, iso: string | null) => { await setDueDateInDb(id, iso ? new Date(iso) : null) },
+              generateSubtasks: async (id: string, force?: boolean) => { await generateSubtasks(id, { force }) },
               createMeeting: async () => {
                 const item = await addItemToDb({
                   title: `Reunião ${new Date().toLocaleDateString('pt-BR')}`,
@@ -651,7 +804,7 @@ const App: React.FC = () => {
                     }) 
                   })
                   const data = await res.json()
-                  const text = data.response || 'Erro ao resumir nota.'
+                  const text = data.reply || data.response || 'Erro ao resumir nota.'
                   await updateItemInDb(id, { summary: text })
                   return text
                 } catch {
@@ -668,16 +821,8 @@ const App: React.FC = () => {
             }
             // Streaming simples: narra (somente actions reconhecidas) e executa
             async function* stream() {
-              const acts = Array.isArray(plan.commands) ? plan.commands.map((c:any)=> c && typeof c==='object' && c.action ? c.action : null).filter(Boolean) as string[] : []
-              if (acts.length > 0) {
-                yield 'Entendi. Vou executar: ' + acts.join(', ') + '\n\n'
-              }
-              const response = await executePlan(plan, tools)
-              if (response && response.trim().length) {
-                yield response
-              } else if (plan.reply) {
-                yield String(plan.reply)
-              }
+              // Agora preferimos ACT (tools no servidor) diretamente
+              for await (const chunk of streamChatFallback()) yield chunk
             }
             return stream()
           }}

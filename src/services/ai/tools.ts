@@ -1,22 +1,24 @@
 import type { MindFlowItem, MindFlowItemType } from '@/types'
 
+type MaybePromise<T> = T | Promise<T>
+
 export type ToolContext = {
   nowISO?: string
 }
 
 export type Tools = {
-  createItem: (data: { title: string; type: MindFlowItemType; summary?: string; dueDateISO?: string }) => MindFlowItem
-  updateItem: (id: string, updates: Partial<MindFlowItem>) => void
-  listItems: () => MindFlowItem[]
-  setDueDate: (id: string, iso: string | null) => void
-  generateSubtasks: (id: string, force?: boolean) => Promise<void>
-  createMeeting: () => MindFlowItem
-  listAgenda?: (rangeDays?: number) => string
-  findItem?: (query: string) => string | undefined
-  summarizeNote?: (id: string) => Promise<string>
+  createItem: (data: { title: string; type: MindFlowItemType; summary?: string; dueDateISO?: string }) => MaybePromise<MindFlowItem>
+  updateItem: (id: string, updates: Partial<MindFlowItem>) => MaybePromise<void>
+  listItems: () => MaybePromise<MindFlowItem[]>
+  setDueDate: (id: string, iso: string | null) => MaybePromise<void>
+  generateSubtasks: (id: string, force?: boolean) => MaybePromise<void>
+  createMeeting: () => MaybePromise<MindFlowItem>
+  listAgenda?: (rangeDays?: number) => MaybePromise<string>
+  findItem?: (query: string) => MaybePromise<string | undefined>
+  summarizeNote?: (id: string) => MaybePromise<string>
   // MCP
-  mcpListTools?: (serverId: string) => Promise<string>
-  mcpCall?: (serverId: string, tool: string, args: any) => Promise<string>
+  mcpListTools?: (serverId: string) => MaybePromise<string>
+  mcpCall?: (serverId: string, tool: string, args: any) => MaybePromise<string>
 }
 
 export type AssistantCommand = {

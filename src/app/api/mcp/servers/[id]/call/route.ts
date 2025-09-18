@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { getServer } from '@/server/mcpRegistry'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 
-export async function POST(req: Request, { params }: { params: { id: string }}) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const key = extractClientKey(req)
   if (!rateLimit({ key, limit: 30, windowMs: 60_000 })) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
-  const srv = await getServer(params.id)
+  const srv = await getServer(id)
   if (!srv) return NextResponse.json({ error: 'not found' }, { status: 404 })
   const { name, arguments: args } = await req.json()
   if (!name) return NextResponse.json({ error: 'name required' }, { status: 400 })

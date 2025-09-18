@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
-import { createGemini } from '@/services/ai/client'
 import { subtasksWithAI } from '@/services/ai'
+import { getAISDKModel } from '@/server/aiProvider'
 
 export async function POST(req: Request) {
   try {
@@ -20,17 +20,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'title required' }, { status: 400 })
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Gemini API key missing' }, { status: 500 })
+    // AI SDK como padrão; fallback se indisponível
+    try {
+      await getAISDKModel() // valida provider/chave por meio do provedor
+    } catch {
+      return NextResponse.json({ subtasks: [] })
     }
-
-    const gemini = createGemini(apiKey)
-    const list = await subtasksWithAI(gemini, { title, summary, type }, { force })
+    const list = await subtasksWithAI({ title, summary, type }, { force })
 
     return NextResponse.json({ subtasks: list })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'unknown error' }, { status: 500 })
   }
 }
-

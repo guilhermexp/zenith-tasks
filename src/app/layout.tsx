@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
+import Providers from './providers';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   description: 'Um gerenciador de tarefas moderno com IA integrada para organizar sua vida de forma inteligente.',
   keywords: ['tarefas', 'produtividade', 'organização', 'IA', 'gerenciamento'],
   authors: [{ name: 'Zenith Tasks' }],
-  metadataBase: new URL('http://localhost:3456'),
+  // Use dev URL in local, configure a public URL in production via env if needed
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3457'),
   openGraph: {
     title: 'Zenith Tasks - Gerenciador de Tarefas Inteligente',
     description: 'Um gerenciador de tarefas moderno com IA integrada para organizar sua vida de forma inteligente.',
@@ -35,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <Providers>
       <html lang="pt-BR" className="h-full">
         <head>
           <link
@@ -46,8 +47,8 @@ export default function RootLayout({
                 `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
                   <defs>
                     <linearGradient id='g' x1='0' x2='1'>
-                      <stop offset='0%' stop-color='#8ab4ff'/>
-                      <stop offset='100%' stop-color='#d08bff'/>
+                      <stop offset='0%' stopColor='#8ab4ff'/>
+                      <stop offset='100%' stopColor='#d08bff'/>
                     </linearGradient>
                   </defs>
                   <circle cx='32' cy='32' r='28' fill='url(#g)'/>
@@ -60,6 +61,6 @@ export default function RootLayout({
           {children}
         </body>
       </html>
-    </ClerkProvider>
+    </Providers>
   );
 }

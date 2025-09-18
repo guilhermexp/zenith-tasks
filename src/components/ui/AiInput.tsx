@@ -307,10 +307,10 @@ function Feedback({
             className="flex h-full flex-col w-full"
           >
             <div className="flex justify-between items-center py-3 px-4 border-b border-neutral-800 bg-neutral-900/50">
-              <p className="text-neutral-300 flex items-center gap-2 select-none text-sm font-medium">
+              <div className="text-neutral-300 flex items-center gap-2 select-none text-sm font-medium">
                 <SiriOrb size="20px" />
                 Assistente AI
-              </p>
+              </div>
               <button
                 type="button"
                 onClick={closeFeedback}

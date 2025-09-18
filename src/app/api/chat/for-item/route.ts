@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
-import { createGemini } from '@/services/ai/client'
 import { chatForItem } from '@/services/ai'
 import type { ChatMessage } from '@/types'
 
@@ -23,17 +22,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'title, type and message required' }, { status: 400 })
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Gemini API key missing' }, { status: 500 })
+    let text: string
+    try {
+      text = await chatForItem({ title, type, summary, financeInfo, history }, message)
+    } catch {
+      text = 'Assistente temporariamente indisponível. Posso registrar isto como uma nota ou tarefa se preferir.'
     }
-
-    const gemini = createGemini(apiKey)
-    const text = await chatForItem(gemini, { title, type, summary, financeInfo, history }, message)
 
     return NextResponse.json({ text })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'unknown error' }, { status: 500 })
   }
 }
-

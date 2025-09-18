@@ -1,4 +1,3 @@
-import type { GeminiClient } from './client'
 import type { AssistantPlan, AssistantCommand, Tools } from './tools'
 import { extractJson } from './parse'
 
@@ -35,58 +34,7 @@ Usuário:
 """${message}"""`
 }
 
-export async function planAssistant(api: GeminiClient, message: string, now = new Date()): Promise<AssistantPlan> {
-  const prompt = buildAssistantPrompt(message, now.toISOString())
-  const enableSearch = (process.env.GEMINI_ENABLE_SEARCH || '').toLowerCase() === 'true'
-  let txt = ''
-  try {
-    if (enableSearch) {
-      // Try model that supports Google Search Grounding
-      const res = await api.modelJsonSearch().generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }]}],
-        tools: [{ googleSearchRetrieval: {} }],
-      })
-      txt = res.response.text()
-    } else {
-      const res = await api.modelJson().generateContent(prompt)
-      txt = res.response.text()
-    }
-  } catch (e: any) {
-    // Fallback if search grounding not supported in current environment
-    const res = await api.modelJson().generateContent(prompt)
-    txt = res.response.text()
-  }
-  const json = extractJson(txt) || { commands: [], reply: '' }
-  // Coerção e saneamento de comandos
-  const valid = new Set([
-    'create_task','create_reminder','create_note','create_idea','create_meeting',
-    'create_event','set_due_date','mark_done','list_agenda','find_item',
-    'summarize_note','generate_subtasks','mcp_list_tools','mcp_call'
-  ])
-  function normalizeStringToAction(s: string): AssistantCommand | null {
-    const t = s.toLowerCase()
-    if (t.includes('agenda') || t.includes('dia')) return { action: 'list_agenda', args: { rangeDays: 1 } }
-    if (t.includes('subtarefa')) return { action: 'generate_subtasks' }
-    if (t.includes('nota') && (t.includes('resum') || t.includes('sumar'))) return { action: 'summarize_note' }
-    if (t.includes('reuni')) return { action: 'create_meeting' }
-    return null
-  }
-  const raw = Array.isArray((json as any).commands) ? (json as any).commands : []
-  const commands: AssistantCommand[] = []
-  for (const c of raw) {
-    if (c && typeof c === 'object' && typeof c.action === 'string' && valid.has(c.action)) {
-      commands.push(c as AssistantCommand)
-    } else if (typeof c === 'string') {
-      const n = normalizeStringToAction(c)
-      if (n) commands.push(n)
-    }
-  }
-  // Heurística: se nada reconhecido mas a pergunta parece de agenda, cria comando
-  if (commands.length === 0 && /agenda|dia|hoje|amanh(ã|a)/i.test(message)) {
-    commands.push({ action: 'list_agenda', args: { rangeDays: 1 } })
-  }
-  return { commands, reply: (json as any).reply || '' }
-}
+// Note: planAssistant (Gemini) was removed in favor of using the AI SDK in the API route.
 
 export async function executePlan(plan: AssistantPlan, tools: Tools): Promise<string> {
   let reply = plan.reply || ''
@@ -108,36 +56,36 @@ async function runCommand(cmd: AssistantCommand, tools: Tools) {
   const args = cmd.args || {}
   switch (a) {
     case 'create_task':
-      tools.createItem({ title: args.title, type: 'Tarefa', summary: args.summary, dueDateISO: args.dueDateISO })
+      await tools.createItem({ title: args.title, type: 'Tarefa', summary: args.summary, dueDateISO: args.dueDateISO })
       return
     case 'create_reminder':
     case 'create_event':
-      tools.createItem({ title: args.title, type: 'Lembrete', dueDateISO: args.dueDateISO })
+      await tools.createItem({ title: args.title, type: 'Lembrete', dueDateISO: args.dueDateISO })
       return
     case 'create_note':
-      tools.createItem({ title: args.title, type: 'Nota', summary: args.summary })
+      await tools.createItem({ title: args.title, type: 'Nota', summary: args.summary })
       return
     case 'create_idea':
-      tools.createItem({ title: args.title, type: 'Ideia', summary: args.summary })
+      await tools.createItem({ title: args.title, type: 'Ideia', summary: args.summary })
       return
     case 'create_meeting':
-      tools.createMeeting()
+      await tools.createMeeting()
       return
     case 'set_due_date':
-      tools.setDueDate(String(args.id), args.dueDateISO ?? null)
+      await tools.setDueDate(String(args.id), args.dueDateISO ?? null)
       return
     case 'mark_done':
-      tools.updateItem(String(args.id), { completed: true })
+      await tools.updateItem(String(args.id), { completed: true })
       return
     case 'generate_subtasks':
       await tools.generateSubtasks(String(args.id), true)
       return
     case 'list_agenda': {
-      if (tools.listAgenda) return tools.listAgenda(Number(args.rangeDays) || 1)
+      if (tools.listAgenda) return await tools.listAgenda(Number(args.rangeDays) || 1)
       if (tools.listItems) {
         const now = new Date()
         const end = new Date(now.getTime() + (Number(args.rangeDays) || 1) * 86400000)
-        const items = tools.listItems().filter(i => i.dueDateISO && new Date(i.dueDateISO) >= now && new Date(i.dueDateISO) <= end)
+        const items = (await tools.listItems()).filter(i => i.dueDateISO && new Date(i.dueDateISO) >= now && new Date(i.dueDateISO) <= end)
         if (!items.length) return 'Agenda vazia.'
         const lines = items
           .sort((a,b)=>new Date(a.dueDateISO!).getTime()-new Date(b.dueDateISO!).getTime())
@@ -147,24 +95,24 @@ async function runCommand(cmd: AssistantCommand, tools: Tools) {
       return
     }
     case 'find_item': {
-      if (tools.findItem) return String(tools.findItem(String(args.query)))
+      if (tools.findItem) return String(await tools.findItem(String(args.query)))
       if (tools.listItems) {
         const q = String(args.query || '').toLowerCase()
-        const found = tools.listItems().find(i => i.title.toLowerCase().includes(q))
+        const found = (await tools.listItems()).find(i => i.title.toLowerCase().includes(q))
         return found ? found.id : 'Não encontrado'
       }
       return
     }
     case 'summarize_note': {
-      if (tools.summarizeNote) return tools.summarizeNote(String(args.id))
+      if (tools.summarizeNote) return await tools.summarizeNote(String(args.id))
       return
     }
     case 'mcp_list_tools': {
-      if (tools.mcpListTools) return tools.mcpListTools(String(args.serverId))
+      if (tools.mcpListTools) return await tools.mcpListTools(String(args.serverId))
       return 'MCP não configurado.'
     }
     case 'mcp_call': {
-      if (tools.mcpCall) return tools.mcpCall(String(args.serverId), String(args.tool), args.arguments || {})
+      if (tools.mcpCall) return await tools.mcpCall(String(args.serverId), String(args.tool), args.arguments || {})
       return 'MCP não configurado.'
     }
     default:

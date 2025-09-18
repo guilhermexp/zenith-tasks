@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { getAISDKModel } from '@/server/aiProvider'
+import { generateText } from 'ai'
 
 export async function POST(req: Request) {
   try {
@@ -17,35 +18,39 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'audioBase64 required' }, { status: 400 })
     }
 
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Gemini API key missing' }, { status: 500 })
+    const provider = (process.env.AI_SDK_PROVIDER || 'google').toLowerCase()
+    if (provider !== 'google') {
+      return NextResponse.json({ error: 'Audio transcription supported only with Google provider' }, { status: 501 })
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' })
+    const model = await getAISDKModel()
+    const format = (() => {
+      if (mimeType.includes('webm')) return 'webm'
+      if (mimeType.includes('wav')) return 'wav'
+      if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3'
+      if (mimeType.includes('mp4') || mimeType.includes('mp4a')) return 'mp4'
+      if (mimeType.includes('ogg')) return 'ogg'
+      return 'webm'
+    })()
 
-    const transcriptionPromise = model.generateContent([
-      {
-        inlineData: {
-          mimeType,
-          data: audioBase64,
-        },
-      },
-      { text: 'Transcreva este áudio em português brasileiro. Retorne apenas a transcrição do que foi dito, sem comentários ou explicações adicionais.' },
-    ])
-
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000))
-    const result: any = await Promise.race([transcriptionPromise, timeoutPromise])
-
-    const text = typeof result?.response?.text === 'function' ? result.response.text() : ''
-    if (!text || !String(text).trim()) {
-      return NextResponse.json({ error: 'Empty transcription' }, { status: 500 })
-    }
-
-    return NextResponse.json({ text: String(text) })
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000))
+    const gen = generateText({
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'input_audio', audio: { data: audioBase64, format } },
+            { type: 'text', text: 'Transcreva este áudio em português brasileiro. Retorne apenas a transcrição do que foi dito, sem comentários adicionais.' }
+          ]
+        }
+      ]
+    })
+    const result = await Promise.race([gen, timeout])
+    const text = result.text?.trim()
+    if (!text) return NextResponse.json({ error: 'Empty transcription' }, { status: 500 })
+    return NextResponse.json({ text })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'transcription error' }, { status: 500 })
   }
 }
-

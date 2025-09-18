@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import type { MindFlowItem, Subtask, ChatMessage, MindFlowItemType } from '../types';
-import { MorphSurface } from './ui/AiInput';
 import { 
   XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon, 
   SparklesIcon, ChevronLeftIcon, TrashIcon, CheckCircleIcon, TagIcon, 
@@ -18,6 +17,8 @@ interface DetailPanelProps {
   onDeleteItem: (itemId: string) => void;
   onGenerateSubtasks: (itemId: string, opts?: { force?: boolean }) => void;
   onChatWithAI: (itemId: string, message: string) => Promise<any>;
+  width?: number;
+  onResize?: (width: number) => void;
 }
 
 const typeIcons: Record<MindFlowItemType, React.FC<{className?: string}>> = {
@@ -125,7 +126,7 @@ const NotesEditor: React.FC<{
     return (
       <div 
         onClick={() => setIsEditing(true)}
-        className="min-h-[80px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-800/50 hover:border-neutral-700/50 cursor-text transition-colors"
+        className="min-h-[120px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-800/50 hover:border-neutral-700/50 cursor-text transition-colors"
       >
         {notes ? (
           <p className="text-sm text-neutral-300 whitespace-pre-wrap">{notes}</p>
@@ -143,7 +144,7 @@ const NotesEditor: React.FC<{
         value={localNotes}
         onChange={handleTextareaChange}
         placeholder="Digite suas anotações aqui..."
-        className="w-full min-h-[80px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-700/50 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 resize-none"
+        className="w-full min-h-[120px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-700/50 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 resize-none"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
             handleCancel();
@@ -190,11 +191,32 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   onUpdateItem, 
   onDeleteItem, 
   onGenerateSubtasks, 
-  onChatWithAI 
+  onChatWithAI,
+  width,
+  onResize,
 }) => {
   const [isSending, setIsSending] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(item.chatHistory || []);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const asideRef = useRef<HTMLDivElement>(null);
+
+  // Resize logic
+  const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onResize) return;
+    const startX = e.clientX;
+    const startWidth = width || asideRef.current?.getBoundingClientRect().width || 720;
+    const onMove = (ev: MouseEvent) => {
+      const delta = startX - ev.clientX; // moving left increases width
+      const next = startWidth + delta;
+      onResize(next);
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
 
   useEffect(() => {
     if (chatContainerRef.current && chatMessages.length > 0) {
@@ -281,7 +303,17 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const TypeIcon = typeIcons[item.type] || PageIcon;
 
   return (
-    <aside className="w-[480px] max-w-[520px] flex flex-col h-full glass-card ml-2">
+    <aside
+      ref={asideRef as any}
+      className="relative shrink-0 w-[560px] md:w-[640px] lg:w-[720px] xl:w-[820px] max-w-[92vw] flex flex-col h-full glass-card ml-2"
+      style={width ? { width } : undefined}
+    >
+      {/* Resize handle */}
+      <div
+        onMouseDown={startDrag}
+        title="Arraste para redimensionar"
+        className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-neutral-700/30 transition-colors"
+      />
       <header className="flex items-center justify-between p-4 border-b border-neutral-800/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-neutral-800/50">
@@ -435,7 +467,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
                 Conversa com IA
               </h4>
-              <div ref={chatContainerRef} className="space-y-3 max-h-60 overflow-y-auto">
+              <div ref={chatContainerRef} className="space-y-3 max-h-[50vh] overflow-y-auto">
                 {chatMessages.map((msg, index) => (
                   <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
