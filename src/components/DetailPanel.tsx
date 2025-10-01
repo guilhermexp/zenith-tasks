@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+
+import SiriOrb from '@/components/ui/SiriOrb';
+
 import type { MindFlowItem, Subtask, ChatMessage, MindFlowItemType } from '../types';
 import { 
   XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon, 
@@ -8,7 +11,6 @@ import {
   LightbulbIcon, PageIcon, BellIcon, LinkIcon, DollarSignIcon, UsersIcon,
   ClipboardIcon
 } from './Icons';
-import SiriOrb from '@/components/ui/SiriOrb';
 
 interface DetailPanelProps {
   item: MindFlowItem;

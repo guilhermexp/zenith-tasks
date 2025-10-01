@@ -11,9 +11,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.19",
     "@ai-sdk/google": "^2.0.13",
     "@ai-sdk/openai": "^2.0.27",
-    "@clerk/nextjs": "^6.31.10",
+    "@clerk/nextjs": "^6.33.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.57.4",
     "ai": "^5.0.39",

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { buildAnalyzePrompt } from '@/services/ai/prompts'
-import { extractClientKey, rateLimit } from '@/server/rateLimit'
+
 import { getAISDKModel } from '@/server/aiProvider'
+import { extractClientKey, rateLimit } from '@/server/rateLimit'
+import { buildAnalyzePrompt } from '@/services/ai/prompts'
 
 export async function POST(req: Request) {
   try {

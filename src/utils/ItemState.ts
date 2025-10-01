@@ -6,7 +6,16 @@ export const ItemState = {
   load(): MindFlowItem[] {
     if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (!stored || !stored.trim()) return [];
+    try {
+      return JSON.parse(stored);
+    } catch (error) {
+      console.warn('[ItemState] Failed to parse localStorage, clearing corrupted data');
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+      return [];
+    }
   },
 
   save(items: MindFlowItem[]): void {

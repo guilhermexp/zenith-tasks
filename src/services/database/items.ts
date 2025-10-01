@@ -1,6 +1,6 @@
-import { supabase } from '@/lib/supabase'
-import type { MindFlowItem, Subtask } from '@/types'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { Database } from '@/lib/supabase'
+import type { MindFlowItem, Subtask } from '@/types'
 
 type DBItem = Database['public']['Tables']['mind_flow_items']['Row']
 type DBSubtask = Database['public']['Tables']['subtasks']['Row']
@@ -10,8 +10,14 @@ export class ItemsService {
    * Load all items for a specific user
    */
   static async loadItems(userId: string): Promise<MindFlowItem[]> {
+    // Se Supabase não configurado, retorna vazio (app usa localStorage)
+    if (!isSupabaseConfigured) {
+      console.log('[ItemsService] Supabase não configurado, usando localStorage')
+      return []
+    }
+
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('mind_flow_items')
         .select(`
           *,
@@ -36,9 +42,13 @@ export class ItemsService {
    * Create a new item
    */
   static async createItem(userId: string, item: Omit<MindFlowItem, 'id' | 'createdAt'>): Promise<MindFlowItem> {
+    if (!isSupabaseConfigured) {
+      throw new Error('Supabase não configurado')
+    }
+
     try {
       // First create the main item
-      const { data: newItem, error } = await supabase
+      const { data: newItem, error } = await supabase!
         .from('mind_flow_items')
         .insert({
           user_id: userId,
@@ -105,7 +115,7 @@ export class ItemsService {
       if (updates.transcript !== undefined) updateData.transcript = updates.transcript
       if (updates.notes !== undefined) updateData.notes = updates.notes
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('mind_flow_items')
         .update(updateData)
         .eq('id', itemId)
@@ -118,7 +128,7 @@ export class ItemsService {
       // Handle subtasks update if provided
       if (updates.subtasks !== undefined) {
         // Delete existing subtasks
-        await supabase
+        await supabase!
           .from('subtasks')
           .delete()
           .eq('parent_item_id', itemId)
@@ -139,7 +149,7 @@ export class ItemsService {
    */
   static async deleteItem(itemId: string): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('mind_flow_items')
         .delete()
         .eq('id', itemId)
@@ -160,7 +170,7 @@ export class ItemsService {
   static async toggleItem(itemId: string): Promise<void> {
     try {
       // First get current status
-      const { data: item, error: fetchError } = await supabase
+      const { data: item, error: fetchError } = await supabase!
         .from('mind_flow_items')
         .select('completed')
         .eq('id', itemId)
@@ -172,7 +182,7 @@ export class ItemsService {
       }
 
       // Update with toggled status
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('mind_flow_items')
         .update({ completed: !item.completed })
         .eq('id', itemId)
@@ -192,7 +202,7 @@ export class ItemsService {
    */
   static async clearCompleted(userId: string): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('mind_flow_items')
         .delete()
         .eq('user_id', userId)
@@ -220,7 +230,7 @@ export class ItemsService {
         position: index
       }))
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('subtasks')
         .insert(subtasksToInsert)
 
@@ -282,7 +292,7 @@ export class ItemsService {
         updateData.due_date_iso = null
       }
 
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('mind_flow_items')
         .update(updateData)
         .eq('id', itemId)

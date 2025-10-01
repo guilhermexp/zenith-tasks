@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+
 import { getServer } from '@/server/mcpRegistry'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
+import { safeJsonParse } from '@/utils/json-helpers'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -21,7 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const url = srv.baseUrl.replace(/\/$/, '') + callPath
   const res = await fetch(url, { method: 'POST', headers, cache: 'no-store', body: JSON.stringify({ name, arguments: args || {} }) })
   const code = res.status
-  const json = await res.json().catch(()=> ({}))
+  const json = await safeJsonParse(res)
   if (!res.ok) return NextResponse.json({ error: `Upstream ${code}`, upstream: json }, { status: code })
   return NextResponse.json(json)
 }

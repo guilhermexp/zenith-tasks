@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
+import { useState, useEffect, useCallback } from 'react'
+
 import { ItemsService } from '@/services/database/items'
 import type { MindFlowItem } from '@/types'
 
@@ -41,13 +42,17 @@ export function useSupabaseItems() {
       console.warn('⚠️ Falling back to localStorage')
       try {
         const stored = localStorage.getItem('zenith-tasks-items')
-        if (stored) {
+        if (stored && stored.trim()) {
           const localItems = JSON.parse(stored)
           console.log('📦 Loaded from localStorage:', localItems.length, 'items')
           setItems(localItems)
         }
       } catch (e) {
         console.error('Failed to load from localStorage:', e)
+        // Limpar storage corrompido
+        try {
+          localStorage.removeItem('zenith-tasks-items')
+        } catch {}
       }
     } finally {
       setIsLoading(false)

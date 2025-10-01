@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
+
 import { getServer } from '@/server/mcpRegistry'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
+import { safeJsonParse } from '@/utils/json-helpers'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -19,7 +21,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const url = srv.baseUrl.replace(/\/$/, '') + toolsPath
   const res = await fetch(url, { headers, cache: 'no-store' })
   const code = res.status
-  const json = await res.json().catch(()=> ({}))
+  const json = await safeJsonParse(res)
   if (!res.ok) return NextResponse.json({ error: `Upstream ${code}`, upstream: json }, { status: code })
   return NextResponse.json(json)
 }

@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
 import { UserButton } from '@clerk/nextjs';
+import { Activity } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+
 import type { NavItem } from '../types';
-import { 
-  PlusIcon, XIcon, MoreHorizontalIcon, SearchIcon, 
+import {
+  PlusIcon, XIcon, MoreHorizontalIcon, SearchIcon,
   SettingsIcon, HelpCircleIcon, LogOutIcon, SoundWaveIcon, MicIcon,
   CalendarIcon
 } from './Icons';
@@ -18,9 +20,10 @@ interface SidebarProps {
   onOpenTalkMode: () => void;
   searchQuery: string;
   onSearch: (query: string) => void;
+  onOpenDebug?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, isOpen, onClose, onOpenTalkMode, searchQuery, onSearch }) => {
+const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, isOpen, onClose, onOpenTalkMode, searchQuery, onSearch, onOpenDebug }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['reunioes']);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -163,21 +166,32 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
       
       <div ref={dropdownRef} className="mt-auto relative">
         <div className="flex items-center justify-between p-2">
-            <button 
+            <button
               onClick={() => onOpenTalkMode()}
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-neutral-200 hover:bg-neutral-700"
             >
                 <MicIcon className="w-4 h-4 text-neutral-400" />
                 <span>Talk mode</span>
             </button>
-            <UserButton 
-              appearance={{
-                elements: {
-                  avatarBox: "w-8 h-8",
-                  userButtonTrigger: "focus:outline-none"
-                }
-              }}
-            />
+            <div className="flex items-center gap-2">
+              {onOpenDebug && (
+                <button
+                  onClick={onOpenDebug}
+                  className="p-1.5 rounded-md hover:bg-neutral-700 transition-colors"
+                  title="Debug Tools"
+                >
+                  <Activity className="w-5 h-5 text-neutral-400" />
+                </button>
+              )}
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-8 h-8",
+                    userButtonTrigger: "focus:outline-none"
+                  }
+                }}
+              />
+            </div>
         </div>
       </div>
       <style jsx>{`

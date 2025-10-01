@@ -1,7 +1,8 @@
 "use client"
 import React from 'react'
-import type { McpServerConfig } from '@/services/mcp/types'
+
 import { listTools, listServers, upsertServerApi, removeServerApi } from '@/services/mcp/client'
+import type { McpServerConfig } from '@/services/mcp/types'
 
 export default function SettingsPage() {
   const [servers, setServers] = React.useState<McpServerConfig[]>([])

@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
-import { extractClientKey, rateLimit } from '@/server/rateLimit'
-import { getAISDKModel } from '@/server/aiProvider'
 import { generateText } from 'ai'
+import { NextResponse } from 'next/server'
+
+import { getAISDKModel } from '@/server/aiProvider'
+import { extractClientKey, rateLimit } from '@/server/rateLimit'
+import { parseRequestBody } from '@/utils/json-helpers'
 
 export async function POST(req: Request) {
   try {
@@ -10,9 +12,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
-    const body = await req.json().catch(() => ({})) as any
-    const audioBase64 = typeof body.audioBase64 === 'string' ? body.audioBase64 : ''
-    const mimeType = typeof body.mimeType === 'string' && body.mimeType ? body.mimeType : 'audio/webm'
+    let audioBase64 = ''
+    let mimeType = 'audio/webm'
+    let sessionId: string | undefined
+    let realTime = false
+
+    // Check if request is FormData
+    const contentType = req.headers.get('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+      // Handle FormData with audio file
+      const formData = await req.formData()
+      const audioFile = formData.get('audio') as File | null
+
+      if (!audioFile) {
+        return NextResponse.json({ error: 'Audio file required' }, { status: 400 })
+      }
+
+      // Convert audio file to base64
+      const arrayBuffer = await audioFile.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      audioBase64 = buffer.toString('base64')
+      mimeType = audioFile.type || 'audio/webm'
+      sessionId = formData.get('sessionId') as string | undefined
+      realTime = formData.get('realTime') === 'true'
+    } else {
+      // Handle JSON body (existing logic)
+      const body = await parseRequestBody<any>(req)
+      audioBase64 = typeof body.audioBase64 === 'string' ? body.audioBase64 : ''
+      mimeType = typeof body.mimeType === 'string' && body.mimeType ? body.mimeType : 'audio/webm'
+      sessionId = typeof body.sessionId === 'string' ? body.sessionId : undefined
+      realTime = body.realTime === true
+    }
 
     if (!audioBase64) {
       return NextResponse.json({ error: 'audioBase64 required' }, { status: 400 })
@@ -40,8 +71,15 @@ export async function POST(req: Request) {
         {
           role: 'user',
           content: [
-            { type: 'input_audio', audio: { data: audioBase64, format } },
-            { type: 'text', text: 'Transcreva este áudio em português brasileiro. Retorne apenas a transcrição do que foi dito, sem comentários adicionais.' }
+            {
+              type: 'text',
+              text: 'Transcreva este áudio em português brasileiro. Retorne apenas a transcrição do que foi dito, sem comentários adicionais.'
+            },
+            {
+              type: 'file',
+              mediaType: 'audio/webm',
+              data: audioBase64
+            }
           ]
         }
       ]
@@ -49,7 +87,18 @@ export async function POST(req: Request) {
     const result = await Promise.race([gen, timeout])
     const text = result.text?.trim()
     if (!text) return NextResponse.json({ error: 'Empty transcription' }, { status: 500 })
-    return NextResponse.json({ text })
+    
+    // Return enhanced response for real-time transcription
+    const response = {
+      text,
+      transcript: text, // Keep backward compatibility
+      confidence: 0.85, // Mock confidence score
+      isFinal: !realTime, // Real-time chunks are not final
+      sessionId,
+      timestamp: Date.now()
+    }
+
+    return NextResponse.json(response)
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'transcription error' }, { status: 500 })
   }

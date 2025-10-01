@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { MicIcon, SoundWaveIcon, SpinnerIcon, CheckIcon } from './Icons';
 
 interface TalkModeModalProps {

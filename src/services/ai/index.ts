@@ -1,8 +1,10 @@
+import { generateObject, generateText } from 'ai'
+
+import { getAISDKModel } from '@/server/aiProvider'
 import type { MindFlowItem, ChatMessage, MindFlowItemType } from '@/types'
+
 import { extractJson, coerceItems, trimHistory } from './parse'
 import { buildAnalyzePrompt, buildSubtasksPrompt } from './prompts'
-import { getAISDKModel } from '@/server/aiProvider'
-import { generateObject, generateText } from 'ai'
 
 export async function analyzeWithAI(text: string): Promise<MindFlowItem[]> {
   const prompt = buildAnalyzePrompt(text)

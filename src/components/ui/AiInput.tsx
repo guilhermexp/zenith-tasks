@@ -1,13 +1,102 @@
 "use client"
 
-import React from "react"
-import { createPortal } from "react-dom"
 import { cx } from "class-variance-authority"
 import { AnimatePresence, motion } from "motion/react"
+import React from "react"
+import { createPortal } from "react-dom"
 
+import { ModelSelector } from "@/components/ModelSelector"
 import { Button } from "@/components/ui/button"
-import { useClickOutside } from "@/hooks/use-click-outside"
 import SiriOrb from "@/components/ui/SiriOrb"
+import { useClickOutside } from "@/hooks/use-click-outside"
+
+// Temporariamente usando implementação manual até ai/react estar disponível
+// TODO: Migrar para useChat do ai/react quando tipos estiverem disponíveis
+const useChat = (config: any) => {
+  const [messages, setMessages] = React.useState<any[]>([])
+  const [input, setInput] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState<Error | undefined>()
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!input.trim() || isLoading) return
+
+    const userMessage = { id: Date.now().toString(), role: 'user', content: input }
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+    setIsLoading(true)
+    setError(undefined)
+
+    try {
+      const res = await fetch(config.api, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: input,
+          ...config.body 
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+
+      console.log('[useChat] Response received, has body:', !!res.body)
+
+      if (res.body) {
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let assistantMessage = { id: (Date.now() + 1).toString(), role: 'assistant', content: '' }
+        setMessages(prev => [...prev, assistantMessage])
+        console.log('[useChat] Created assistant message:', assistantMessage.id)
+
+        let chunkCount = 0
+        while (true) {
+          const { done, value } = await reader.read()
+          console.log('[useChat] Read chunk:', { done, hasValue: !!value, chunkCount })
+          if (done) break
+
+          // Decodificar o chunk como texto puro
+          const text = decoder.decode(value, { stream: true })
+          console.log('[useChat] Decoded text chunk:', text)
+          assistantMessage.content += text
+          chunkCount++
+
+          // Atualizar mensagem
+          setMessages(prev => {
+            const copy = [...prev]
+            copy[copy.length - 1] = { ...assistantMessage }
+            console.log('[useChat] Updated message, total length:', assistantMessage.content.length)
+            return copy
+          })
+        }
+
+        console.log('[useChat] Stream finished, total chunks:', chunkCount, 'final length:', assistantMessage.content.length)
+        config.onFinish?.(assistantMessage)
+      }
+    } catch (err: any) {
+      setError(err)
+      config.onError?.(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const reload = () => {
+    // TODO: Implementar reload
+  }
+
+  const stop = () => {
+    // TODO: Implementar stop
+  }
+
+  return { messages, input, handleInputChange, handleSubmit, isLoading, error, reload, stop }
+}
 
 const SPEED = 1
 
@@ -22,39 +111,46 @@ const FooterContext = React.createContext({} as FooterContext)
 const useFooter = () => React.useContext(FooterContext)
 
 interface MorphSurfaceProps {
-  onSubmit?: (message: string) => Promise<string | AsyncIterable<string> | void>
   placeholder?: string
 }
 
-export function MorphSurface({ onSubmit, placeholder = "Pergunte algo..." }: MorphSurfaceProps) {
+export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceProps) {
   const rootRef = React.useRef<HTMLDivElement>(null)
 
   const feedbackRef = React.useRef<HTMLTextAreaElement | null>(null)
   const [showFeedback, setShowFeedback] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
-  const [chatMessages, setChatMessages] = React.useState<Array<{role: string, content: string}>>([])
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [selectedModel, setSelectedModel] = React.useState<string>('')
 
-  // Persist last 10 messages between sessions (storage only; UI starts limpa)
-  React.useEffect(() => {
+  // Usar hook useChat (implementação manual temporária)
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, reload, stop } = useChat({
+    api: '/api/assistant/chat?stream=1',
+    body: {
+      model: selectedModel || undefined,
+    },
+    onFinish: (message: any) => {
+      // Salvar no histórico quando finalizar
+      persistMessage(message)
+    },
+    onError: (error: any) => {
+      console.error('[AiInput] Chat error:', error)
+    }
+  })
+
+  // Persist last 10 messages between sessions
+  const persistMessage = React.useCallback((message: any) => {
     if (typeof window === 'undefined') return;
     try {
       const raw = localStorage.getItem('zenith-ai-last10')
-      if (raw) {
-        JSON.parse(raw) // valida formato, mas não repovoa UI
-      }
-    } catch {}
-  }, [])
-
-  const persistLast10 = React.useCallback((messages: Array<{role: string, content: string}>) => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = localStorage.getItem('zenith-ai-last10')
-      const prev: Array<{role: string, content: string, ts?: number}> = raw ? JSON.parse(raw) : []
-      const appended = [...prev, ...messages.map(m => ({ ...m, ts: Date.now() }))]
+      const prev: Array<any> = raw && raw.trim() ? JSON.parse(raw) : []
+      const appended = [...prev, { ...message, ts: Date.now() }]
       const last10 = appended.slice(-10)
       localStorage.setItem('zenith-ai-last10', JSON.stringify(last10))
-    } catch {}
+    } catch (error) {
+      console.warn('[AiInput] Failed to persist message:', error)
+      // Reset corrupted storage
+      localStorage.removeItem('zenith-ai-last10')
+    }
   }, [])
 
   const closeFeedback = React.useCallback(() => {
@@ -68,49 +164,6 @@ export function MorphSurface({ onSubmit, placeholder = "Pergunte algo..." }: Mor
       feedbackRef.current?.focus()
     })
   }, [])
-
-  const onFeedbackSuccess = React.useCallback(async () => {
-    const message = feedbackRef.current?.value
-    if (message) {
-      // Adiciona mensagem do usuário ao chat e salva histórico
-      setChatMessages(prev => {
-        const next = [...prev, { role: 'user', content: message }]
-        persistLast10([{ role: 'user', content: message }])
-        return next
-      })
-      if (feedbackRef.current) feedbackRef.current.value = ""
-      
-      // Simula loading
-      setIsLoading(true)
-      
-      if (onSubmit) {
-        try {
-          const result: any = await onSubmit(message)
-          // Suporta streaming via AsyncIterable<string>
-          if (result && typeof result === 'object' && typeof result[Symbol.asyncIterator] === 'function') {
-            let acc = ''
-            setChatMessages(prev => [...prev, { role: 'assistant', content: '' }])
-            for await (const chunk of result as AsyncIterable<string>) {
-              acc += String(chunk)
-              setChatMessages(prev => {
-                const copy = [...prev]
-                copy[copy.length - 1] = { role: 'assistant', content: acc }
-                return copy
-              })
-            }
-            persistLast10([{ role: 'assistant', content: acc }])
-          } else if (typeof result === 'string' && result.length > 0) {
-            setChatMessages(prev => [...prev, { role: 'assistant', content: result }])
-            persistLast10([{ role: 'assistant', content: result }])
-          }
-        } finally {
-          setIsLoading(false)
-        }
-      } else {
-        setIsLoading(false)
-      }
-    }
-  }, [onSubmit])
 
   useClickOutside(rootRef, closeFeedback)
 
@@ -183,12 +236,18 @@ export function MorphSurface({ onSubmit, placeholder = "Pergunte algo..." }: Mor
                   }}
                 >
                   <FooterContext.Provider value={context}>
-                    <Feedback 
-                      feedbackRef={feedbackRef} 
-                      onSuccess={onFeedbackSuccess} 
-                      placeholder={placeholder}
-                      chatMessages={chatMessages}
+                    <Feedback
+                      messages={messages}
+                      input={input}
+                      handleInputChange={handleInputChange}
+                      handleSubmit={handleSubmit}
                       isLoading={isLoading}
+                      error={error}
+                      reload={reload}
+                      stop={stop}
+                      placeholder={placeholder}
+                      selectedModel={selectedModel}
+                      onModelChange={setSelectedModel}
                     />
                   </FooterContext.Provider>
                 </motion.div>
@@ -253,25 +312,31 @@ const FEEDBACK_WIDTH = "100%"
 const FEEDBACK_HEIGHT = "100%"
 
 function Feedback({
-  feedbackRef,
-  onSuccess,
+  messages,
+  input,
+  handleInputChange,
+  handleSubmit,
+  isLoading,
+  error,
+  reload,
+  stop,
   placeholder,
-  chatMessages = [],
-  isLoading = false,
+  selectedModel = '',
+  onModelChange,
 }: {
-  feedbackRef: React.RefObject<HTMLTextAreaElement>
-  onSuccess: () => void
+  messages: any[]
+  input: string
+  handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+  isLoading: boolean
+  error?: Error
+  reload?: () => void
+  stop?: () => void
   placeholder?: string
-  chatMessages?: Array<{role: string, content: string}>
-  isLoading?: boolean
+  selectedModel?: string
+  onModelChange?: (model: string) => void
 }) {
   const { closeFeedback, showFeedback } = useFooter()
-  const submitRef = React.useRef<HTMLButtonElement>(null)
-
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    onSuccess()
-  }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Escape") {
@@ -280,13 +345,13 @@ function Feedback({
     // Enviar com Enter. Para quebra de linha, use Shift+Enter
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      submitRef.current?.click()
+      handleSubmit(e as any)
     }
   }
 
   return (
     <form
-      onSubmit={onSubmit}
+      onSubmit={handleSubmit}
       className="flex flex-col h-full w-full"
       style={{
         pointerEvents: showFeedback ? "all" : "none",
@@ -322,7 +387,7 @@ function Feedback({
             
             {/* Área de chat */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-gradient-to-b from-neutral-950 to-neutral-900/50">
-              {chatMessages.length === 0 ? (
+              {messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
                   <div className="mb-4">
                     <SiriOrb size="48px" colors={{ bg: "oklch(22.64% 0 0)" }} />
@@ -333,8 +398,8 @@ function Feedback({
                   </p>
                 </div>
               ) : (
-                chatMessages.map((msg, index) => (
-                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                messages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
                       msg.role === 'user' 
                         ? 'bg-neutral-800/70 text-neutral-200 border border-neutral-700/60' 
@@ -356,37 +421,72 @@ function Feedback({
                   </div>
                 </div>
               )}
+              {error && (
+                <div className="flex justify-center">
+                  <div className="bg-red-900/20 text-red-400 border border-red-800/60 px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+                    <span>Erro: {error.message}</span>
+                    {reload && (
+                      <button
+                        onClick={reload}
+                        className="text-xs underline hover:text-red-300"
+                      >
+                        Tentar novamente
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Input area */}
-            <div className="p-4 sm:p-6 border-t border-neutral-800 bg-neutral-900/30">
+            <div className="p-4 sm:p-6 border-t border-neutral-800 bg-neutral-900/30 space-y-3">
+              {/* Model Selector */}
+              <div className="w-full">
+                <ModelSelector
+                  value={selectedModel}
+                  onChange={onModelChange}
+                  context="chat"
+                  className="w-full"
+                />
+              </div>
+
+              {/* Text Input */}
               <div className="relative">
                 <textarea
-                  ref={feedbackRef}
+                  value={input}
+                  onChange={handleInputChange}
                   placeholder={placeholder || "Pergunte algo ou adicione uma tarefa..."}
                   name="message"
                   className="w-full bg-neutral-950 text-neutral-100 resize-none rounded-lg p-3 sm:p-4 pr-16 outline-0 placeholder:text-neutral-500 min-h-[60px] max-h-32 border border-neutral-800 focus:border-neutral-700 transition-colors"
                   rows={2}
                   onKeyDown={onKeyDown}
                   spellCheck={false}
-                />
-                <button
-                  type="submit"
-                  ref={submitRef}
-                  className="absolute right-3 bottom-3 p-2 text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
                   disabled={isLoading}
-                  title="Enviar (⌘+Enter)"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="m22 2-7 20-4-9-9-4zm0 0-10 10" />
-                  </svg>
-                </button>
-              </div>
-              <div className="absolute bottom-6 right-16 opacity-50">
-                <span className="text-xs text-neutral-600 flex items-center gap-1">
-                  <Kbd className="text-xs px-1 py-0.5 bg-neutral-800/50">⌘</Kbd>
-                  <Kbd className="text-xs px-1 py-0.5 bg-neutral-800/50">Enter</Kbd>
-                </span>
+                />
+                <div className="absolute right-3 bottom-3 flex gap-2">
+                  {isLoading && stop && (
+                    <button
+                      type="button"
+                      onClick={stop}
+                      className="p-2 text-neutral-400 hover:text-white transition-colors"
+                      title="Parar geração"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                      </svg>
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="p-2 text-neutral-400 hover:text-white transition-colors disabled:opacity-50"
+                    disabled={isLoading || !input.trim()}
+                    title="Enviar (Enter)"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="m22 2-7 20-4-9-9-4zm0 0-10 10" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

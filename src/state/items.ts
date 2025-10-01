@@ -5,8 +5,16 @@ const STORAGE_KEY = 'zenith-tasks-items'
 export function load(): MindFlowItem[] {
   if (typeof window === 'undefined') return []
   const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) return []
-  try { return JSON.parse(raw) as MindFlowItem[] } catch { return [] }
+  if (!raw || !raw.trim()) return []
+  try { 
+    return JSON.parse(raw) as MindFlowItem[] 
+  } catch (error) {
+    console.warn('[items] Failed to load from localStorage, clearing corrupted data')
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {}
+    return []
+  }
 }
 
 export function save(items: MindFlowItem[]) {

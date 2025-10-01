@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+
 import type { MindFlowItem } from '../types';
-import { 
-  DollarSignIcon, TrendingUpIcon, TrendingDownIcon
-} from './Icons';
+// Icons are defined inline in this file, not imported from Icons.tsx
 
 interface FinancePageProps {
   items: MindFlowItem[];

@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+
 import type { MindFlowItem, ChatBubble, MeetingDetails } from '../types';
-import { 
+import AudioRecorder from './AudioRecorder';
+import {
   SendIcon, XIcon
 } from './Icons';
+import { getMeetingStorage } from '../services/database/meetings';
 
 interface MeetingPageProps {
   items: MindFlowItem[];
@@ -14,15 +17,17 @@ interface MeetingPageProps {
   onDeleteItem: (itemId: string) => void;
 }
 
-const MeetingPage: React.FC<MeetingPageProps> = ({ 
-  items, 
-  onSelectItem, 
-  onUpdateItem, 
+const MeetingPage: React.FC<MeetingPageProps> = ({
+  items,
+  onSelectItem,
+  onUpdateItem,
   onCreateMeetingNote,
   onDeleteItem
 }) => {
   const [selectedMeeting, setSelectedMeeting] = useState<MindFlowItem | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [showRecorder, setShowRecorder] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   // Get meeting items from real data only
   const meetingItems = useMemo(() => {
@@ -39,7 +44,7 @@ const MeetingPage: React.FC<MeetingPageProps> = ({
 
   const handleSendMessage = () => {
     if (!newMessage.trim() || !selectedMeeting) return;
-    
+
     const newBubble: ChatBubble = {
       speaker: 'Você',
       text: newMessage,
@@ -47,12 +52,75 @@ const MeetingPage: React.FC<MeetingPageProps> = ({
     };
 
     const updatedTranscript = [...(selectedMeeting.transcript || []), newBubble];
-    
+
     onUpdateItem(selectedMeeting.id, {
       transcript: updatedTranscript
     });
 
     setNewMessage('');
+  };
+
+  // Handle audio recording
+  const handleAudioReady = async (audioBlob: Blob) => {
+    if (!selectedMeeting) return;
+
+    setIsTranscribing(true);
+    const meetingStorage = getMeetingStorage();
+
+    try {
+      // Store audio
+      const audioUrl = await meetingStorage.storeAudio(audioBlob, selectedMeeting.id);
+
+      // Create FormData for API
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.webm');
+
+      // Send to transcription API
+      const response = await fetch('/api/speech/transcribe', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro na transcrição');
+      }
+
+      const { transcript } = await response.json();
+
+      if (transcript) {
+        const newBubble: ChatBubble = {
+          speaker: 'Áudio Transcrito',
+          text: transcript,
+          isCurrentUser: false
+        };
+
+        const updatedTranscript = [...(selectedMeeting.transcript || []), newBubble];
+
+        // Store transcript
+        await meetingStorage.storeTranscript(selectedMeeting.id, updatedTranscript);
+
+        // Update item
+        onUpdateItem(selectedMeeting.id, {
+          transcript: updatedTranscript
+        });
+
+        // Generate summary if transcript has enough content
+        if (updatedTranscript.length >= 3) {
+          const meetingDetails = await meetingStorage.createMeetingSummary(
+            updatedTranscript,
+            { title: selectedMeeting.title }
+          );
+
+          onUpdateItem(selectedMeeting.id, {
+            meetingDetails
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
+    } finally {
+      setIsTranscribing(false);
+    }
   };
 
   if (!selectedMeeting) {
@@ -134,10 +202,35 @@ const MeetingPage: React.FC<MeetingPageProps> = ({
             <h3 className="font-semibold text-white">Meeting transcript</h3>
             <p className="text-xs text-neutral-400">qua., jul. 2 • 2:11 PM • 34 minutes</p>
           </div>
-          <button className="p-1 text-neutral-400 hover:text-white">
-            <XIcon className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowRecorder(!showRecorder)}
+              className={`p-1.5 rounded-md transition-colors ${
+                showRecorder
+                  ? 'bg-neutral-700 text-white'
+                  : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+              }`}
+              title={showRecorder ? 'Fechar gravador' : 'Abrir gravador'}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </button>
+            <button className="p-1 text-neutral-400 hover:text-white">
+              <XIcon className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+
+        {/* Audio Recorder */}
+        {showRecorder && (
+          <div className="p-4 border-b border-neutral-800 bg-neutral-900/50">
+            <AudioRecorder
+              onAudioReady={handleAudioReady}
+              isTranscribing={isTranscribing}
+            />
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-auto overscroll-contain p-4 space-y-3">

@@ -1,40 +1,34 @@
+/* eslint-disable import/order */
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs';
-import type { 
-  MindFlowItem, 
-  NavItem, 
-  MindFlowItemType, 
-  ChatMessage, 
-  ChatBubble, 
-  MeetingDetails 
-} from '../types';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import type { Tools } from '@/services/ai/tools';
 import { useSupabaseItems } from '../hooks/useSupabaseItems';
+import type { MindFlowItem, NavItem, MindFlowItemType, ChatMessage, ChatBubble, MeetingDetails } from '../types';
 
 // Components
-import Sidebar from './Sidebar';
-import TaskList from './TaskList';
-import DetailPanel from './DetailPanel';
 import CalendarPage from './CalendarPage';
-import UpdatesPage from './UpdatesPage';
+import DebugTools from './DebugTools';
+import DetailPanel from './DetailPanel';
 import FinancePage from './FinancePage';
-import MeetingPage from './MeetingPage';
-import TalkModeModal from './TalkModeModal';
-import { MorphSurface } from './ui/AiInput';
-import ItemsPreviewModal from './ItemsPreviewModal';
-import SettingsPage from './SettingsPage';
-import MCPMarketplace from './MCPMarketplace';
-import { executePlan } from '@/services/ai/assistant'
-import type { Tools } from '@/services/ai/tools'
-import { loadServers } from '@/services/mcp/store'
-
-// Icons
 import { 
   CheckCircleIcon, CalendarIcon, TrendingUpIcon, 
   BellIcon, UsersIcon, HomeIcon, LightbulbIcon,
   PageIcon, DollarSignIcon, SettingsIcon, SparklesIcon
 } from './Icons';
+import ItemsPreviewModal from './ItemsPreviewModal';
+import MCPMarketplace from './MCPMarketplace';
+import MeetingPage from './MeetingPage';
+import SettingsPage from './SettingsPage';
+import Sidebar from './Sidebar';
+import TalkModeModal from './TalkModeModal';
+import TaskList from './TaskList';
+import { MorphSurface } from './ui/AiInput';
+import UpdatesPage from './UpdatesPage';
+
+
+// Icons
 
 const App: React.FC = () => {
   // Clerk authentication
@@ -62,6 +56,7 @@ const App: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewItems, setPreviewItems] = useState<MindFlowItem[] | null>(null);
+  const [isDebugOpen, setIsDebugOpen] = useState(false);
   const [detailWidth, setDetailWidth] = useState<number>(() => {
     if (typeof window === 'undefined') return 720;
     try {
@@ -598,8 +593,13 @@ const App: React.FC = () => {
       
       {/* AI Input - CANTO INFERIOR DIREITO RESPONSIVO */}
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 z-50">
-        <MorphSurface 
-          onSubmit={async (message: string) => {
+        <MorphSurface
+          placeholder="Adicione uma tarefa, ideia ou nota..."
+        />
+        {/* TODO: Integrar lógica de comandos AI com novo sistema useChat */}
+        {false && (() => {
+          // Manter lógica antiga comentada para referência
+          return async (message: string, model?: string) => {
             // Sempre processar via API backend
             // Tenta streaming do plano (SSE); cai para JSON se falhar
             async function fetchPlan(): Promise<{ commands: any[]; reply?: string }> {
@@ -607,7 +607,7 @@ const App: React.FC = () => {
                 const res = await fetch('/api/assistant?stream=1', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Accept': 'text/event-stream' },
-                  body: JSON.stringify({ message })
+                  body: JSON.stringify({ message, model })
                 })
                 const ctype = res.headers.get('content-type') || ''
                 if (res.ok && ctype.includes('text/event-stream') && res.body) {
@@ -825,9 +825,8 @@ const App: React.FC = () => {
               for await (const chunk of streamChatFallback()) yield chunk
             }
             return stream()
-          }}
-          placeholder="Pergunte algo ou adicione uma tarefa..."
-        />
+          }
+        })()}
       </div>
 
       {/* Preview modal for multiple items */}
@@ -848,6 +847,12 @@ const App: React.FC = () => {
           }}
         />
       )}
+
+      {/* Debug Tools Modal */}
+      <DebugTools
+        isOpen={isDebugOpen}
+        onClose={() => setIsDebugOpen(false)}
+      />
     </div>
     </SignedIn>
   );

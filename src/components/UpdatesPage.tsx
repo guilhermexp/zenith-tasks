@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+
 import type { MindFlowItem, ActivityLogEntry } from '../types';
 import { 
   CheckCircleIcon, PlusIcon

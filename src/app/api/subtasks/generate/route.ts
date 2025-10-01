@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
+
+import { getAISDKModel } from '@/server/aiProvider'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 import { subtasksWithAI } from '@/services/ai'
-import { getAISDKModel } from '@/server/aiProvider'
 
 export async function POST(req: Request) {
   try {

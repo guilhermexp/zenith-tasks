@@ -3,9 +3,12 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/', // Home page pública para acesso direto ao app
+  '/api/(.*)', // API routes públicas para funcionamento do app
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Não força proteção - permite acesso ao app
   if (!isPublicRoute(request)) {
     await auth.protect();
   }

@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { HTMLMotionProps } from 'framer-motion';
 import { Columns3, Grid } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 
 export type DayType = {
   day: string;

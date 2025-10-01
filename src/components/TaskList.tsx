@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+
 import type { MindFlowItem, MindFlowItemType } from '../types';
 import { 
   MoreHorizontalIcon, CalendarIcon, CheckIcon, MicIcon, CheckCircleIcon, 

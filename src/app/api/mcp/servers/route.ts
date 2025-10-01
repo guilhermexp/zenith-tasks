@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+
 import { getServers, upsertServer } from '@/server/mcpRegistry'
 
 export async function GET() {

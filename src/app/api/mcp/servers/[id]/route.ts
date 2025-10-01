@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+
 import { getServer, removeServer } from '@/server/mcpRegistry'
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {

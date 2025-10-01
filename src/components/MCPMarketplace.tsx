@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { marketplaceServers, type MCPMarketplaceServer } from '@/services/mcp/marketplace-registry'
+
 import { upsertServerApi, listServers } from '@/services/mcp/client'
+import { marketplaceServers, type MCPMarketplaceServer } from '@/services/mcp/marketplace-registry'
 import type { McpServerConfig } from '@/services/mcp/types'
 
 interface AuthModalProps {

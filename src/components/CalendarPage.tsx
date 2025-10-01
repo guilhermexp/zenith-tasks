@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+
 import type { MindFlowItem } from '../types';
 import { 
   ChevronLeftIcon, ChevronRightIcon, CalendarIcon, 

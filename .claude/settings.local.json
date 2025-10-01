@@ -5,7 +5,9 @@
       "Read(/Users/guilhermevarela/**)",
       "Read(/Users/guilhermevarela/.claude/**)",
       "Read(/Users/guilhermevarela/.claude/**)",
-      "Read(/Users/guilhermevarela/.claude/**)"
+      "Read(/Users/guilhermevarela/.claude/**)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [],
     "ask": []
