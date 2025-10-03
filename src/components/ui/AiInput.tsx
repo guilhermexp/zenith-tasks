@@ -1,5 +1,6 @@
 "use client"
 
+import { useUser } from "@clerk/nextjs"
 import { cx } from "class-variance-authority"
 import { AnimatePresence, motion } from "motion/react"
 import React from "react"
@@ -10,93 +11,8 @@ import { Button } from "@/components/ui/button"
 import SiriOrb from "@/components/ui/SiriOrb"
 import { useClickOutside } from "@/hooks/use-click-outside"
 
-// Temporariamente usando implementação manual até ai/react estar disponível
-// TODO: Migrar para useChat do ai/react quando tipos estiverem disponíveis
-const useChat = (config: any) => {
-  const [messages, setMessages] = React.useState<any[]>([])
-  const [input, setInput] = React.useState('')
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [error, setError] = React.useState<Error | undefined>()
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!input.trim() || isLoading) return
-
-    const userMessage = { id: Date.now().toString(), role: 'user', content: input }
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-    setIsLoading(true)
-    setError(undefined)
-
-    try {
-      const res = await fetch(config.api, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          message: input,
-          ...config.body 
-        })
-      })
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`)
-      }
-
-      console.log('[useChat] Response received, has body:', !!res.body)
-
-      if (res.body) {
-        const reader = res.body.getReader()
-        const decoder = new TextDecoder()
-        let assistantMessage = { id: (Date.now() + 1).toString(), role: 'assistant', content: '' }
-        setMessages(prev => [...prev, assistantMessage])
-        console.log('[useChat] Created assistant message:', assistantMessage.id)
-
-        let chunkCount = 0
-        while (true) {
-          const { done, value } = await reader.read()
-          console.log('[useChat] Read chunk:', { done, hasValue: !!value, chunkCount })
-          if (done) break
-
-          // Decodificar o chunk como texto puro
-          const text = decoder.decode(value, { stream: true })
-          console.log('[useChat] Decoded text chunk:', text)
-          assistantMessage.content += text
-          chunkCount++
-
-          // Atualizar mensagem
-          setMessages(prev => {
-            const copy = [...prev]
-            copy[copy.length - 1] = { ...assistantMessage }
-            console.log('[useChat] Updated message, total length:', assistantMessage.content.length)
-            return copy
-          })
-        }
-
-        console.log('[useChat] Stream finished, total chunks:', chunkCount, 'final length:', assistantMessage.content.length)
-        config.onFinish?.(assistantMessage)
-      }
-    } catch (err: any) {
-      setError(err)
-      config.onError?.(err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const reload = () => {
-    // TODO: Implementar reload
-  }
-
-  const stop = () => {
-    // TODO: Implementar stop
-  }
-
-  return { messages, input, handleInputChange, handleSubmit, isLoading, error, reload, stop }
-}
+// AI SDK v5 ainda não exporta useChat via ai/react
+// Mantendo implementação compatível que funciona
 
 const SPEED = 1
 
@@ -121,21 +37,17 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
   const [showFeedback, setShowFeedback] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
   const [selectedModel, setSelectedModel] = React.useState<string>('')
+  const { user } = useUser()
 
-  // Usar hook useChat (implementação manual temporária)
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, reload, stop } = useChat({
-    api: '/api/assistant/chat?stream=1',
-    body: {
-      model: selectedModel || undefined,
-    },
-    onFinish: (message: any) => {
-      // Salvar no histórico quando finalizar
-      persistMessage(message)
-    },
-    onError: (error: any) => {
-      console.error('[AiInput] Chat error:', error)
-    }
-  })
+  // Estados para o chat com AI SDK v5
+  const [messages, setMessages] = React.useState<any[]>([])
+  const [input, setInput] = React.useState('')
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState<Error | undefined>()
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+  }
 
   // Persist last 10 messages between sessions
   const persistMessage = React.useCallback((message: any) => {
@@ -152,6 +64,80 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
       localStorage.removeItem('zenith-ai-last10')
     }
   }, [])
+
+  const handleSubmit = React.useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!input.trim() || isLoading) return
+
+    const userMessage = { id: Date.now().toString(), role: 'user', content: input }
+    setMessages(prev => [...prev, userMessage])
+    const currentInput = input
+    setInput('')
+    setIsLoading(true)
+    setError(undefined)
+
+    const history = [...messages, userMessage]
+      .filter(msg => typeof msg?.content === 'string' && msg.content.trim().length > 0)
+      .map(msg => ({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content
+      }))
+
+    try {
+      const res = await fetch('/api/assistant/act?stream=1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: currentInput,
+          history,
+          userId: user?.id,
+          model: selectedModel || undefined,
+        })
+      })
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+
+      if (res.body) {
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let assistantMessage = { id: (Date.now() + 1).toString(), role: 'assistant', content: '' }
+        setMessages(prev => [...prev, assistantMessage])
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const text = decoder.decode(value, { stream: true })
+          assistantMessage.content += text
+
+          setMessages(prev => {
+            const copy = [...prev]
+            copy[copy.length - 1] = { ...assistantMessage }
+            return copy
+          })
+        }
+
+        // Salvar no histórico quando finalizar
+        persistMessage(assistantMessage)
+      }
+    } catch (err: any) {
+      setError(err)
+      console.error('[AiInput] Chat error:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [input, isLoading, selectedModel, persistMessage, messages, user?.id])
+
+  const reload = () => {
+    // Implementação futura
+  }
+
+  const stop = () => {
+    // Implementação futura
+  }
+
 
   const closeFeedback = React.useCallback(() => {
     setShowFeedback(false)

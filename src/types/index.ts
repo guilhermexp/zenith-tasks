@@ -28,10 +28,21 @@ export interface ChatBubble {
   isCurrentUser: boolean;
 }
 
+export interface MeetingActionItem {
+  task: string;
+  responsible?: string;
+  deadline?: string;
+}
+
 export interface MeetingDetails {
   summary: string;
   topics: { title: string; content: string }[];
-  actionItems: string[];
+  actionItems: MeetingActionItem[];
+  participants?: string[];
+  startTime?: string;
+  duration?: string;
+  decisions?: string[];
+  nextSteps?: string[];
 }
 
 export interface MindFlowItem {

@@ -68,56 +68,19 @@ export async function POST(req: Request) {
       }
     }
 
-    // 5. Obter modelo com tratamento de erro
+    // 5. Obter modelo usando AIProvider centralizado
     let model: any
-    let modelConfig: any = { temperature: 0.7, maxTokens: 2000 }
+    let modelConfig: any
 
-    // Try direct providers (bypass complex AIProvider for now)
     try {
-      console.log('[Assistant] Getting model directly...')
-      
-      // Try Google first (most likely to work)
-      if (process.env.GEMINI_API_KEY) {
-        const { createGoogleGenerativeAI } = await import('@ai-sdk/google')
-        const google = createGoogleGenerativeAI({
-          apiKey: process.env.GEMINI_API_KEY
-        })
-        model = google('gemini-2.0-flash-exp')
-        console.log('[Assistant] Using Google Gemini')
-      }
-      // Try OpenRouter
-      else if (process.env.OPENROUTER_API_KEY) {
-        const { createOpenAI } = await import('@ai-sdk/openai')
-        const openai = createOpenAI({
-          apiKey: process.env.OPENROUTER_API_KEY,
-          baseURL: 'https://openrouter.ai/api/v1'
-        })
-        model = openai('openrouter/auto')
-        console.log('[Assistant] Using OpenRouter')
-      }
-      // Try OpenAI
-      else if (process.env.OPENAI_API_KEY) {
-        const { createOpenAI } = await import('@ai-sdk/openai')
-        const openai = createOpenAI({
-          apiKey: process.env.OPENAI_API_KEY
-        })
-        model = openai('gpt-4o-mini')
-        console.log('[Assistant] Using OpenAI')
-      }
-      // Try Anthropic
-      else if (process.env.ANTHROPIC_API_KEY) {
-        const { createAnthropic } = await import('@ai-sdk/anthropic')
-        const anthropic = createAnthropic({
-          apiKey: process.env.ANTHROPIC_API_KEY
-        })
-        model = anthropic('claude-3-5-haiku-20241022')
-        console.log('[Assistant] Using Anthropic')
-      }
-      else {
-        throw new Error('No AI provider configured')
-      }
+      console.log('[Assistant] Getting model from AIProvider...')
+      const aiProvider = AIProvider.getInstance()
+      const result = await aiProvider.getModelForContext('chat')
+      model = result.model
+      modelConfig = result.settings
+      console.log('[Assistant] Using AIProvider with context: chat')
     } catch (error: any) {
-      console.error('[Assistant] All providers failed:', error.message)
+      console.error('[Assistant] AIProvider failed:', error.message)
       
       // Final graceful fallback
       const reply = sanitizedMessage.length <= 3

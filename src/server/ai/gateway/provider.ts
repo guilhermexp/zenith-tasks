@@ -84,14 +84,12 @@ export class GatewayProvider {
       let response;
 
       if (this.gateway?.metadata) {
-        // Use real gateway metadata
         const metadata = await this.gateway.metadata();
         response = { models: metadata.models || [] };
         console.log('[Gateway] Loaded real models from API');
       } else {
-        // Fallback to mock for testing
-        console.log('[Gateway] Using mock models (no real API available)');
-        response = { models: await this.getMockModels() };
+        console.warn('[Gateway] Nenhum provedor de modelos configurado. Retornando lista vazia.');
+        response = { models: [] };
       }
       
       const models: ModelInfo[] = response.models.map((model: any) => ({
@@ -181,12 +179,10 @@ export class GatewayProvider {
 
     try {
       console.log('[Gateway] Fetching credit information...');
-      // Mock para testes - substituir quando API real estiver disponível
-      const response = await this.getMockCredits();
-      
+
       const credits: CreditInfo = {
-        balance: response.balance || 0,
-        total_used: response.total_used || 0,
+        balance: 0,
+        total_used: 0,
         last_updated: new Date().toISOString()
       };
 
@@ -305,57 +301,6 @@ export class GatewayProvider {
   /**
    * Infer model capabilities from model info
    */
-  // Mock de créditos para testes
-  private async getMockCredits() {
-    return {
-      balance: 100.00,
-      total_used: 25.50,
-      last_updated: new Date().toISOString()
-    };
-  }
-
-  // Mock de modelos para testes
-  private async getMockModels() {
-    // Retorna lista real de modelos populares
-    return [
-      {
-        id: 'openai/gpt-4o',
-        name: 'GPT-4 Optimized',
-        contextWindow: 128000,
-        maxOutputTokens: 4096,
-        pricing: { input: 5, output: 15 }
-      },
-      {
-        id: 'anthropic/claude-3-5-sonnet-20241022',
-        name: 'Claude 3.5 Sonnet',
-        contextWindow: 200000,
-        maxOutputTokens: 8192,
-        pricing: { input: 3, output: 15 }
-      },
-      {
-        id: 'google/gemini-2.0-flash-exp',
-        name: 'Gemini 2.0 Flash',
-        contextWindow: 1000000,
-        maxOutputTokens: 8192,
-        pricing: { input: 0.075, output: 0.3 }
-      },
-      {
-        id: 'openai/gpt-4o-mini',
-        name: 'GPT-4 Mini',
-        contextWindow: 128000,
-        maxOutputTokens: 16384,
-        pricing: { input: 0.15, output: 0.6 }
-      },
-      {
-        id: 'anthropic/claude-3-haiku-20240307',
-        name: 'Claude 3 Haiku',
-        contextWindow: 200000,
-        maxOutputTokens: 4096,
-        pricing: { input: 0.25, output: 1.25 }
-      }
-    ];
-  }
-
   private inferCapabilities(model: any): string[] {
     const capabilities: string[] = ['text-generation'];
     

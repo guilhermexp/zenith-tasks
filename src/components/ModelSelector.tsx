@@ -82,7 +82,12 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
     const modelId = model.id.toLowerCase();
     const provider = model.provider.toLowerCase();
 
-    // Z.AI Models
+    // Gateway
+    if (provider === 'gateway') {
+      return <Sparkles className="h-4 w-4 text-cyan-400" />;
+    }
+
+    // Z.AI Models (direct)
     if (provider === 'zai') {
       return <Zap className="h-4 w-4 text-emerald-400" />;
     }
@@ -168,23 +173,16 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full min-w-[300px] flex items-center justify-between gap-3 px-4 py-3 bg-neutral-900 hover:bg-neutral-800 rounded-lg border border-neutral-800 transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 rounded-lg border border-neutral-800 transition-colors min-w-0"
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           {currentModel && getModelIcon(currentModel)}
-          <div className="flex flex-col items-start min-w-0 flex-1">
-            <span className="text-sm font-medium text-neutral-100 truncate w-full">
-              {currentModel?.name || 'Selecionar modelo'}
-            </span>
-            {currentModel?.provider && (
-              <span className="text-xs text-neutral-500">
-                {currentModel.provider.charAt(0).toUpperCase() + currentModel.provider.slice(1)}
-              </span>
-            )}
-          </div>
+          <span className="text-sm font-medium text-neutral-100 truncate">
+            {currentModel?.name || 'Modelo'}
+          </span>
         </div>
         <ChevronDown
-          className={`h-4 w-4 text-neutral-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-3 w-3 text-neutral-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -194,86 +192,62 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full mt-2 w-full min-w-[400px] max-h-[500px] bg-neutral-900 rounded-lg border border-neutral-800 shadow-2xl z-50 overflow-hidden">
+          <div className="absolute bottom-full mb-2 w-full min-w-[380px] max-h-[600px] bg-neutral-900 rounded-lg border border-neutral-800 shadow-2xl z-50 overflow-hidden">
             {models.length === 0 ? (
-              <div className="px-4 py-3 text-sm text-neutral-400">
+              <div className="px-3 py-2 text-sm text-neutral-400">
                 {error || 'Nenhum modelo disponível'}
               </div>
             ) : (
-              <div className="max-h-[500px] overflow-y-auto">
-                {/* Group models by provider */}
-                {Object.entries(
-                  models.reduce((groups: Record<string, typeof models>, model) => {
-                    const provider = model.provider;
-                    if (!groups[provider]) groups[provider] = [];
-                    groups[provider].push(model);
-                    return groups;
-                  }, {})
-                ).map(([provider, providerModels]) => (
-                  <div key={provider}>
-                    <div className="px-3 py-2 text-xs font-medium text-neutral-500 bg-neutral-800/50 border-b border-neutral-800">
-                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                    </div>
-                    {providerModels.map((model) => (
-                      <button
-                        key={model.id}
-                        onClick={() => handleSelect(model.id)}
-                        className={`w-full text-left px-4 py-3 hover:bg-neutral-800 transition-colors border-b border-neutral-800/30 last:border-b-0 ${
-                          model.id === selectedModel ? 'bg-neutral-800/80' : ''
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1 flex-shrink-0">
-                            {getModelIcon(model)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="text-sm font-medium text-neutral-100 break-words">
-                                {model.name}
-                              </div>
-                              {model.pricing && (
-                                <div className="text-xs text-neutral-400 flex-shrink-0">
-                                  {formatPrice(model.pricing.input)}
-                                </div>
-                              )}
-                            </div>
-                            {model.description && (
-                              <div className="text-xs text-neutral-400 mt-1 line-clamp-2">
-                                {model.description}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-3 mt-2">
-                              {model.contextWindow && (
-                                <span className="text-xs px-2 py-1 bg-neutral-700 rounded text-neutral-300">
-                                  {model.contextWindow >= 1000000 
-                                    ? `${(model.contextWindow / 1000000).toFixed(1)}M tokens`
-                                    : `${(model.contextWindow / 1000).toFixed(0)}k tokens`
-                                  }
-                                </span>
-                              )}
-                              {model.capabilities && model.capabilities.length > 0 && (
-                                <div className="flex gap-1">
-                                  {model.capabilities.slice(0, 3).map((cap) => (
-                                    <span
-                                      key={cap}
-                                      className="text-xs px-2 py-1 bg-blue-900/30 text-blue-300 rounded"
-                                    >
-                                      {cap}
-                                    </span>
-                                  ))}
-                                  {model.capabilities.length > 3 && (
-                                    <span className="text-xs text-neutral-500">
-                                      +{model.capabilities.length - 3}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
+              <div className="max-h-[600px] overflow-y-auto">
+                {models.slice(0, 20).map((model) => (
+                  <button
+                    key={model.id}
+                    onClick={() => handleSelect(model.id)}
+                    className={`w-full text-left px-3 py-2 hover:bg-neutral-800 transition-colors border-b border-neutral-800/30 last:border-b-0 ${
+                      model.id === selectedModel ? 'bg-neutral-800/80' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        {getModelIcon(model)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-neutral-100 truncate">
+                            {model.name}
+                          </span>
+                          <span className="text-xs text-neutral-500 flex-shrink-0">
+                            {model.provider === 'gateway' ? 'GTW' : model.provider.slice(0, 3).toUpperCase()}
+                          </span>
                         </div>
-                      </button>
-                    ))}
-                  </div>
+                        {model.description && (
+                          <div className="text-xs text-neutral-400 truncate mt-0.5">
+                            {model.description}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 mt-1">
+                          {model.contextWindow && (
+                            <span className="text-xs px-1.5 py-0.5 bg-neutral-700 rounded text-neutral-300">
+                              {model.contextWindow >= 1000000 
+                                ? `${(model.contextWindow / 1000000).toFixed(1)}M`
+                                : `${(model.contextWindow / 1000).toFixed(0)}k`
+                              }
+                            </span>
+                          )}
+                          {model.capabilities && model.capabilities.includes('function-calling') && (
+                            <span className="text-xs px-1.5 py-0.5 bg-emerald-900/30 text-emerald-300 rounded">
+                              tools
+                            </span>
+                          )}
+                          {model.capabilities && model.capabilities.includes('vision') && (
+                            <span className="text-xs px-1.5 py-0.5 bg-blue-900/30 text-blue-300 rounded">
+                              vision
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -287,189 +261,97 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
 // Default models as fallback
 function getDefaultModels(): Model[] {
   return [
-    // Z.AI Models (Default/Priority)
+    // 🌐 AI GATEWAY (Recomendado - usa o melhor modelo disponível)
     {
-      id: 'zai/glm-4.6',
-      name: 'GLM-4.6',
-      provider: 'zai',
-      description: 'Modelo avançado da Z.AI - Recomendado',
+      id: 'gateway/auto',
+      name: '🌐 AI Gateway (Auto)',
+      provider: 'gateway',
+      description: 'Gateway inteligente - seleciona o melhor modelo',
+      contextWindow: 200000,
+      capabilities: ['auto-select', 'fallback', 'reliable']
+    },
+    {
+      id: 'gateway/openai/gpt-4o',
+      name: '🌐 GPT-4o (Gateway)',
+      provider: 'gateway',
+      description: 'GPT-4o via Gateway - Confiável',
       contextWindow: 128000,
-      pricing: { input: 0, output: 0 }, // Free tier
-      capabilities: ['text', 'vision', 'function-calling', 'reasoning']
+      capabilities: ['text', 'vision', 'function-calling']
+    },
+    {
+      id: 'gateway/anthropic/claude-3.5-sonnet',
+      name: '🌐 Claude 3.5 (Gateway)',
+      provider: 'gateway',
+      description: 'Claude via Gateway - Análise e código',
+      contextWindow: 200000,
+      capabilities: ['text', 'vision', 'code', 'analysis']
+    },
+    {
+      id: 'gateway/google/gemini-2.5-pro',
+      name: '🌐 Gemini 2.5 Pro (Gateway)',
+      provider: 'gateway',
+      description: 'Gemini via Gateway - Contexto grande',
+      contextWindow: 2000000,
+      capabilities: ['text', 'vision', 'huge-context']
     },
 
-    // OpenAI Models
+    // 🟢 GOOGLE GEMINI (Fallback - gratuito)
+    {
+      id: 'google/gemini-2.5-pro',
+      name: '🟢 Gemini 2.5 Pro',
+      provider: 'google',
+      description: 'Google Gemini 2.5 - Grátis com API key',
+      contextWindow: 2000000,
+      capabilities: ['text', 'vision', 'huge-context', 'free']
+    },
+    {
+      id: 'google/gemini-2.5-flash',
+      name: '⚡ Gemini 2.5 Flash',
+      provider: 'google',
+      description: 'Google Gemini Flash - Rápido e gratuito',
+      contextWindow: 1000000,
+      capabilities: ['text', 'vision', 'fast', 'free']
+    },
+
+    // 🔵 Z.AI (Desenvolvimento)
+    {
+      id: 'zai/glm-4.6',
+      name: '🔵 GLM-4.6 (Z.AI)',
+      provider: 'zai',
+      description: 'Z.AI GLM - Para desenvolvimento',
+      contextWindow: 128000,
+      capabilities: ['text', 'code', 'development']
+    },
+
+    // 🟣 ANTHROPIC CLAUDE (Direto)
+    {
+      id: 'anthropic/claude-3.5-sonnet',
+      name: '🟣 Claude 3.5 Sonnet',
+      provider: 'anthropic',
+      description: 'Anthropic Claude - Análise e código premium',
+      contextWindow: 200000,
+      capabilities: ['text', 'vision', 'code', 'analysis']
+    },
+
+    // 🟠 OPENAI (Direto)
     {
       id: 'openai/gpt-4o',
-      name: 'GPT-4 Optimized',
+      name: '🟠 GPT-4o',
       provider: 'openai',
-      description: 'Modelo mais avançado da OpenAI',
+      description: 'OpenAI GPT-4o - Modelo mais recente',
       contextWindow: 128000,
-      pricing: { input: 5, output: 15 },
       capabilities: ['text', 'vision', 'function-calling']
     },
     {
       id: 'openai/gpt-4o-mini',
-      name: 'GPT-4 Mini',
+      name: '🟠 GPT-4o Mini',
       provider: 'openai',
-      description: 'Versão compacta e econômica',
+      description: 'OpenAI GPT-4o compacto',
       contextWindow: 128000,
-      pricing: { input: 0.15, output: 0.6 },
-      capabilities: ['text', 'vision', 'function-calling']
-    },
-    {
-      id: 'openai/gpt-3.5-turbo',
-      name: 'GPT-3.5 Turbo',
-      provider: 'openai',
-      description: 'Modelo rápido e eficiente',
-      contextWindow: 16385,
-      pricing: { input: 0.5, output: 1.5 },
-      capabilities: ['text', 'function-calling']
-    },
-
-    // Anthropic Models
-    {
-      id: 'anthropic/claude-3-5-sonnet-20241022',
-      name: 'Claude 3.5 Sonnet',
-      provider: 'anthropic',
-      description: 'Modelo de alto desempenho da Anthropic',
-      contextWindow: 200000,
-      pricing: { input: 3, output: 15 },
-      capabilities: ['text', 'vision', 'analysis']
-    },
-    {
-      id: 'anthropic/claude-3-5-haiku-20241022',
-      name: 'Claude 3.5 Haiku',
-      provider: 'anthropic',
-      description: 'Modelo rápido e econômico da Anthropic',
-      contextWindow: 200000,
-      pricing: { input: 0.25, output: 1.25 },
-      capabilities: ['text', 'vision']
-    },
-    {
-      id: 'anthropic/claude-3-opus-20240229',
-      name: 'Claude 3 Opus',
-      provider: 'anthropic',
-      description: 'Modelo mais poderoso da Anthropic',
-      contextWindow: 200000,
-      pricing: { input: 15, output: 75 },
-      capabilities: ['text', 'vision', 'analysis', 'reasoning']
-    },
-
-    // Google Models
-    {
-      id: 'google/gemini-2.0-flash-exp',
-      name: 'Gemini 2.0 Flash',
-      provider: 'google',
-      description: 'Modelo experimental mais recente do Google',
-      contextWindow: 1000000,
-      pricing: { input: 0.075, output: 0.3 },
-      capabilities: ['text', 'vision', 'audio', 'multimodal']
-    },
-    {
-      id: 'google/gemini-1.5-pro',
-      name: 'Gemini 1.5 Pro',
-      provider: 'google',
-      description: 'Modelo profissional com grande contexto',
-      contextWindow: 2000000,
-      pricing: { input: 1.25, output: 5 },
-      capabilities: ['text', 'vision', 'audio', 'code']
-    },
-    {
-      id: 'google/gemini-1.5-flash',
-      name: 'Gemini 1.5 Flash',
-      provider: 'google',
-      description: 'Modelo rápido e eficiente',
-      contextWindow: 1000000,
-      pricing: { input: 0.075, output: 0.3 },
-      capabilities: ['text', 'vision', 'multimodal']
-    },
-
-    // Cohere Models
-    {
-      id: 'cohere/command-r-plus',
-      name: 'Command R+',
-      provider: 'cohere',
-      description: 'Modelo avançado da Cohere para tarefas complexas',
-      contextWindow: 128000,
-      pricing: { input: 3, output: 15 },
-      capabilities: ['text', 'reasoning', 'multilingual']
-    },
-    {
-      id: 'cohere/command-r',
-      name: 'Command R',
-      provider: 'cohere',
-      description: 'Modelo equilibrado da Cohere',
-      contextWindow: 128000,
-      pricing: { input: 0.5, output: 1.5 },
-      capabilities: ['text', 'reasoning']
-    },
-    {
-      id: 'cohere/command-light',
-      name: 'Command Light',
-      provider: 'cohere',
-      description: 'Modelo leve e rápido da Cohere',
-      contextWindow: 4096,
-      pricing: { input: 0.3, output: 0.6 },
-      capabilities: ['text']
-    },
-
-    // Mistral Models
-    {
-      id: 'mistral/mistral-large-2407',
-      name: 'Mistral Large',
-      provider: 'mistral',
-      description: 'Modelo mais avançado da Mistral AI',
-      contextWindow: 128000,
-      pricing: { input: 2, output: 6 },
-      capabilities: ['text', 'reasoning', 'function-calling']
-    },
-    {
-      id: 'mistral/mistral-medium',
-      name: 'Mistral Medium',
-      provider: 'mistral',
-      description: 'Modelo equilibrado da Mistral AI',
-      contextWindow: 32000,
-      pricing: { input: 2.7, output: 8.1 },
-      capabilities: ['text', 'reasoning']
-    },
-    {
-      id: 'mistral/mistral-small',
-      name: 'Mistral Small',
-      provider: 'mistral',
-      description: 'Modelo compacto da Mistral AI',
-      contextWindow: 32000,
-      pricing: { input: 1, output: 3 },
-      capabilities: ['text']
-    },
-
-    // Perplexity Models
-    {
-      id: 'perplexity/llama-3.1-sonar-large-128k-online',
-      name: 'Sonar Large Online',
-      provider: 'perplexity',
-      description: 'Modelo com acesso à internet em tempo real',
-      contextWindow: 127072,
-      pricing: { input: 1, output: 1 },
-      capabilities: ['text', 'web-search', 'real-time']
-    },
-    {
-      id: 'perplexity/llama-3.1-sonar-small-128k-online',
-      name: 'Sonar Small Online',
-      provider: 'perplexity',
-      description: 'Modelo compacto com acesso à web',
-      contextWindow: 127072,
-      pricing: { input: 0.2, output: 0.2 },
-      capabilities: ['text', 'web-search']
-    },
-    {
-      id: 'perplexity/llama-3.1-sonar-huge-128k-online',
-      name: 'Sonar Huge Online',
-      provider: 'perplexity',
-      description: 'Modelo mais poderoso com pesquisa web',
-      contextWindow: 127072,
-      pricing: { input: 5, output: 5 },
-      capabilities: ['text', 'web-search', 'reasoning', 'real-time']
+      capabilities: ['text', 'vision', 'function-calling', 'economical']
     }
+
+    // NOTA: OpenRouter foi desabilitado devido a problemas com AI SDK v5
+    // Use AI Gateway (opções acima) para acesso a múltiplos provedores
   ];
 }

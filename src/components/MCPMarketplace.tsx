@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 
-import { upsertServerApi, listServers } from '@/services/mcp/client'
+import { upsertServerApi, listServers, removeServerApi } from '@/services/mcp/client'
 import { marketplaceServers, type MCPMarketplaceServer } from '@/services/mcp/marketplace-registry'
 import type { McpServerConfig } from '@/services/mcp/types'
 
@@ -15,6 +15,29 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ server, isOpen, onClose, onConnect }) => {
   const [credentials, setCredentials] = useState<Record<string, string>>({})
+  const requiredFieldNames = React.useMemo(() => new Set(server.requiredFields?.map(field => field.name) ?? []), [server])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCredentials({})
+      return
+    }
+
+    setCredentials(prev => {
+      if (Object.keys(prev).length > 0) return prev
+      const defaults: Record<string, string> = {}
+      if (server.defaultConfig?.url) defaults.baseUrl = server.defaultConfig.url
+      if (server.defaultConfig?.callPath) defaults.callPath = server.defaultConfig.callPath
+      if (server.defaultConfig?.toolsPath) defaults.toolsPath = server.defaultConfig.toolsPath
+      if (server.defaultConfig?.command) defaults.command = server.defaultConfig.command
+      if (server.defaultConfig?.args?.length) defaults.args = server.defaultConfig.args.join(' ')
+      return defaults
+    })
+  }, [server, isOpen])
+
+  const updateCredential = (name: string, value: string) => {
+    setCredentials(prev => ({ ...prev, [name]: value }))
+  }
   
   if (!isOpen) return null
   
@@ -70,7 +93,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ server, isOpen, onClose, onConnec
                   {field.type === 'select' ? (
                     <select
                       className="w-full px-4 py-2 bg-neutral-800 rounded-lg text-neutral-100 border border-neutral-700 focus:border-neutral-600"
-                      onChange={(e) => setCredentials({ ...credentials, [field.name]: e.target.value })}
+                      value={credentials[field.name] || ''}
+                      onChange={(e) => updateCredential(field.name, e.target.value)}
                       required
                     >
                       <option value="">Select {field.label}</option>
@@ -83,7 +107,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ server, isOpen, onClose, onConnec
                       type={field.type}
                       placeholder={field.placeholder}
                       className="w-full px-4 py-2 bg-neutral-800 rounded-lg text-neutral-100 placeholder:text-neutral-500 border border-neutral-700 focus:border-neutral-600"
-                      onChange={(e) => setCredentials({ ...credentials, [field.name]: e.target.value })}
+                        value={credentials[field.name] || ''}
+                        onChange={(e) => updateCredential(field.name, e.target.value)}
                       required
                     />
                   )}
@@ -92,6 +117,75 @@ const AuthModal: React.FC<AuthModalProps> = ({ server, isOpen, onClose, onConnec
                   )}
                 </div>
               ))}
+
+              {server.connectionType === 'http' && !requiredFieldNames.has('baseUrl') && !requiredFieldNames.has('url') && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-300 mb-1">URL Base</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://servidor-mcp.com"
+                    className="w-full px-4 py-2 bg-neutral-800 rounded-lg text-neutral-100 placeholder:text-neutral-500 border border-neutral-700 focus:border-neutral-600"
+                    value={credentials.baseUrl || server.defaultConfig?.url || ''}
+                    onChange={(e) => updateCredential('baseUrl', e.target.value)}
+                  />
+                </div>
+              )}
+
+              {server.connectionType === 'http' && (
+                <>
+                  {!requiredFieldNames.has('apiKey') && (
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-300 mb-1">API Key (opcional)</label>
+                      <input
+                        type="password"
+                        placeholder="Cole sua API Key"
+                        className="w-full px-4 py-2 bg-neutral-800 rounded-lg text-neutral-100 placeholder:text-neutral-500 border border-neutral-700 focus:border-neutral-600"
+                        value={credentials.apiKey || ''}
+                        onChange={(e) => updateCredential('apiKey', e.target.value)}
+                      />
+                    </div>
+                  )}
+                  {!requiredFieldNames.has('headersJson') && (
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-300 mb-1">Headers extras (JSON)</label>
+                      <textarea
+                        placeholder='{"X-Custom":"valor"}'
+                        className="w-full px-4 py-2 bg-neutral-800 rounded-lg text-neutral-100 placeholder:text-neutral-500 border border-neutral-700 focus:border-neutral-600"
+                        value={credentials.headersJson || ''}
+                        onChange={(e) => updateCredential('headersJson', e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {!requiredFieldNames.has('toolsPath') && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-300 mb-1">toolsPath</label>
+                        <input
+                          type="text"
+                          placeholder="/tools"
+                          className="w-full px-4 py-2 bg-neutral-800 rounded-lg text-neutral-100 placeholder:text-neutral-500 border border-neutral-700 focus:border-neutral-600"
+                          value={credentials.toolsPath || server.defaultConfig?.toolsPath || '/tools'}
+                          onChange={(e) => updateCredential('toolsPath', e.target.value)}
+                        />
+                      </div>
+                    )}
+                    {!requiredFieldNames.has('callPath') && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-300 mb-1">callPath</label>
+                        <input
+                          type="text"
+                          placeholder="/call"
+                          className="w-full px-4 py-2 bg-neutral-800 rounded-lg text-neutral-100 placeholder:text-neutral-500 border border-neutral-700 focus:border-neutral-600"
+                          value={credentials.callPath || server.defaultConfig?.callPath || '/call'}
+                          onChange={(e) => updateCredential('callPath', e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </>
           )}
           
@@ -216,16 +310,61 @@ export const MCPMarketplace: React.FC = () => {
   
   const handleConnect = async (server: MCPMarketplaceServer, credentials: any) => {
     try {
+      const {
+        baseUrl: credBaseUrl,
+        url: credUrl,
+        apiKey: credApiKey,
+        api_token,
+        token,
+        headersJson: credHeadersJson,
+        headers,
+        callPath: credCallPath,
+        toolsPath: credToolsPath,
+        command: credCommand,
+        args: credArgs,
+        ...extra
+      } = credentials || {}
+
+      const baseUrlRaw = (credBaseUrl || credUrl || server.defaultConfig?.url || '').trim()
+      const callPath = (credCallPath || server.defaultConfig?.callPath || '/call').trim() || '/call'
+      const toolsPath = (credToolsPath || server.defaultConfig?.toolsPath || '/tools').trim() || '/tools'
+      const apiKey = (credApiKey || api_token || token || '').trim()
+      const headersJson = (credHeadersJson || headers || '').trim()
+
+      if (server.connectionType === 'http' && !baseUrlRaw) {
+        alert('Informe a URL base do servidor MCP.')
+        return
+      }
+
+      let argsArray: string[] | undefined
+      if (server.connectionType === 'command') {
+        if (Array.isArray(server.defaultConfig?.args)) {
+          argsArray = [...(server.defaultConfig?.args || [])]
+        }
+        if (typeof credArgs === 'string' && credArgs.trim()) {
+          argsArray = credArgs.split(/\s+/).filter(Boolean)
+        }
+      }
+
+      const metadataEntries = Object.entries(extra).filter(([, value]) => value !== undefined && value !== '')
+      const metadata = metadataEntries.length ? Object.fromEntries(metadataEntries) : undefined
+
       const config: McpServerConfig = {
         id: server.id,
         name: server.name,
-        baseUrl: server.defaultConfig?.url || '',
-        callPath: server.defaultConfig?.callPath || '/call',
-        ...credentials
+        baseUrl: baseUrlRaw || `command://${server.id}`,
+        callPath,
+        toolsPath,
+        connectionType: server.connectionType,
+        command: credCommand || server.defaultConfig?.command,
+        args: argsArray,
+        ...(apiKey ? { apiKey } : {}),
+        ...(headersJson ? { headersJson } : {}),
+        ...(metadata ? { metadata } : {})
       }
       
       await upsertServerApi(config)
-      setConnectedServers([...connectedServers, server.id])
+      await loadConnectedServers()
       setAuthModalServer(null)
     } catch (error) {
       console.error('Failed to connect server:', error)
@@ -235,8 +374,8 @@ export const MCPMarketplace: React.FC = () => {
   
   const handleDisconnect = async (serverId: string) => {
     try {
-      // In production, would call removeServerApi
-      setConnectedServers(connectedServers.filter(id => id !== serverId))
+      await removeServerApi(serverId)
+      setConnectedServers(prev => prev.filter(id => id !== serverId))
     } catch (error) {
       console.error('Failed to disconnect:', error)
     }

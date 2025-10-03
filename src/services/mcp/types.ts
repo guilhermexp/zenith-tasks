@@ -6,6 +6,10 @@ export interface McpServerConfig {
   headersJson?: string // JSON string for extra headers
   toolsPath?: string   // default: /tools
   callPath?: string    // default: /call
+  connectionType?: 'http' | 'websocket' | 'command'
+  command?: string
+  args?: string[]
+  metadata?: Record<string, any>
 }
 
 export interface McpToolDesc {

@@ -142,8 +142,9 @@ export class AIProvider {
       return this.models.get(cacheKey)!;
     }
 
-    // Criar novo modelo
-    const languageModel = await this.createModel(provider, config);
+    // Criar novo modelo com a configuração correta
+    const enhancedConfig = { ...config, model };
+    const languageModel = await this.createModel(provider, enhancedConfig);
     
     // Armazenar no cache
     this.models.set(cacheKey, languageModel);
@@ -200,23 +201,31 @@ export class AIProvider {
         return google(modelName) as LanguageModel;
       }
 
-      case 'openrouter': {
-        const apiKey = config?.apiKey || process.env.OPENROUTER_API_KEY;
-        if (!apiKey) throw new Error('OPENROUTER_API_KEY missing');
+      // DESABILITADO: OpenRouter tem problemas de compatibilidade com AI SDK v5
+      // Preferir usar AI Gateway (USE_AI_GATEWAY=true) que tem melhor compatibilidade
+      // case 'openrouter': {
+      //   const apiKey = config?.apiKey || process.env.OPENROUTER_API_KEY;
+      //   if (!apiKey) throw new Error('OPENROUTER_API_KEY missing');
 
-        const { createOpenAI } = await import('@ai-sdk/openai');
-        const openai = createOpenAI({
-          apiKey,
-          baseURL: config?.baseURL || 'https://openrouter.ai/api/v1',
-          headers: {
-            'X-Title': 'Zenith Tasks AI Assistant',
-            'HTTP-Referer': process.env.NEXT_PUBLIC_URL || 'http://localhost:3457'
-          }
-        });
+      //   console.log('[AIProvider] Configurando OpenRouter com modelo:', config?.model);
+      //   
+      //   const { createOpenAI } = await import('@ai-sdk/openai');
+      //   const openrouter = createOpenAI({
+      //     apiKey,
+      //     baseURL: 'https://openrouter.ai/api/v1',
+      //     headers: {
+      //       'HTTP-Referer': process.env.NEXT_PUBLIC_URL || 'http://localhost:3457',
+      //       'X-Title': 'Zenith Tasks'
+      //     }
+      //   });
+      //   
+      //   const modelName = config?.model || process.env.OPENROUTER_MODEL || 'google/gemma-2-9b-it:free';
+      //   console.log('[AIProvider] Using OpenRouter model via @ai-sdk/openai:', modelName);
+      //   return openrouter(modelName) as LanguageModel;
+      // }
 
-        const modelName = config?.model || process.env.OPENROUTER_MODEL || 'openrouter/auto';
-        return openai(modelName) as LanguageModel;
-      }
+      case 'openrouter':
+        throw new Error('OpenRouter está desabilitado devido a problemas com AI SDK v5. Use AI Gateway (USE_AI_GATEWAY=true) ou outro provedor.');
 
       case 'anthropic': {
         const apiKey = config?.apiKey || process.env.ANTHROPIC_API_KEY;
@@ -247,11 +256,11 @@ export class AIProvider {
     const defaults: Record<string, string> = {
       'zai': 'glm-4.6',
       'google': 'gemini-2.5-pro',
-      'openrouter': 'openrouter/auto',
+      'openrouter': 'google/gemma-2-9b-it:free', // Modelo gratuito como padrão
       'anthropic': 'claude-3-5-sonnet-20241022',
       'openai': 'gpt-4o'
     };
-    return defaults[provider] || defaults['zai'];
+    return defaults[provider] || defaults['google'];
   }
 
   // Limpar cache (útil para testes ou reinicialização)
@@ -327,6 +336,7 @@ export class AIProvider {
       return null;
     }
   }
+
 }
 
 // Helper function para compatibilidade com código existente

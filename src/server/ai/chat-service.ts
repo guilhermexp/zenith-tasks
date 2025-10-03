@@ -250,7 +250,7 @@ export class ChatService {
   }> {
     try {
       const provider = AIProvider.getInstance()
-      const contextType = options.context?.planning ? 'task-planning' : 'general-chat'
+      const contextType = options.context?.planning ? 'task-planning' : 'chat'
       const result = await provider.getModelForContext(contextType)
 
       return { model: result.model, settings: result.settings }
@@ -334,6 +334,13 @@ export class ChatService {
    * Executa o chat real (stream ou não)
    */
   private async performChat(config: any, stream: boolean): Promise<ChatResult> {
+    // Check if we're using OpenRouter direct model
+    if (config.model && typeof config.model === 'object' && config.model.generate) {
+      logger.info('[ChatService] Using direct OpenRouter implementation')
+      return await this.performDirectOpenRouterChat(config, stream)
+    }
+
+    // Default AI SDK implementation
     if (stream) {
       const result = streamText(config)
       logger.info('[ChatService] streamText iniciado')
@@ -374,6 +381,120 @@ export class ChatService {
         return { text: safetyCheck.sanitized as string }
       }
 
+      return { text: result.text }
+    }
+  }
+
+  /**
+   * Handles direct OpenRouter chat using OpenAI SDK
+   */
+  private async performDirectOpenRouterChat(config: any, stream: boolean): Promise<ChatResult> {
+    const directModel = config.model
+    const messages = config.messages
+    
+    logger.info('[ChatService] Executing direct OpenRouter chat', {
+      stream,
+      messageCount: messages.length,
+      temperature: config.temperature
+    })
+
+    if (stream) {
+      // For streaming, we need to create a ReadableStream
+      const encoder = new TextEncoder()
+      let streamFinished = false
+      
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            // Note: OpenAI SDK doesn't support streaming in the same way as AI SDK
+            // For now, we'll do a non-streaming call and simulate streaming
+            const result = await directModel.generate(messages, {
+              temperature: config.temperature,
+              maxTokens: config.maxTokens
+            })
+            
+            // Simulate streaming by chunking the response
+            const words = result.text.split(' ')
+            for (let i = 0; i < words.length; i++) {
+              const chunk = i === 0 ? words[i] : ' ' + words[i]
+              controller.enqueue(encoder.encode(chunk))
+              // Small delay to simulate streaming
+              await new Promise(resolve => setTimeout(resolve, 50))
+            }
+            
+            controller.close()
+            streamFinished = true
+            
+            // Log metrics
+            if (result.usage) {
+              logger.info('[ChatService] Direct OpenRouter stream completed', {
+                promptTokens: result.usage.promptTokens,
+                completionTokens: result.usage.completionTokens,
+                totalTokens: result.usage.totalTokens
+              })
+              
+              trackTokenUsage({
+                promptTokens: result.usage.promptTokens,
+                completionTokens: result.usage.completionTokens,
+                totalTokens: result.usage.totalTokens,
+                finishReason: result.finishReason,
+                operation: 'chat-stream-openrouter'
+              })
+            }
+            
+          } catch (error: any) {
+            logger.error('[ChatService] Direct OpenRouter stream error:', error)
+            if (!streamFinished) {
+              controller.error(error)
+            }
+          }
+        },
+        cancel() {
+          logger.info('[ChatService] Direct OpenRouter stream cancelled')
+        }
+      })
+      
+      const response = new Response(readableStream, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
+      })
+      
+      return { response }
+    } else {
+      // Non-streaming
+      const result = await directModel.generate(messages, {
+        temperature: config.temperature,
+        maxTokens: config.maxTokens
+      })
+      
+      // Log metrics
+      if (result.usage) {
+        logger.info('[ChatService] Direct OpenRouter generation completed', {
+          promptTokens: result.usage.promptTokens,
+          completionTokens: result.usage.completionTokens,
+          totalTokens: result.usage.totalTokens,
+          finishReason: result.finishReason
+        })
+        
+        trackTokenUsage({
+          promptTokens: result.usage.promptTokens,
+          completionTokens: result.usage.completionTokens,
+          totalTokens: result.usage.totalTokens,
+          finishReason: result.finishReason,
+          operation: 'chat-generate-openrouter'
+        })
+      }
+      
+      // Validate security
+      const safetyCheck = SecurityManager.validateOutputSafety(result.text)
+      if (!safetyCheck.safe) {
+        logger.warn('[ChatService] Direct OpenRouter output contains sensitive data', safetyCheck.issues)
+        return { text: safetyCheck.sanitized as string }
+      }
+      
       return { text: result.text }
     }
   }

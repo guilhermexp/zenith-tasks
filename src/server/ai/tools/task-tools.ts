@@ -1,33 +1,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
-// Importar funções do banco de dados (assumindo que existem)
-// import { createTaskInDatabase, updateTaskInDatabase, deleteTaskFromDatabase, searchTasksInDatabase } from '@/services/database/items';
-
-// Mock functions para desenvolvimento - substituir pelas reais
-async function createTaskInDatabase(data: any) {
-  console.log('Creating task:', data);
-  return { id: Date.now().toString(), ...data };
-}
-
-async function updateTaskInDatabase(id: string, updates: any) {
-  console.log('Updating task:', id, updates);
-  return { id, ...updates };
-}
-
-async function deleteTaskFromDatabase(id: string) {
-  console.log('Deleting task:', id);
-  return true;
-}
-
-async function searchTasksInDatabase(params: any) {
-  console.log('Searching tasks:', params);
-  return [];
-}
-
-async function logDeletion(id: string, reason: string) {
-  console.log('Logging deletion:', id, reason);
-}
+const NOT_CONFIGURED_MESSAGE = 'Integração direta com o banco ainda não está configurada neste ambiente.';
 
 export const taskTools = {
   createTask: tool({
@@ -47,41 +21,21 @@ export const taskTools = {
       transactionType: z.enum(['Entrada', 'Saída']).optional().describe('Tipo de transação financeira')
     }),
     execute: async ({ title, summary, type, dueDate, priority, tags, subtasks, amount, transactionType }) => {
-      try {
-        const taskData = {
+      return {
+        created: false,
+        message: `${NOT_CONFIGURED_MESSAGE} Utilize as tools de app (createItem) ou configure Supabase para habilitar esta operação direta.`,
+        requested: {
           title,
           summary,
           type,
-          completed: false,
-          dueDate: dueDate ? new Date(dueDate).toLocaleDateString('pt-BR') : undefined,
-          dueDateISO: dueDate,
+          dueDate,
           priority,
           tags,
           subtasks,
-          ...(type === 'Financeiro' && { amount, transactionType })
-        };
-
-        const newTask = await createTaskInDatabase(taskData);
-
-        return {
-          id: newTask.id,
-          created: true,
-          message: `Tarefa "${title}" criada com sucesso`,
-          task: {
-            id: newTask.id,
-            title: newTask.title,
-            type: newTask.type,
-            completed: newTask.completed
-          }
-        };
-      } catch (error) {
-        return {
-          id: '',
-          created: false,
-          message: `Erro ao criar tarefa: ${error}`,
-          task: { id: '', title: '', type: '', completed: false }
-        };
-      }
+          amount,
+          transactionType
+        }
+      };
     }
   }),
 
@@ -102,49 +56,11 @@ export const taskTools = {
       }).describe('Campos a serem atualizados')
     }),
     execute: async ({ id, updates }) => {
-      try {
-        const updateData = {
-          ...updates,
-          ...(updates.dueDate !== undefined && {
-            dueDate: updates.dueDate ? new Date(updates.dueDate).toLocaleDateString('pt-BR') : null,
-            dueDateISO: updates.dueDate
-          })
-        };
-
-        await updateTaskInDatabase(id, updateData);
-
-        const changedFields = Object.keys(updates)
-          .filter(key => updates[key as keyof typeof updates] !== undefined)
-          .map(key => {
-            const fieldNames: Record<string, string> = {
-              title: 'título',
-              summary: 'resumo',
-              completed: 'status de conclusão',
-              dueDate: 'data de vencimento',
-              priority: 'prioridade',
-              type: 'tipo',
-              tags: 'tags',
-              amount: 'valor',
-              transactionType: 'tipo de transação'
-            };
-            return fieldNames[key] || key;
-          });
-
-        return {
-          success: true,
-          message: `Tarefa atualizada: ${changedFields.join(', ')}`,
-          updated: {
-            id,
-            changes: changedFields
-          }
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `Erro ao atualizar tarefa: ${error}`,
-          updated: { id, changes: [] }
-        };
-      }
+      return {
+        success: false,
+        message: `${NOT_CONFIGURED_MESSAGE} Utilize a ferramenta updateItem do app para alterações.`,
+        requested: { id, updates }
+      };
     }
   }),
 
@@ -155,27 +71,12 @@ export const taskTools = {
       reason: z.string().optional().describe('Motivo da remoção (para log)')
     }),
     execute: async ({ id, reason }) => {
-      try {
-        const deleted = await deleteTaskFromDatabase(id);
-
-        if (reason) {
-          await logDeletion(id, reason);
-        }
-
-        return {
-          deleted,
-          id,
-          message: deleted
-            ? `Tarefa removida com sucesso${reason ? ` (motivo: ${reason})` : ''}`
-            : 'Tarefa não encontrada'
-        };
-      } catch (error) {
-        return {
-          deleted: false,
-          id,
-          message: `Erro ao remover tarefa: ${error}`
-        };
-      }
+      return {
+        deleted: false,
+        id,
+        message: `${NOT_CONFIGURED_MESSAGE} Solicite ao assistente para usar deleteItem quando disponível.`,
+        requestedReason: reason
+      };
     }
   }),
 
@@ -197,30 +98,13 @@ export const taskTools = {
       sortBy: z.enum(['createdAt', 'dueDate', 'priority', 'title']).default('createdAt')
     }),
     execute: async (params) => {
-      try {
-        const tasks = await searchTasksInDatabase(params);
-
-        return {
-          count: tasks.length,
-          tasks: tasks.map((task: any) => ({
-            id: task.id,
-            title: task.title,
-            type: task.type,
-            completed: task.completed,
-            dueDate: task.dueDate,
-            priority: task.priority
-          })),
-          hasMore: tasks.length === params.limit,
-          message: `${tasks.length} tarefa(s) encontrada(s)`
-        };
-      } catch (error) {
-        return {
-          count: 0,
-          tasks: [],
-          hasMore: false,
-          message: `Erro na busca: ${error}`
-        };
-      }
+      return {
+        count: 0,
+        tasks: [],
+        hasMore: false,
+        message: `${NOT_CONFIGURED_MESSAGE} Configure uma origem de dados ou utilize listItems/searchItems das ferramentas do app.`,
+        request: params
+      };
     }
   }),
 
@@ -231,25 +115,12 @@ export const taskTools = {
       completed: z.boolean().describe('Novo status de conclusão')
     }),
     execute: async ({ id, completed }) => {
-      try {
-        await updateTaskInDatabase(id, { completed });
-
-        return {
-          success: true,
-          id,
-          completed,
-          message: completed
-            ? 'Tarefa marcada como concluída'
-            : 'Tarefa marcada como não concluída'
-        };
-      } catch (error) {
-        return {
-          success: false,
-          id,
-          completed: false,
-          message: `Erro ao atualizar status: ${error}`
-        };
-      }
+      return {
+        success: false,
+        id,
+        completed,
+        message: `${NOT_CONFIGURED_MESSAGE} Utilize a ferramenta markAsDone/setDueDate para alterar status.`
+      };
     }
   })
 };

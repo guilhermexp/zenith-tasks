@@ -26,6 +26,7 @@ export interface MCPMarketplaceServer {
     command?: string
     args?: string[]
     callPath?: string
+    toolsPath?: string
   }
   requiredFields?: Array<{
     name: string

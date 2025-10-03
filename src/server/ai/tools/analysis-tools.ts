@@ -1,23 +1,12 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
-// Mock functions para desenvolvimento - substituir pelas reais
 async function getItemsFromDatabase(filters: any) {
-  console.log('Getting items:', filters);
-  // Simular dados para desenvolvimento
-  const mockTasks = [
-    { id: '1', title: 'Task 1', completed: true, type: 'Tarefa', dueDate: '2024-01-01', createdAt: new Date() },
-    { id: '2', title: 'Task 2', completed: false, type: 'Ideia', dueDate: '2024-01-02', createdAt: new Date() },
-  ];
-  return mockTasks;
+  return [];
 }
 
 async function getUserSettings() {
-  return {
-    workingHours: { start: '09:00', end: '18:00' },
-    preferredCategories: ['Trabalho', 'Pessoal'],
-    timezone: 'America/Sao_Paulo'
-  };
+  return null;
 }
 
 function analyzeProductivityMetrics(items: any[], settings: any) {

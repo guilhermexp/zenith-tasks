@@ -6,6 +6,9 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 
+import { getServer, getServers } from '@/server/mcpRegistry';
+import { safeResponseJson } from '@/utils/safe-json';
+
 // Schema dos tipos de item do app
 const ItemTypeSchema = z.enum(['Tarefa', 'Ideia', 'Nota', 'Lembrete', 'Financeiro', 'Reunião']);
 const TransactionTypeSchema = z.enum(['Entrada', 'Saída']);
@@ -317,6 +320,143 @@ export const appTools = {
         action: 'summarize_meeting',
         params,
         message: `Gerando resumo da reunião ${params.meetingId}...`
+      };
+    }
+  }),
+
+  // ============================================
+  // MCP
+  // ============================================
+
+  mcpListServers: tool({
+    description: 'Lista servidores MCP configurados no app.',
+    inputSchema: z.object({
+      includeHeaders: z.boolean().default(false).describe('Incluir cabeçalhos personalizados armazenados'),
+      includeApiKey: z.boolean().default(false).describe('Incluir chaves de API completas (use apenas em modo seguro)')
+    }),
+    execute: async ({ includeHeaders, includeApiKey }) => {
+      const servers = await getServers();
+      const mapped = servers.map(({ apiKey, headersJson, ...rest }) => ({
+        ...rest,
+        hasApiKey: !!apiKey,
+        ...(includeApiKey ? { apiKey } : {}),
+        ...(includeHeaders ? { headersJson } : {})
+      }));
+
+      return {
+        servers: mapped,
+        total: mapped.length,
+        message: mapped.length
+          ? `Encontrados ${mapped.length} servidor(es) MCP.`
+          : 'Nenhum servidor MCP configurado.'
+      };
+    }
+  }),
+
+  mcpListTools: tool({
+    description: 'Busca ferramentas disponíveis em um servidor MCP HTTP.',
+    inputSchema: z.object({
+      serverId: z.string().describe('ID do servidor MCP registrado')
+    }),
+    execute: async ({ serverId }) => {
+      const srv = await getServer(serverId);
+      if (!srv) {
+        return {
+          tools: [],
+          message: `Servidor ${serverId} não encontrado.`
+        };
+      }
+
+      if (!srv.baseUrl || !srv.baseUrl.trim()) {
+        return {
+          tools: [],
+          message: `Servidor ${serverId} não possui baseUrl configurada.`
+        };
+      }
+
+      const headers: Record<string, string> = { Accept: 'application/json' };
+      if (srv.apiKey) headers['Authorization'] = `Bearer ${srv.apiKey}`;
+      if (srv.headersJson) {
+        try { Object.assign(headers, JSON.parse(srv.headersJson)); } catch {}
+      }
+
+      const toolsPath = srv.toolsPath && srv.toolsPath.trim().length ? srv.toolsPath : '/tools';
+      const url = srv.baseUrl.replace(/\/$/, '') + toolsPath;
+
+      const res = await fetch(url, { headers, cache: 'no-store' });
+      const json = await safeResponseJson(res, {});
+
+      if (!res.ok) {
+        return {
+          tools: [],
+          error: `Falha ao obter ferramentas (${res.status})`,
+          upstream: json
+        };
+      }
+
+      const tools = Array.isArray((json as any)?.tools) ? (json as any).tools : json;
+      return {
+        tools,
+        message: Array.isArray(tools)
+          ? `Servidor ${serverId} retornou ${tools.length} ferramenta(s).`
+          : `Resposta recebida do servidor ${serverId}.`
+      };
+    }
+  }),
+
+  mcpCall: tool({
+    description: 'Executa uma ferramenta em um servidor MCP HTTP.',
+    inputSchema: z.object({
+      serverId: z.string().describe('ID do servidor MCP registrado'),
+      name: z.string().describe('Nome da ferramenta'),
+      arguments: z.record(z.string(), z.any()).default({}).describe('Argumentos para a ferramenta')
+    }),
+    execute: async ({ serverId, name, arguments: args }) => {
+      const srv = await getServer(serverId);
+      if (!srv) {
+        return {
+          error: `Servidor ${serverId} não encontrado.`,
+          result: null
+        };
+      }
+
+      if (!srv.baseUrl || !srv.baseUrl.trim()) {
+        return {
+          error: `Servidor ${serverId} não possui baseUrl configurada.`,
+          result: null
+        };
+      }
+
+      const headers: Record<string, string> = {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      };
+      if (srv.apiKey) headers['Authorization'] = `Bearer ${srv.apiKey}`;
+      if (srv.headersJson) {
+        try { Object.assign(headers, JSON.parse(srv.headersJson)); } catch {}
+      }
+
+      const callPath = srv.callPath && srv.callPath.trim().length ? srv.callPath : '/call';
+      const url = srv.baseUrl.replace(/\/$/, '') + callPath;
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        cache: 'no-store',
+        body: JSON.stringify({ name, arguments: args || {} })
+      });
+      const json = await safeResponseJson(res, {});
+
+      if (!res.ok) {
+        return {
+          error: `Servidor retornou ${res.status}.`,
+          upstream: json
+        };
+      }
+
+      return {
+        result: json,
+        message: `Ferramenta ${name} executada com sucesso em ${serverId}.`
       };
     }
   })
