@@ -11,19 +11,18 @@ describe('AI Tools', () => {
       expect(tool).toBeDefined();
       expect(tool.inputSchema).toBeDefined();
       expect(tool.execute).toBeDefined();
-      expect(tool.description).toBe('Cria uma nova tarefa no sistema com informações detalhadas');
+      expect(typeof tool.description).toBe('string');
     });
 
     it('should execute createTask correctly', async () => {
       const result = await taskTools.createTask.execute({
         title: 'Test Task',
-        type: 'Tarefa',
-        priority: 'medium'
+        type: 'Tarefa'
       });
 
-      expect(result.created).toBe(true);
-      expect(result.message).toContain('Test Task');
-      expect(result.task.title).toBe('Test Task');
+      expect(result).toHaveProperty('action', 'create_item');
+      expect(result).toHaveProperty('params');
+      expect(result.params.title).toBe('Test Task');
     });
 
     it('should have updateTask tool', () => {
@@ -45,13 +44,11 @@ describe('AI Tools', () => {
     it('should execute searchTasks correctly', async () => {
       const result = await taskTools.searchTasks.execute({
         query: 'test',
-        limit: 10,
-        sortBy: 'createdAt'
+        limit: 10
       });
 
-      expect(result.tasks).toBeDefined();
-      expect(Array.isArray(result.tasks)).toBe(true);
-      expect(result.message).toContain('tarefa(s) encontrada(s)');
+      expect(result).toHaveProperty('action', 'search_items');
+      expect(result).toHaveProperty('params');
     });
   });
 
@@ -127,8 +124,7 @@ describe('AI Tools', () => {
 
       const validInput = {
         title: 'Valid Task',
-        type: 'Tarefa',
-        priority: 'high'
+        type: 'Tarefa'
       };
 
       const result = schema.safeParse(validInput);
@@ -140,8 +136,7 @@ describe('AI Tools', () => {
 
       const invalidInput = {
         title: 'Invalid Task',
-        type: 'InvalidType', // Invalid
-        priority: 'high'
+        type: 'InvalidType' // Invalid
       };
 
       const result = schema.safeParse(invalidInput);

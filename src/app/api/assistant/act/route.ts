@@ -1,4 +1,4 @@
-import { streamText, generateText } from 'ai'
+import { streamText } from 'ai'
 import { NextResponse } from 'next/server'
 
 import { AIErrorManager } from '@/server/ai/error-handler'
@@ -18,7 +18,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 })
     }
 
-    const { message, userId, conversationId, maxSteps = 5 } = await req.json()
+    const payload = await req.json()
+    const { message, userId, conversationId, history = [] } = payload
     
     if (!message || typeof message !== 'string') {
       return NextResponse.json({ error: 'message required' }, { status: 400 })
@@ -74,6 +75,27 @@ export async function POST(req: Request) {
       tools = filteredTools
     }
 
+    const maxHistoryEntries = 20
+    const normalizedHistory = Array.isArray(history) ? history : []
+    type ChatMessage = { role: 'user' | 'assistant'; content: string }
+
+    const formattedHistory: ChatMessage[] = normalizedHistory
+      .filter((entry: any) => entry && typeof entry.content === 'string')
+      .slice(-maxHistoryEntries)
+      .map((entry: any): ChatMessage => {
+        const role: ChatMessage['role'] = entry.role === 'assistant' ? 'assistant' : 'user'
+        const content = role === 'user'
+          ? SecurityManager.sanitizeInput(String(entry.content))
+          : String(entry.content)
+        return { role, content }
+      })
+
+    if (!formattedHistory.length || formattedHistory[formattedHistory.length - 1].role !== 'user') {
+      formattedHistory.push({ role: 'user', content: sanitizedMessage })
+    } else {
+      formattedHistory[formattedHistory.length - 1] = { role: 'user', content: sanitizedMessage }
+    }
+
     // Sistema de prompt otimizado para ações
     const systemPrompt = `Você é um assistente de produtividade inteligente.
 
@@ -110,7 +132,7 @@ Responda em português brasileiro de forma natural e útil.`
         return await streamText({
           model,
           system: systemPrompt,
-          messages: [{ role: 'user', content: sanitizedMessage }],
+          messages: formattedHistory,
           tools: Object.keys(tools).length > 0 ? tools : undefined,
           temperature: 0.7,
           onStepFinish: async ({ usage, toolCalls, toolResults }) => {

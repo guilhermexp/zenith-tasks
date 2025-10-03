@@ -1,5 +1,5 @@
 import { ChevronDown, Sparkles, Zap, DollarSign, Brain } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface Model {
   id: string;
@@ -27,44 +27,74 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const selectedModelRef = useRef(selectedModel);
 
   // Fetch models from API
   useEffect(() => {
+    if (value) {
+      setSelectedModel(value);
+    }
+  }, [value]);
+
+  useEffect(() => {
+    selectedModelRef.current = selectedModel;
+  }, [selectedModel]);
+
+  useEffect(() => {
+    let cancelled = false;
+
     async function fetchModels() {
       try {
         setLoading(true);
         setError(null);
 
-        // Always use default models for now since API is having issues
-        console.log('Using default models directly');
-        const defaultModels = getDefaultModels();
-        setModels(defaultModels);
-        
-        if (!selectedModel && defaultModels.length > 0) {
-          const defaultModel = defaultModels[0].id;
+        const response = await fetch(`/api/models?recommended=true&context=${encodeURIComponent(context)}&limit=20`);
+        const data = await response.json();
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data?.error || `HTTP ${response.status}`);
+        }
+
+        const fetchedModels: Model[] = Array.isArray(data.models) && data.models.length
+          ? data.models
+          : getDefaultModels();
+
+        if (cancelled) return;
+
+        setModels(fetchedModels);
+
+        if (!selectedModelRef.current && fetchedModels.length > 0) {
+          const defaultModel = fetchedModels[0].id;
           setSelectedModel(defaultModel);
+          selectedModelRef.current = defaultModel;
           onChange?.(defaultModel);
         }
-      } catch (err) {
-        console.error('Error with models:', err);
-        setError('Erro ao carregar modelos');
-        
-        // Final fallback
+      } catch (err: any) {
+        if (cancelled) return;
+        setError(err.message || 'Erro ao carregar modelos');
+
         const fallbackModels = getDefaultModels();
         setModels(fallbackModels);
-        
-        if (!selectedModel && fallbackModels.length > 0) {
+
+        if (!selectedModelRef.current && fallbackModels.length > 0) {
           const defaultModel = fallbackModels[0].id;
           setSelectedModel(defaultModel);
+          selectedModelRef.current = defaultModel;
           onChange?.(defaultModel);
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
 
     fetchModels();
-  }, [context]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [context, onChange, value]);
 
   // Update parent when selection changes
   useEffect(() => {

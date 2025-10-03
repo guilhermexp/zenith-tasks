@@ -6,8 +6,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SUPABASE_URL = 'https://indijtkshpwkampfmvit.supabase.co';
-const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluZGlqdGtzaHB3a2FtcGZtdml0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzMwOTU2MiwiZXhwIjoyMDcyODg1NTYyfQ.yoYb6cJipaWGWp0FQhfHVos0jPjuRgEv8HZE9VOLnwI';
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://indijtkshpwkampfmvit.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluZGlqdGtzaHB3a2FtcGZtdml0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzMwOTU2MiwiZXhwIjoyMDcyODg1NTYyfQ.yoYb6cJipaWGWp0FQhfHVos0jPjuRgEv8HZE9VOLnwI';
 
 async function executeSql(sql) {
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/exec_sql`, {

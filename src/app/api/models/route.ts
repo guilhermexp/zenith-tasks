@@ -2,86 +2,204 @@ import { NextResponse } from 'next/server';
 
 import { getModelSelector } from '@/server/ai/gateway/model-selector';
 import { getGatewayProvider } from '@/server/ai/gateway/provider';
+import { extractClientKey, rateLimit } from '@/server/rateLimit';
+
+const FALLBACK_LIMIT = 50;
 
 export async function GET(req: Request) {
   try {
+    const key = extractClientKey(req);
+    if (!rateLimit({ key, limit: 60, windowMs: 60_000 })) {
+      return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+    }
+
     const url = new URL(req.url);
-    const context = url.searchParams.get('context');
+    const limit = Math.max(1, parseInt(url.searchParams.get('limit') || '50'));
+    const providerFilter = url.searchParams.get('provider') ?? undefined;
+    const context = url.searchParams.get('context') ?? undefined;
     const recommended = url.searchParams.get('recommended') === 'true';
-    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const optimized = url.searchParams.get('optimized');
+    const budget = (url.searchParams.get('budget') as 'low' | 'medium' | 'high') || 'medium';
+    const priority = (url.searchParams.get('priority') as 'speed' | 'quality' | 'balanced') || 'balanced';
+
+    const gatewayProvider = getGatewayProvider();
+    const selector = getModelSelector();
 
     let allModels: any[] = [];
 
-    // Try to get models from gateway first
     try {
-      const gatewayProvider = getGatewayProvider();
       allModels = await gatewayProvider.getAvailableModels();
-      console.log('[API/models] Got models from gateway:', allModels.length);
+      console.log('[API/models] Loaded models from gateway:', allModels.length);
     } catch (gatewayError: any) {
-      console.log('[API/models] Gateway failed, using fallback models:', gatewayError.message);
-      // Fallback to default models
+      console.warn('[API/models] Gateway unavailable, using default catalog:', gatewayError?.message || gatewayError);
+    }
+
+    if (!allModels?.length) {
       allModels = getDefaultModels();
     }
 
-    // If we still don't have models, use hardcoded defaults
-    if (!allModels || allModels.length === 0) {
-      console.log('[API/models] No models available, using hardcoded defaults');
-      allModels = getDefaultModels();
-    }
-
-    // Get recommended models for context
     if (recommended && context) {
       try {
-        const selector = getModelSelector();
         const recommendations = await selector.getRecommendations(context, {
-          budget: url.searchParams.get('budget') as any || 'medium',
-          priority: url.searchParams.get('priority') as any || 'balanced'
+          budget,
+          priority
         });
 
         return NextResponse.json({
+          success: true,
           context,
-          models: recommendations.slice(0, limit).map(r => r.model)
+          models: recommendations.slice(0, limit).map(r => ({
+            ...r.model,
+            score: r.score,
+            reasons: r.reasons,
+            costEstimate: r.costEstimate
+          })),
+          metadata: {
+            budget,
+            priority
+          }
         });
       } catch (selectorError) {
-        console.log('[API/models] Selector failed, returning filtered models');
-        // Fallback: filter models by context manually
+        console.warn('[API/models] Recommendation failed, applying heuristic filter:', selectorError);
         const contextModels = filterModelsByContext(allModels, context);
         return NextResponse.json({
+          success: true,
           context,
-          models: contextModels.slice(0, limit)
+          models: contextModels.slice(0, limit),
+          fallback: true
         });
       }
     }
 
-    // Filter by provider if specified
-    const provider = url.searchParams.get('provider');
-    const models = provider
-      ? allModels.filter(m => m.provider === provider)
-      : allModels;
+    if (optimized) {
+      const optimizedLimit = Math.max(1, parseInt(url.searchParams.get('limit') || '5'));
+
+      try {
+        let models;
+        switch (optimized) {
+          case 'cost':
+            models = await selector.getCostOptimizedModels(optimizedLimit);
+            break;
+          case 'performance':
+            models = await selector.getPerformanceOptimizedModels(optimizedLimit);
+            break;
+          case 'quality':
+            models = await selector.getQualityOptimizedModels(optimizedLimit);
+            break;
+          default:
+            return NextResponse.json({ success: false, error: 'Invalid optimization type' }, { status: 400 });
+        }
+
+        return NextResponse.json({
+          success: true,
+          optimization: optimized,
+          models
+        });
+      } catch (optimizationError) {
+        console.warn('[API/models] Optimization failed, using fallback list:', optimizationError);
+        return NextResponse.json({
+          success: true,
+          optimization: optimized,
+          models: getDefaultModels().slice(0, optimizedLimit),
+          fallback: true
+        });
+      }
+    }
+
+    let filteredModels = allModels;
+
+    if (providerFilter) {
+      filteredModels = filteredModels.filter(model => model.provider === providerFilter);
+    }
+
+    if (context && !providerFilter && !recommended) {
+      filteredModels = filterModelsByContext(filteredModels, context);
+    }
+
+    const providers = [...new Set(filteredModels.map(model => model.provider))];
 
     return NextResponse.json({
-      total: models.length,
-      models: models.slice(0, limit),
-      providers: [...new Set(models.map(m => m.provider))]
+      success: true,
+      total: filteredModels.length,
+      providers,
+      models: filteredModels.slice(0, limit)
     });
   } catch (error: any) {
     console.error('[API/models] Error:', error);
-    
-    // Final fallback - return hardcoded models
+
     const fallbackModels = getDefaultModels();
     return NextResponse.json({
+      success: true,
       total: fallbackModels.length,
-      models: fallbackModels.slice(0, parseInt(req.url.includes('limit=') ? new URL(req.url).searchParams.get('limit') || '50' : '50')),
-      providers: [...new Set(fallbackModels.map(m => m.provider))],
+      providers: [...new Set(fallbackModels.map(model => model.provider))],
+      models: fallbackModels.slice(0, FALLBACK_LIMIT),
       fallback: true
     });
   }
 }
 
-// Default models fallback
+export async function POST(req: Request) {
+  try {
+    const key = extractClientKey(req);
+    if (!rateLimit({ key, limit: 60, windowMs: 60_000 })) {
+      return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+    }
+
+    const body = await req.json();
+    const {
+      context = 'chat',
+      minContextWindow,
+      maxCost,
+      requiredCapabilities,
+      preferredProviders,
+      avoidProviders,
+      speedPriority,
+      maxResponseTokens
+    } = body;
+
+    const selector = getModelSelector();
+    const model = await selector.selectModel({
+      context,
+      minContextWindow,
+      maxCost,
+      requiredCapabilities,
+      preferredProviders,
+      avoidProviders,
+      speedPriority,
+      maxResponseTokens
+    });
+
+    if (!model) {
+      return NextResponse.json({
+        success: false,
+        error: 'No suitable model found for requirements'
+      }, { status: 404 });
+    }
+
+    const scores = await selector.scoreModels(body);
+    const selectedScore = scores.find(score => score.model.id === model.id);
+
+    return NextResponse.json({
+      success: true,
+      selected: model,
+      score: selectedScore?.score,
+      reasons: selectedScore?.reasons,
+      costEstimate: selectedScore?.costEstimate,
+      alternatives: scores
+        .filter(score => score.model.id !== model.id)
+        .slice(0, 3)
+    });
+  } catch (error: any) {
+    console.error('[API/models] Error selecting model:', error);
+    return NextResponse.json({
+      success: false,
+      error: error?.message || 'Failed to select model'
+    }, { status: 500 });
+  }
+}
+
 function getDefaultModels() {
   return [
-    // OpenAI Models
     {
       id: 'openai/gpt-4o',
       name: 'GPT-4 Optimized',
@@ -109,8 +227,6 @@ function getDefaultModels() {
       pricing: { input: 0.5, output: 1.5 },
       capabilities: ['text', 'function-calling']
     },
-
-    // Anthropic Models
     {
       id: 'anthropic/claude-3-5-sonnet-20241022',
       name: 'Claude 3.5 Sonnet',
@@ -138,8 +254,6 @@ function getDefaultModels() {
       pricing: { input: 15, output: 75 },
       capabilities: ['text', 'vision', 'analysis', 'reasoning']
     },
-
-    // Google Models
     {
       id: 'google/gemini-2.0-flash-exp',
       name: 'Gemini 2.0 Flash',
@@ -167,8 +281,6 @@ function getDefaultModels() {
       pricing: { input: 0.075, output: 0.3 },
       capabilities: ['text', 'vision', 'multimodal']
     },
-
-    // Cohere Models
     {
       id: 'cohere/command-r-plus',
       name: 'Command R+',
@@ -187,8 +299,6 @@ function getDefaultModels() {
       pricing: { input: 0.5, output: 1.5 },
       capabilities: ['text', 'reasoning']
     },
-
-    // Mistral Models
     {
       id: 'mistral/mistral-large-2407',
       name: 'Mistral Large',
@@ -207,8 +317,6 @@ function getDefaultModels() {
       pricing: { input: 2.7, output: 8.1 },
       capabilities: ['text', 'reasoning']
     },
-
-    // Perplexity Models
     {
       id: 'perplexity/llama-3.1-sonar-large-128k-online',
       name: 'Sonar Large Online',
@@ -230,30 +338,40 @@ function getDefaultModels() {
   ];
 }
 
-// Filter models by context
 function filterModelsByContext(models: any[], context: string) {
   switch (context) {
     case 'chat':
-      return models.filter(m => 
-        m.pricing?.input < 5 && 
-        m.capabilities?.includes('text')
-      );
+      return models.filter(model => model.capabilities?.includes('text'));
     case 'code':
-      return models.filter(m => 
-        m.capabilities?.includes('function-calling') || 
-        m.capabilities?.includes('code') ||
-        m.contextWindow > 50000
+      return models.filter(model =>
+        model.capabilities?.includes('function-calling') ||
+        model.capabilities?.includes('code') ||
+        model.contextWindow > 50000
       );
     case 'analysis':
-      return models.filter(m => 
-        m.capabilities?.includes('reasoning') || 
-        m.capabilities?.includes('analysis')
+      return models.filter(model =>
+        model.capabilities?.includes('reasoning') ||
+        model.capabilities?.includes('analysis')
       );
     case 'creative':
-      return models.filter(m => 
-        m.contextWindow > 100000 ||
-        m.provider === 'anthropic'
+      return models.filter(model =>
+        model.capabilities?.includes('multimodal') ||
+        model.contextWindow > 100000
       );
+    case 'fast':
+      return models
+        .filter(model => {
+          const id = model.id.toLowerCase();
+          return id.includes('flash') || id.includes('mini') || id.includes('haiku');
+        });
+    case 'economical':
+      return models
+        .filter(model => (model.pricing?.input || 0) + (model.pricing?.output || 0) <= 10)
+        .sort((a, b) => {
+          const aCost = (a.pricing?.input || 0) + (a.pricing?.output || 0);
+          const bCost = (b.pricing?.input || 0) + (b.pricing?.output || 0);
+          return aCost - bCost;
+        });
     default:
       return models;
   }

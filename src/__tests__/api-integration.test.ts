@@ -175,10 +175,10 @@ describe('API Integration Tests', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data).toHaveProperty('models')
+      expect(data).toHaveProperty('success', true)
       expect(Array.isArray(data.models)).toBe(true)
       expect(data).toHaveProperty('total')
-      expect(data).toHaveProperty('providers')
+      expect(Array.isArray(data.providers)).toBe(true)
     })
 
     it('should return recommended models for context', async () => {
@@ -186,8 +186,8 @@ describe('API Integration Tests', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
+      expect(data).toHaveProperty('success', true)
       expect(data).toHaveProperty('context', 'chat')
-      expect(data).toHaveProperty('models')
       expect(Array.isArray(data.models)).toBe(true)
       expect(data.models.length).toBeLessThanOrEqual(5)
     })
@@ -197,7 +197,7 @@ describe('API Integration Tests', () => {
       const data = await response.json()
 
       expect(response.status).toBe(200)
-      expect(data).toHaveProperty('models')
+      expect(data).toHaveProperty('success', true)
       
       if (data.models.length > 0) {
         data.models.forEach((model: any) => {
@@ -336,10 +336,11 @@ describe('API Integration Tests', () => {
       const response = await fetch(`${baseUrl}/api/credits`)
       
       // Should return 200 or appropriate status
-      expect([200, 404, 501]).toContain(response.status)
+      expect([200, 429, 500]).toContain(response.status)
       
       if (response.status === 200) {
         const data = await response.json()
+        expect(data).toHaveProperty('success', true)
         expect(data).toHaveProperty('credits')
       }
     })

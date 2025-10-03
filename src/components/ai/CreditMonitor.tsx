@@ -6,11 +6,11 @@ import { DollarSignIcon, BellIcon as AlertIcon, TrendingUpIcon, SpinnerIcon } fr
 
 interface CreditInfo {
   balance: number;
-  total_used: number;
+  totalUsed: number;
   dailyUsageEstimate: number;
   monthlyUsageEstimate: number;
   projectedDaysRemaining: number | null;
-  last_updated: string;
+  lastUpdated: string;
 }
 
 interface Alert {
@@ -45,17 +45,23 @@ export default function CreditMonitor({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/ai/credits${forceRefresh ? '?refresh=true' : ''}`);
+      const query = forceRefresh ? '?history=true&days=7' : '';
+      const response = await fetch(`/api/credits${query}`);
       const data = await response.json();
 
-      if (data.success) {
-        setCredits(data.credits);
-        setAlerts(data.alerts || []);
-        setRecommendations(data.recommendations || []);
-        setLastRefresh(new Date());
-      } else {
-        setError(data.error || 'Failed to load credits');
+      if (!response.ok || data.success === false) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
       }
+
+      const creditsPayload = data.credits as CreditInfo | undefined;
+      if (!creditsPayload) {
+        throw new Error('Resposta inválida da API de créditos');
+      }
+
+      setCredits(creditsPayload);
+      setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
+      setRecommendations(Array.isArray(data.recommendations) ? data.recommendations : []);
+      setLastRefresh(new Date());
     } catch (err: any) {
       setError(err.message || 'Network error');
     } finally {
@@ -76,7 +82,8 @@ export default function CreditMonitor({
     }
   }, [autoRefresh, refreshInterval]);
 
-  const formatCurrency = (amount: number): string => {
+  const formatCurrency = (amount?: number): string => {
+    if (typeof amount !== 'number' || Number.isNaN(amount)) return '$0.00';
     if (amount === 0) return '$0.00';
     if (amount < 0.01) return '<$0.01';
     return `$${amount.toFixed(2)}`;
@@ -159,7 +166,7 @@ export default function CreditMonitor({
             <div className="p-3 bg-white border rounded-lg">
               <div className="text-xs text-gray-500 mb-1">Total Usado</div>
               <div className="text-lg font-bold text-gray-900">
-                {formatCurrency(credits.total_used)}
+                {formatCurrency(credits.totalUsed)}
               </div>
             </div>
           </div>
@@ -182,7 +189,7 @@ export default function CreditMonitor({
               </div>
             </div>
             
-            {credits.projectedDaysRemaining && (
+          {credits.projectedDaysRemaining !== null && (
               <div className="mt-2 text-xs">
                 <span className="text-gray-500">Duração estimada:</span>
                 <span className="ml-1 font-medium">

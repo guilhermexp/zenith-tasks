@@ -3,8 +3,8 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // Configuração do Supabase
-const supabaseUrl = 'https://indijtkshpwkampfmvit.supabase.co';
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluZGlqdGtzaHB3a2FtcGZtdml0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzMwOTU2MiwiZXhwIjoyMDcyODg1NTYyfQ.yoYb6cJipaWGWp0FQhfHVos0jPjuRgEv8HZE9VOLnwI';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://indijtkshpwkampfmvit.supabase.co';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluZGlqdGtzaHB3a2FtcGZtdml0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NzMwOTU2MiwiZXhwIjoyMDcyODg1NTYyfQ.yoYb6cJipaWGWp0FQhfHVos0jPjuRgEv8HZE9VOLnwI';
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

@@ -53,11 +53,20 @@ export class ProviderFallbackManager {
    */
   private initializeProviders() {
     // Configuração base dos provedores
+    const disabledProviders = new Set(
+      (process.env.AI_DISABLED_PROVIDERS || '')
+        .split(',')
+        .map(name => name.trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const allowOpenRouter = process.env.AI_ALLOW_OPENROUTER === 'true';
+
     const providerConfigs: ProviderConfig[] = [
       {
         name: 'openrouter',
         priority: 1,
-        enabled: !!process.env.OPENROUTER_API_KEY,
+        enabled: !!process.env.OPENROUTER_API_KEY && allowOpenRouter,
         healthScore: 100,
         errorCount: 0,
         successCount: 0,
@@ -98,8 +107,18 @@ export class ProviderFallbackManager {
 
     // Registrar provedores habilitados
     for (const config of providerConfigs) {
+      const normalizedName = config.name.toLowerCase()
+
+      if (disabledProviders.has(normalizedName)) {
+        config.enabled = false
+      }
+
       if (config.enabled) {
         this.providers.set(config.name, config)
+      } else {
+        console.info('[ProviderFallback] Ignorando provedor desabilitado', {
+          provider: config.name
+        })
       }
     }
 

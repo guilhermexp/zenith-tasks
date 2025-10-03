@@ -232,8 +232,8 @@ async function testAPIs() {
 
   try {
     // Testar API de modelos
-    console.log('📡 Testando GET /api/ai/models...');
-    const modelsRes = await fetch(`${baseUrl}/api/ai/models`);
+    console.log('📡 Testando GET /api/models...');
+    const modelsRes = await fetch(`${baseUrl}/api/models`);
     if (modelsRes.ok) {
       const data = await modelsRes.json();
       console.log(`✅ API de modelos: ${data.total} modelos, ${data.providers?.length || 0} providers`);
@@ -242,18 +242,18 @@ async function testAPIs() {
     }
 
     // Testar API de créditos
-    console.log('\n📡 Testando GET /api/ai/credits...');
-    const creditsRes = await fetch(`${baseUrl}/api/ai/credits`);
+    console.log('\n📡 Testando GET /api/credits...');
+    const creditsRes = await fetch(`${baseUrl}/api/credits`);
     if (creditsRes.ok) {
       const data = await creditsRes.json();
-      console.log(`✅ API de créditos: Saldo $${data.balance || 0}`);
+      console.log(`✅ API de créditos: Saldo $${data.credits?.balance || 0}`);
     } else {
       console.log(`⚠️  API de créditos retornou: ${creditsRes.status}`);
     }
 
     // Testar API de modelos recomendados
     console.log('\n📡 Testando modelos recomendados...');
-    const recRes = await fetch(`${baseUrl}/api/ai/models?recommended=true&context=chat`);
+    const recRes = await fetch(`${baseUrl}/api/models?recommended=true&context=chat`);
     if (recRes.ok) {
       const data = await recRes.json();
       console.log(`✅ Recomendações obtidas para contexto: ${data.context}`);

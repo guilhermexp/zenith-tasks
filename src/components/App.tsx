@@ -15,10 +15,9 @@ import FinancePage from './FinancePage';
 import { 
   CheckCircleIcon, CalendarIcon, TrendingUpIcon, 
   BellIcon, UsersIcon, HomeIcon, LightbulbIcon,
-  PageIcon, DollarSignIcon, SettingsIcon, SparklesIcon
+  PageIcon, DollarSignIcon, SettingsIcon
 } from './Icons';
 import ItemsPreviewModal from './ItemsPreviewModal';
-import MCPMarketplace from './MCPMarketplace';
 import MeetingPage from './MeetingPage';
 import SettingsPage from './SettingsPage';
 import Sidebar from './Sidebar';
@@ -128,7 +127,6 @@ const App: React.FC = () => {
     { id: 'calendario', label: 'Calendário', icon: CalendarIcon },
     { id: 'financas', label: 'Finanças', icon: DollarSignIcon },
     { id: 'config', label: 'Configurações', icon: SettingsIcon },
-    { id: 'mcp-marketplace', label: 'MCP Marketplace', icon: SparklesIcon },
     
     { id: 'views-header', label: 'VIEWS', isHeader: true },
     { 
@@ -489,10 +487,6 @@ const App: React.FC = () => {
       case 'config':
         return (
           <SettingsPage />
-        );
-      case 'mcp-marketplace':
-        return (
-          <MCPMarketplace />
         );
       case 'reunioes':
         return (

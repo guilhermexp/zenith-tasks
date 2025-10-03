@@ -52,6 +52,7 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyDwFs_TvZMZk0pcKJrm3ao5DJIR3GBCYNs
 NEXT_PUBLIC_SUPABASE_URL=https://indijtkshpwkampfmvit.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImluZGlqdGtzaHB3a2FtcGZtdml0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczMDk1NjIsImV4cCI6MjA3Mjg4NTU2Mn0.PW7gbUhUW3n0y0LqRiWzqU5FpBi2pnlVAmYPGGdJQy8
+SUPABASE_SERVICE_ROLE_KEY=****************************************************************************************************************************************************************************************************************
 ```
 
 ### 4️⃣ Deploy para Produção
