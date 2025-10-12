@@ -1,0 +1,58 @@
+@startuml Zenith Tasks - Fluxo de Criação de Tarefa
+!theme blueprint
+
+title Fluxo de Dados - Criação de Tarefa com IA
+
+actor Usuário
+participant "Web App\n(React)" as UI
+participant "API Route\n/inbox/analyze" as API
+participant "AI Service\n(aiProvider)" as AI
+participant "Gemini API" as Gemini
+database "Supabase\nPostgreSQL" as DB
+
+Usuário -> UI: Digite texto\n"Comprar pão amanhã"
+activate UI
+
+UI -> API: POST /api/inbox/analyze\n{text: "Comprar pão amanhã"}
+activate API
+
+API -> AI: analyzeText(text, userId)
+activate AI
+
+AI -> AI: Construir system prompt\n+ user message
+
+AI -> Gemini: streamText(\n  model: "gemini-2.5-flash",\n  messages: [...]  \n)
+activate Gemini
+
+Gemini -> Gemini: Processar linguagem natural\n- Extrair entidades\n- Classificar tipo\n- Inferir data
+
+Gemini --> AI: JSON Response\n{\n  type: "Tarefa",\n  title: "Comprar pão",\n  dueDate: "tomorrow"\n}
+deactivate Gemini
+
+AI -> AI: Parse JSON response\nConverter para MindFlowItem[]
+
+AI --> API: parsedItems: MindFlowItem[]
+deactivate AI
+
+API --> UI: 200 OK\n{ items: [...] }
+deactivate API
+
+UI -> UI: Mostrar preview\n(se múltiplos itens)
+
+alt Usuário confirma
+    UI -> DB: Supabase.from('mind_flow_items')\n  .insert(items)
+    activate DB
+
+    DB -> DB: Validar schema\nAplicar RLS policies
+
+    DB --> UI: newItems[]
+    deactivate DB
+
+    UI -> Usuário: Mostrar tarefa criada\ncom animação
+else Usuário cancela
+    UI -> UI: Descartar itens
+end
+
+deactivate UI
+
+@enduml

@@ -322,7 +322,8 @@ export class ChatService {
       maxAttempts,
       delay: 1000,
       onError: (error, attempt) => {
-        logger.warn(`[ChatService] Tentativa ${attempt} falhou`, { error: error.message })
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        logger.warn(`[ChatService] Tentativa ${attempt} falhou`, { error: errorMessage })
       },
       onRetry: (attempt, delay) => {
         logger.info(`[ChatService] Tentando novamente em ${delay}ms (tentativa ${attempt})`)
@@ -377,7 +378,7 @@ export class ChatService {
       // Validar segurança do output
       const safetyCheck = SecurityManager.validateOutputSafety(result.text)
       if (!safetyCheck.safe) {
-        logger.warn('[ChatService] Output contém dados sensíveis', safetyCheck.issues)
+        logger.warn('[ChatService] Output contém dados sensíveis', { issues: safetyCheck.issues })
         return { text: safetyCheck.sanitized as string }
       }
 
@@ -491,7 +492,7 @@ export class ChatService {
       // Validate security
       const safetyCheck = SecurityManager.validateOutputSafety(result.text)
       if (!safetyCheck.safe) {
-        logger.warn('[ChatService] Direct OpenRouter output contains sensitive data', safetyCheck.issues)
+        logger.warn('[ChatService] Direct OpenRouter output contains sensitive data', { issues: safetyCheck.issues })
         return { text: safetyCheck.sanitized as string }
       }
       

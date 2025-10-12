@@ -1,10 +1,11 @@
-/* eslint-disable import/order */
 'use client';
 
 import { useUser, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Tools } from '@/services/ai/tools';
+
+import { useToast } from '@/components/Toast';
 import { useSupabaseItems } from '../hooks/useSupabaseItems';
+import type { Tools } from '@/services/ai/tools';
 import type { MindFlowItem, NavItem, MindFlowItemType, ChatMessage, ChatBubble, MeetingDetails } from '../types';
 
 // Components
@@ -32,7 +33,10 @@ import UpdatesPage from './UpdatesPage';
 const App: React.FC = () => {
   // Clerk authentication
   const { isLoaded, isSignedIn, user } = useUser();
-  
+
+  // Toast notifications
+  const { showToast } = useToast();
+
   // Supabase items management
   const {
     items,
@@ -263,6 +267,7 @@ const App: React.FC = () => {
       return addedItems;
     } catch (error) {
       console.error('Erro ao adicionar item:', error);
+      showToast('Erro ao analisar texto com IA. Criando nota simples.', 'warning');
       // Fallback: create simple note
       const fallbackItem = await addItemToDb({
         title: text.substring(0, 100),
@@ -352,7 +357,7 @@ const App: React.FC = () => {
       if (activeItem?.id === itemId) {
         setActiveItem(prev => prev ? { ...prev, isGeneratingSubtasks: false } : null);
       }
-      alert('Erro ao gerar subtarefas. Tente novamente mais tarde.');
+      showToast('Erro ao gerar subtarefas. Tente novamente mais tarde.', 'error');
     }
   };
 
@@ -529,8 +534,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <SignedIn>
-      <div className="h-screen overflow-hidden app-shell text-white flex gap-2 md:gap-3 p-1 md:p-2 lg:p-2">
+    <div className="h-screen overflow-hidden app-shell text-white flex gap-2 md:gap-3 p-1 md:p-2 lg:p-2">
       {/* Sidebar */}
       <Sidebar
         navItems={navItems}
@@ -618,7 +622,6 @@ const App: React.FC = () => {
         onClose={() => setIsDebugOpen(false)}
       />
     </div>
-    </SignedIn>
   );
 };
 

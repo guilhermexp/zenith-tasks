@@ -1,0 +1,25 @@
+@startuml Zenith Tasks - System Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram - Zenith Tasks
+
+Person(user, "Usuário", "Pessoa que gerencia tarefas e compromissos")
+
+System(zenith_tasks, "Zenith Tasks", "Aplicativo web para gerenciamento inteligente de tarefas com IA")
+
+System_Ext(gemini_api, "Google Gemini API", "Serviço de inteligência artificial para processamento de linguagem natural")
+System_Ext(supabase, "Supabase", "Backend-as-a-Service (PostgreSQL + Realtime + Auth)")
+System_Ext(clerk_auth, "Clerk", "Serviço de autenticação e gerenciamento de usuários")
+System_Ext(mcp_servers, "MCP Servers", "Servidores externos compatíveis com Model Context Protocol")
+System_Ext(browser_apis, "Browser APIs", "APIs nativas do navegador (Speech, MediaRecorder, etc)")
+
+Rel(user, zenith_tasks, "Usa", "HTTPS/WebSocket")
+Rel(zenith_tasks, gemini_api, "Envia prompts, recebe respostas", "HTTPS/JSON")
+Rel(zenith_tasks, supabase, "Persiste/recupera dados", "PostgREST API + Realtime")
+Rel(zenith_tasks, clerk_auth, "Autentica usuários", "HTTPS/JWT")
+Rel(zenith_tasks, mcp_servers, "Chama ferramentas externas", "HTTPS/MCP Protocol")
+Rel(zenith_tasks, browser_apis, "Captura áudio, transcreve", "JavaScript APIs")
+
+@enduml

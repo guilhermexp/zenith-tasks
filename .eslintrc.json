@@ -1,8 +1,8 @@
 {
   "extends": ["next", "next/core-web-vitals"],
   "rules": {
-    "no-console": ["warn", { "allow": ["warn", "error", "log", "info"] }],
-    "react-hooks/exhaustive-deps": "off",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "react-hooks/exhaustive-deps": "warn",
     "import/order": ["warn", {
       "groups": [["builtin", "external"], ["internal"], ["parent", "sibling", "index"]],
       "newlines-between": "always",

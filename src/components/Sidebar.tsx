@@ -1,7 +1,8 @@
 'use client';
 
-import { UserButton } from '@clerk/nextjs';
-import { Activity } from 'lucide-react';
+// Clerk desabilitado - bypass de autenticação
+// import { UserButton } from '@clerk/nextjs';
+import { Activity, User } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
 import type { NavItem } from '../types';
@@ -134,22 +135,24 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
         <div className="px-1 mb-3">
             <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-neutral-300">Zenith Tasks</h2>
-                <button onClick={onClose} className="p-1 rounded-md hover:bg-neutral-800 md:hidden">
-                    <XIcon className="w-4 h-4 text-neutral-500" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onSelectItem('caixa-entrada')}
+                      className="p-1.5 rounded-md hover:bg-neutral-800/60 transition-colors"
+                      title="Novo"
+                    >
+                        <PlusIcon className="w-4 h-4 text-neutral-400" />
+                    </button>
+                    <button onClick={onClose} className="p-1 rounded-md hover:bg-neutral-800 md:hidden">
+                        <XIcon className="w-4 h-4 text-neutral-500" />
+                    </button>
+                </div>
             </div>
-            {/* New button like reference */}
-            <button
-              className="w-full mb-3 h-11 rounded-xl bg-neutral-900/70 border border-white/10 text-neutral-200 text-sm font-medium hover:bg-neutral-900 hover:border-white/15 transition-colors"
-              onClick={() => onSelectItem('caixa-entrada')}
-            >
-              Novo
-            </button>
             {/* Search field */}
             <div className="relative">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     placeholder="Search"
                     value={searchQuery}
                     onChange={(e) => onSearch(e.target.value)}
@@ -183,14 +186,10 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
                   <Activity className="w-5 h-5 text-neutral-400" />
                 </button>
               )}
-              <UserButton
-                appearance={{
-                  elements: {
-                    avatarBox: "w-8 h-8",
-                    userButtonTrigger: "focus:outline-none"
-                  }
-                }}
-              />
+              {/* UserButton do Clerk removido - bypass ativo */}
+              <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center">
+                <User className="w-4 h-4 text-neutral-400" />
+              </div>
             </div>
         </div>
       </div>

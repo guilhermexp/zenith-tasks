@@ -2,6 +2,7 @@
 import { LanguageModel } from 'ai';
 
 import { getGatewayProvider, isGatewayAvailable } from './ai/gateway/provider';
+import { logger } from '@/utils/logger';
 
 export interface AIProviderConfig {
   provider: 'gateway' | 'google' | 'openrouter' | 'anthropic' | 'openai';
@@ -59,6 +60,7 @@ export class AIProvider {
   private static instance: AIProvider;
   private models: Map<string, LanguageModel> = new Map();
   private configs: Map<string, AIProviderConfig> = new Map();
+  private gatewayFailedAuth: boolean = false; // Track gateway auth failures in memory
 
   private constructor() {
     // Singleton pattern - construtor privado
@@ -80,26 +82,29 @@ export class AIProvider {
                       config?.provider === 'gateway' ||
                       process.env.USE_AI_GATEWAY === 'true';
 
-    // Try Gateway first if enabled and we have a valid key
-    if (useGateway && hasGatewayKey) {
+    // Try Gateway first if enabled, we have a valid key, and auth hasn't failed before
+    if (useGateway && hasGatewayKey && !this.gatewayFailedAuth) {
       try {
-        console.log('[AIProvider] Attempting to use AI Gateway');
+        logger.info('Attempting to use AI Gateway', { provider: 'AIProvider' });
         const gatewayAvailable = await isGatewayAvailable();
         if (gatewayAvailable) {
           return await this.getGatewayModel(config);
         } else {
-          console.log('[AIProvider] Gateway not available, falling back to direct providers');
+          logger.info('Gateway not available, falling back to direct providers', { provider: 'AIProvider' });
         }
-      } catch (error: any) {
-        console.error('[AIProvider] Gateway error, falling back:', error.message);
-        // If it's an auth error, don't try gateway again
-        if (error.message?.includes('Invalid API Key') || error.statusCode === 401) {
-          console.warn('[AIProvider] Gateway API key invalid, disabling gateway for this session');
-          process.env.USE_AI_GATEWAY = 'false';
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.error('Gateway error, falling back', error, { provider: 'AIProvider' });
+        // If it's an auth error, mark as failed in instance state
+        if (errorMessage.includes('Invalid API Key') || (error as { statusCode?: number }).statusCode === 401) {
+          logger.warn('Gateway API key invalid, disabling gateway for this instance', { provider: 'AIProvider' });
+          this.gatewayFailedAuth = true;
         }
       }
     } else if (useGateway && !hasGatewayKey) {
-      console.warn('[AIProvider] Gateway requested but AI_GATEWAY_API_KEY not found');
+      logger.warn('Gateway requested but AI_GATEWAY_API_KEY not found', { provider: 'AIProvider' });
+    } else if (useGateway && this.gatewayFailedAuth) {
+      logger.info('Gateway authentication failed previously, skipping', { provider: 'AIProvider' });
     }
 
     // Fallback to direct providers
@@ -128,7 +133,7 @@ export class AIProvider {
       }
     }
 
-    console.log(`[AIProvider] Using Gateway model: ${modelId}`);
+    logger.info('Using Gateway model', { provider: 'AIProvider', modelId });
     return await gateway.getModel(modelId);
   }
 
@@ -176,7 +181,7 @@ export class AIProvider {
       case 'zai': {
         const apiKey = config?.apiKey || process.env.ZAI_API_KEY;
         if (!apiKey) {
-          console.log('[AIProvider] ZAI_API_KEY not found, falling back to other providers');
+          logger.warn('ZAI_API_KEY not found, falling back to other providers', { provider: 'AIProvider' });
           throw new Error('ZAI_API_KEY not configured');
         }
 
@@ -201,31 +206,10 @@ export class AIProvider {
         return google(modelName) as LanguageModel;
       }
 
-      // DESABILITADO: OpenRouter tem problemas de compatibilidade com AI SDK v5
-      // Preferir usar AI Gateway (USE_AI_GATEWAY=true) que tem melhor compatibilidade
-      // case 'openrouter': {
-      //   const apiKey = config?.apiKey || process.env.OPENROUTER_API_KEY;
-      //   if (!apiKey) throw new Error('OPENROUTER_API_KEY missing');
-
-      //   console.log('[AIProvider] Configurando OpenRouter com modelo:', config?.model);
-      //   
-      //   const { createOpenAI } = await import('@ai-sdk/openai');
-      //   const openrouter = createOpenAI({
-      //     apiKey,
-      //     baseURL: 'https://openrouter.ai/api/v1',
-      //     headers: {
-      //       'HTTP-Referer': process.env.NEXT_PUBLIC_URL || 'http://localhost:3457',
-      //       'X-Title': 'Zenith Tasks'
-      //     }
-      //   });
-      //   
-      //   const modelName = config?.model || process.env.OPENROUTER_MODEL || 'google/gemma-2-9b-it:free';
-      //   console.log('[AIProvider] Using OpenRouter model via @ai-sdk/openai:', modelName);
-      //   return openrouter(modelName) as LanguageModel;
-      // }
-
       case 'openrouter':
-        throw new Error('OpenRouter está desabilitado devido a problemas com AI SDK v5. Use AI Gateway (USE_AI_GATEWAY=true) ou outro provedor.');
+        // OpenRouter has compatibility issues with AI SDK v5
+        // Use AI Gateway (USE_AI_GATEWAY=true) or another provider instead
+        throw new Error('OpenRouter is disabled due to AI SDK v5 compatibility issues. Use AI Gateway or another provider.');
 
       case 'anthropic': {
         const apiKey = config?.apiKey || process.env.ANTHROPIC_API_KEY;
@@ -316,23 +300,23 @@ export class AIProvider {
   }
 
   // Get available Gateway models
-  async getAvailableGatewayModels(): Promise<any[]> {
+  async getAvailableGatewayModels(): Promise<unknown[]> {
     try {
       const gateway = getGatewayProvider();
       return await gateway.getAvailableModels();
     } catch (error) {
-      console.error('[AIProvider] Failed to get Gateway models:', error);
+      logger.error('Failed to get Gateway models', error, { provider: 'AIProvider' });
       return [];
     }
   }
 
   // Get Gateway credits
-  async getGatewayCredits(): Promise<any> {
+  async getGatewayCredits(): Promise<unknown> {
     try {
       const gateway = getGatewayProvider();
       return await gateway.getCredits();
     } catch (error) {
-      console.error('[AIProvider] Failed to get Gateway credits:', error);
+      logger.error('Failed to get Gateway credits', error, { provider: 'AIProvider' });
       return null;
     }
   }

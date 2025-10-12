@@ -3,9 +3,11 @@ import { useState, useEffect, useCallback } from 'react'
 
 import { ItemsService } from '@/services/database/items'
 import type { MindFlowItem } from '@/types'
+import { logger } from '@/utils/logger'
 
 export function useSupabaseItems() {
   const { user, isLoaded } = useUser()
+
   const [items, setItems] = useState<MindFlowItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -22,33 +24,33 @@ export function useSupabaseItems() {
 
   const loadItems = useCallback(async () => {
     if (!user) {
-      console.log('🔴 No user found for Supabase')
+      logger.debug('No user found for Supabase', { hook: 'useSupabaseItems' })
       return
     }
 
-    console.log('🟢 Loading items for user:', user.id)
-    
+    logger.info('Loading items for user', { userId: user.id, hook: 'useSupabaseItems' })
+
     try {
       setIsLoading(true)
       setError(null)
       const loadedItems = await ItemsService.loadItems(user.id)
-      console.log('✅ Loaded from Supabase:', loadedItems.length, 'items')
+      logger.info('Loaded from Supabase', { count: loadedItems.length, hook: 'useSupabaseItems' })
       setItems(loadedItems)
     } catch (err) {
-      console.error('❌ Error loading from Supabase:', err)
+      logger.error('Error loading from Supabase', err, { hook: 'useSupabaseItems' })
       setError('Erro ao carregar itens')
-      
+
       // Fallback to localStorage if Supabase fails
-      console.warn('⚠️ Falling back to localStorage')
+      logger.warn('Falling back to localStorage', { hook: 'useSupabaseItems' })
       try {
         const stored = localStorage.getItem('zenith-tasks-items')
         if (stored && stored.trim()) {
           const localItems = JSON.parse(stored)
-          console.log('📦 Loaded from localStorage:', localItems.length, 'items')
+          logger.info('Loaded from localStorage', { count: localItems.length, hook: 'useSupabaseItems' })
           setItems(localItems)
         }
       } catch (e) {
-        console.error('Failed to load from localStorage:', e)
+        logger.error('Failed to load from localStorage', e, { hook: 'useSupabaseItems' })
         // Limpar storage corrompido
         try {
           localStorage.removeItem('zenith-tasks-items')
@@ -61,19 +63,19 @@ export function useSupabaseItems() {
 
   const addItem = useCallback(async (item: Omit<MindFlowItem, 'id' | 'createdAt'>): Promise<MindFlowItem | null> => {
     if (!user) {
-      console.log('🔴 Cannot add item - no user')
+      logger.debug('Cannot add item - no user', { hook: 'useSupabaseItems' })
       return null
     }
 
-    console.log('🔵 Adding item to Supabase:', item.title)
-    
+    logger.info('Adding item to Supabase', { title: item.title, hook: 'useSupabaseItems' })
+
     try {
       const newItem = await ItemsService.createItem(user.id, item)
-      console.log('✅ Item saved to Supabase:', newItem.id)
+      logger.info('Item saved to Supabase', { itemId: newItem.id, hook: 'useSupabaseItems' })
       setItems(prev => [newItem, ...prev])
       return newItem
     } catch (err) {
-      console.error('❌ Error saving to Supabase:', err)
+      logger.error('Error saving to Supabase', err, { hook: 'useSupabaseItems' })
       setError('Erro ao criar item')
       return null
     }
@@ -84,11 +86,11 @@ export function useSupabaseItems() {
 
     try {
       await ItemsService.updateItem(itemId, updates)
-      setItems(prev => prev.map(item => 
+      setItems(prev => prev.map(item =>
         item.id === itemId ? { ...item, ...updates } : item
       ))
     } catch (err) {
-      console.error('Error updating item:', err)
+      logger.error('Error updating item', err, { itemId, hook: 'useSupabaseItems' })
       setError('Erro ao atualizar item')
     }
   }, [user])
@@ -100,7 +102,7 @@ export function useSupabaseItems() {
       await ItemsService.deleteItem(itemId)
       setItems(prev => prev.filter(item => item.id !== itemId))
     } catch (err) {
-      console.error('Error deleting item:', err)
+      logger.error('Error deleting item', err, { itemId, hook: 'useSupabaseItems' })
       setError('Erro ao deletar item')
     }
   }, [user])
@@ -110,11 +112,11 @@ export function useSupabaseItems() {
 
     try {
       await ItemsService.toggleItem(itemId)
-      setItems(prev => prev.map(item => 
+      setItems(prev => prev.map(item =>
         item.id === itemId ? { ...item, completed: !item.completed } : item
       ))
     } catch (err) {
-      console.error('Error toggling item:', err)
+      logger.error('Error toggling item', err, { itemId, hook: 'useSupabaseItems' })
       setError('Erro ao alternar item')
     }
   }, [user])
@@ -126,7 +128,7 @@ export function useSupabaseItems() {
       await ItemsService.clearCompleted(user.id)
       setItems(prev => prev.filter(item => !item.completed))
     } catch (err) {
-      console.error('Error clearing completed:', err)
+      logger.error('Error clearing completed', err, { userId: user.id, hook: 'useSupabaseItems' })
       setError('Erro ao limpar completados')
     }
   }, [user])
@@ -136,17 +138,17 @@ export function useSupabaseItems() {
 
     try {
       await ItemsService.setDueDate(itemId, date)
-      setItems(prev => prev.map(item => 
-        item.id === itemId 
-          ? { 
-              ...item, 
+      setItems(prev => prev.map(item =>
+        item.id === itemId
+          ? {
+              ...item,
               dueDate: date ? date.toLocaleDateString('pt-BR') : undefined,
               dueDateISO: date ? date.toISOString() : undefined
-            } 
+            }
           : item
       ))
     } catch (err) {
-      console.error('Error setting due date:', err)
+      logger.error('Error setting due date', err, { itemId, hook: 'useSupabaseItems' })
       setError('Erro ao definir data')
     }
   }, [user])

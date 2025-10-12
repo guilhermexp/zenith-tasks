@@ -1,7 +1,7 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface LogEntry {
@@ -163,8 +163,8 @@ export const logger = Logger.getInstance();
 export type { LogLevel, LogContext, LogEntry };
 
 // Helper functions for common logging patterns
-export function logApiHandler(handler: Function) {
-  return async function(req: Request, ...args: any[]) {
+export function logApiHandler<T extends unknown[]>(handler: (req: Request, ...args: T) => Promise<Response>) {
+  return async function(req: Request, ...args: T): Promise<Response> {
     const startTime = Date.now();
     const url = new URL(req.url);
     const method = req.method;
@@ -196,8 +196,8 @@ export function logApiHandler(handler: Function) {
 }
 
 // Export for Next.js API routes
-export function withLogger<T extends (...args: any[]) => any>(handler: T): T {
-  return (async (...args: any[]) => {
+export function withLogger<T extends (...args: unknown[]) => Promise<unknown>>(handler: T): T {
+  return (async (...args: unknown[]) => {
     try {
       const result = await handler(...args);
       return result;

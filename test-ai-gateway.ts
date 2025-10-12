@@ -211,8 +211,8 @@ async function testAIProviderIntegration() {
 
     // Verificar créditos via AIProvider
     console.log('\n💳 Verificando créditos via AIProvider...');
-    const credits = await provider.getGatewayCredits();
-    if (credits) {
+    const credits = await provider.getGatewayCredits() as { balance?: number } | null;
+    if (credits && typeof credits === 'object') {
       console.log(`✅ Créditos: $${credits.balance || 0}`);
     } else {
       console.log('⚠️  Não foi possível obter créditos');

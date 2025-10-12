@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import type { HTMLMotionProps } from 'framer-motion';
-import { Columns3, Grid } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 export type DayType = {
@@ -100,7 +99,8 @@ type InteractiveCalendarProps = HTMLMotionProps<'div'> & {
 
 const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendarProps>(
   ({ className, events = [], currentDate, ...props }, ref) => {
-  const [moreView, setMoreView] = useState(true); // Inicia sempre no modo grade
+  // Só mostra o painel lateral se houver eventos
+  const hasEvents = events.length > 0;
   const [hoveredDay, setHoveredDay] = useState<string | null>(null);
 
   const handleDayHover = (day: string | null) => {
@@ -183,10 +183,10 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
     <AnimatePresence mode="wait">
       <motion.div
         ref={ref}
-        className="relative mx-auto my-10 flex w-full flex-col items-center justify-center gap-8 lg:flex-row"
+        className={`relative mx-auto my-10 flex w-full flex-col items-center ${hasEvents ? 'justify-center gap-8 lg:flex-row' : 'justify-center'}`}
         {...props}
       >
-        <motion.div layout className="w-full max-w-lg">
+        <motion.div layout className={`w-full ${hasEvents ? 'max-w-lg' : 'max-w-2xl'}`}>
           <motion.div
             key="calendar-view"
             className="flex w-full flex-col gap-4"
@@ -195,22 +195,6 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
               <motion.h2 className="mb-2 text-4xl font-bold tracking-wider text-zinc-300">
                 {monthLabel.split(' ')[0].slice(0,2).toUpperCase()} <span className="opacity-50">{monthLabel.split(' ').slice(-1)[0]}</span>
               </motion.h2>
-              <motion.button
-                className="relative flex items-center gap-3 rounded-lg border border-[#323232] px-1.5 py-1 text-[#323232]"
-                onClick={() => setMoreView(!moreView)}
-              >
-                <Columns3 className="z-[2]" />
-                <Grid className="z-[2]" />
-                <div
-                  className="absolute left-0 top-0 h-[85%] w-7 rounded-md bg-white transition-transform duration-300"
-                  style={{
-                    top: '50%',
-                    transform: moreView
-                      ? 'translateY(-50%) translateX(40px)'
-                      : 'translateY(-50%) translateX(4px)',
-                  }}
-                ></div>
-              </motion.button>
             </div>
             <div className="grid grid-cols-7 gap-2">
               {daysOfWeek.map((day) => (
@@ -225,7 +209,7 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
             <CalendarGrid onHover={handleDayHover} days={days} />
           </motion.div>
         </motion.div>
-        {moreView && (
+        {hasEvents && (
           <motion.div
             className="w-full max-w-lg"
             initial={{ opacity: 0, y: 20 }}

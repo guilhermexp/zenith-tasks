@@ -153,7 +153,8 @@ Responda em português brasileiro de forma natural e útil.`
         maxAttempts: 2,
         delay: 1000,
         onError: (error, attempt) => {
-          console.error(`[Act] Tentativa ${attempt} falhou:`, error.message)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          console.error(`[Act] Tentativa ${attempt} falhou:`, errorMessage)
         }
       }
     )

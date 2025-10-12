@@ -11,9 +11,6 @@ import { Button } from "@/components/ui/button"
 import SiriOrb from "@/components/ui/SiriOrb"
 import { useClickOutside } from "@/hooks/use-click-outside"
 
-// AI SDK v5 ainda não exporta useChat via ai/react
-// Mantendo implementação compatível que funciona
-
 const SPEED = 1
 
 interface FooterContext {

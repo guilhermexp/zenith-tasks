@@ -35,16 +35,37 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. Extrair parâmetros
+    // 2. Extrair parâmetros e validar com Zod
     const url = new URL(req.url)
     const stream = url.searchParams.get('stream') === '1'
     const useTools = url.searchParams.get('tools') !== '0'
-    
-    const { message, userId, conversationId, maxSteps = 5 } = await req.json()
-    
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json({ error: 'message required' }, { status: 400 })
+
+    const bodySchema = z.object({
+      message: z.string().min(1).max(10000),
+      userId: z.string().optional(),
+      conversationId: z.string().optional(),
+      maxSteps: z.number().int().min(1).max(10).default(5),
+      model: z.string().optional(),
+      history: z.array(z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string()
+      })).optional()
+    })
+
+    let body: z.infer<typeof bodySchema>
+    try {
+      body = bodySchema.parse(await req.json())
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json({
+          error: 'Invalid request body',
+          details: error.issues
+        }, { status: 400 })
+      }
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
     }
+
+    const { message, userId, conversationId, maxSteps } = body
 
     // 3. Validação de segurança
     const sanitizedMessage = SecurityManager.sanitizeInput(message)
@@ -198,7 +219,8 @@ export async function POST(req: Request) {
         maxAttempts: 3,
         delay: 1000,
         onError: (error, attempt) => {
-          console.error(`[Assistant] Tentativa ${attempt} falhou:`, error.message)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          console.error(`[Assistant] Tentativa ${attempt} falhou:`, errorMessage)
         },
         onRetry: (attempt, delay) => {
           console.log(`[Assistant] Tentando novamente em ${delay}ms (tentativa ${attempt})`)

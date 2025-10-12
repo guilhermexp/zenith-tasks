@@ -1,20 +1,28 @@
 import { NoObjectGeneratedError, APICallError } from "ai";
 
+type AdjusterFunction = (current: number) => number;
+type MessageAdjuster = (current: ChatMessage[]) => ChatMessage[];
+
 export interface ErrorCategory {
   type: string;
   userMessage: string;
   shouldRetry: boolean;
   retryDelay?: number;
   maxRetries?: number;
-  adjustments?: Record<string, any>;
+  adjustments?: Record<string, AdjusterFunction | MessageAdjuster | number | string>;
 }
 
 export interface RetryOptions {
   maxAttempts?: number;
   delay?: number;
   backoff?: number;
-  onError?: (error: any, attempt: number) => void;
+  onError?: (error: Error | unknown, attempt: number) => void;
   onRetry?: (attempt: number, delay: number) => void;
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
 }
 
 export interface ErrorContext {
@@ -25,7 +33,7 @@ export interface ErrorContext {
   temperature?: number;
   timeout?: number;
   prompt?: string;
-  messages?: any[];
+  messages?: ChatMessage[];
 }
 
 // Categorias de erro predefinidas
@@ -96,29 +104,39 @@ export const errorCategories: Record<string, ErrorCategory> = {
   },
 };
 
-export class AIErrorManager {
-  private errorLog: Array<{
-    timestamp: string;
-    error: any;
-    context: ErrorContext;
-    category: string;
-  }> = [];
+interface ErrorLogEntry {
+  timestamp: string;
+  error: Error | unknown;
+  context: ErrorContext;
+  category: string;
+}
 
+interface HandleErrorResult {
+  retry: boolean;
+  adjustments?: Record<string, number | string | ChatMessage[]>;
+  fallback?: FallbackResponse;
+  userMessage: string;
+  category: string;
+}
+
+interface FallbackResponse {
+  error: string;
+  suggestion: string;
+  rawText?: string;
+  fallbackResponse?: string;
+}
+
+export class AIErrorManager {
+  private errorLog: ErrorLogEntry[] = [];
   private maxLogSize = 1000;
 
   /**
    * Trata um erro e retorna instruções para retry ou fallback
    */
   async handleError(
-    error: any,
+    error: Error | unknown,
     context: ErrorContext
-  ): Promise<{
-    retry: boolean;
-    adjustments?: Record<string, any>;
-    fallback?: any;
-    userMessage: string;
-    category: string;
-  }> {
+  ): Promise<HandleErrorResult> {
     const category = this.categorizeError(error);
     this.logError(error, context, category.type);
 
@@ -155,7 +173,7 @@ export class AIErrorManager {
   /**
    * Categoriza um erro baseado em sua mensagem e tipo
    */
-  categorizeError(error: any): ErrorCategory {
+  categorizeError(error: Error | unknown): ErrorCategory {
     // Erro de geração de objeto estruturado
     if (NoObjectGeneratedError.isInstance(error)) {
       return errorCategories["schema_validation"];
@@ -174,7 +192,7 @@ export class AIErrorManager {
       }
     }
 
-    const message = error.message?.toLowerCase() || "";
+    const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
 
     // Rate limit
     if (
@@ -235,19 +253,24 @@ export class AIErrorManager {
   private calculateAdjustments(
     category: ErrorCategory,
     context: ErrorContext
-  ): Record<string, any> {
+  ): Record<string, number | string | ChatMessage[]> {
     if (!category.adjustments) return {};
 
-    const adjustments: Record<string, any> = {};
+    const adjustments: Record<string, number | string | ChatMessage[]> = {};
 
     for (const [key, adjuster] of Object.entries(category.adjustments)) {
       if (typeof adjuster === "function") {
-        const currentValue = (context as any)[key];
+        const currentValue = context[key as keyof ErrorContext];
         if (currentValue !== undefined) {
-          adjustments[key] = adjuster(currentValue);
+          // Type narrowing based on the key
+          if (key === 'messages' && Array.isArray(currentValue)) {
+            adjustments[key] = (adjuster as MessageAdjuster)(currentValue as ChatMessage[]);
+          } else if (typeof currentValue === 'number') {
+            adjustments[key] = (adjuster as AdjusterFunction)(currentValue);
+          }
         }
       } else {
-        adjustments[key] = adjuster;
+        adjustments[key] = adjuster as number | string;
       }
     }
 
@@ -266,11 +289,11 @@ export class AIErrorManager {
   /**
    * Gera fallback baseado no tipo de erro
    */
-  private generateFallback(error: any, context: ErrorContext): any {
+  private generateFallback(error: Error | unknown, context: ErrorContext): FallbackResponse {
     if (NoObjectGeneratedError.isInstance(error)) {
       return {
         error: "Failed to generate structured response",
-        rawText: error.text,
+        rawText: (error as NoObjectGeneratedError).text,
         suggestion: "Try with a simpler request or check the schema",
       };
     }
@@ -293,22 +316,11 @@ export class AIErrorManager {
   /**
    * Registra erro para debugging e analytics
    */
-  private logError(error: any, context: ErrorContext, category: string) {
-    const logEntry = {
+  private logError(error: Error | unknown, context: ErrorContext, category: string) {
+    const logEntry: ErrorLogEntry = {
       timestamp: new Date().toISOString(),
-      error: {
-        message: error.message,
-        stack: error.stack,
-        type: error.constructor.name,
-        statusCode: error.statusCode,
-      },
-      context: {
-        userId: context.userId,
-        conversationId: context.conversationId,
-        attempt: context.attempt,
-        maxTokens: context.maxTokens,
-        temperature: context.temperature,
-      },
+      error,
+      context,
       category,
     };
 
@@ -320,7 +332,8 @@ export class AIErrorManager {
     }
 
     // Log no console para desenvolvimento
-    console.error(`[AIError:${category}]`, error.message, {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[AIError:${category}]`, errorMessage, {
       attempt: context.attempt,
       userId: context.userId,
     });
@@ -348,7 +361,7 @@ export class AIErrorManager {
     } = options;
 
     const errorManager = new AIErrorManager();
-    let lastError: any;
+    let lastError: Error | unknown;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
