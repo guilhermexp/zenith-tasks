@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 
 import { CreditSystem } from '@/services/credits/credit-system';
+import { logger } from '@/utils/logger';
 
 export async function POST(req: Request) {
+  const logContext = { route: 'credits-add' } as const;
   try {
     const { userId, amount, type = 'purchase', description, metadata } = await req.json();
 
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
       amount
     });
   } catch (error: any) {
-    console.error('[Credits] Error adding credits:', error);
+    logger.error('Credits API: error adding credits', error, logContext);
     return NextResponse.json(
       { error: 'Failed to add credits' },
       { status: 500 }

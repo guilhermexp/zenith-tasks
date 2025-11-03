@@ -3,8 +3,10 @@ import { NextResponse } from 'next/server';
 import { getModelSelector } from '@/server/ai/gateway/model-selector';
 import { getGatewayProvider } from '@/server/ai/gateway/provider';
 import { extractClientKey, rateLimit } from '@/server/rateLimit';
+import { logger } from '@/utils/logger';
 
 const FALLBACK_LIMIT = 50;
+const logContext = { route: 'models' } as const;
 
 export async function GET(req: Request) {
   try {
@@ -29,9 +31,15 @@ export async function GET(req: Request) {
 
     try {
       allModels = await gatewayProvider.getAvailableModels();
-      console.log('[API/models] Loaded models from gateway:', allModels.length);
+      logger.info('Models API: loaded models from gateway', {
+        total: allModels.length,
+        ...logContext
+      });
     } catch (gatewayError: any) {
-      console.warn('[API/models] Gateway unavailable, using default catalog:', gatewayError?.message || gatewayError);
+      logger.warn('Models API: gateway unavailable, using default catalog', {
+        error: gatewayError instanceof Error ? gatewayError.message : String(gatewayError),
+        ...logContext
+      });
     }
 
     if (!allModels?.length) {
@@ -60,7 +68,11 @@ export async function GET(req: Request) {
           }
         });
       } catch (selectorError) {
-        console.warn('[API/models] Recommendation failed, applying heuristic filter:', selectorError);
+        logger.warn('Models API: recommendation failed, applying heuristic filter', {
+          error: selectorError instanceof Error ? selectorError.message : String(selectorError),
+          context,
+          ...logContext
+        });
         const contextModels = filterModelsByContext(allModels, context);
         return NextResponse.json({
           success: true,
@@ -96,7 +108,11 @@ export async function GET(req: Request) {
           models
         });
       } catch (optimizationError) {
-        console.warn('[API/models] Optimization failed, using fallback list:', optimizationError);
+        logger.warn('Models API: optimization failed, using fallback list', {
+          error: optimizationError instanceof Error ? optimizationError.message : String(optimizationError),
+          optimization: optimized,
+          ...logContext
+        });
         return NextResponse.json({
           success: true,
           optimization: optimized,
@@ -125,7 +141,7 @@ export async function GET(req: Request) {
       models: filteredModels.slice(0, limit)
     });
   } catch (error: any) {
-    console.error('[API/models] Error:', error);
+    logger.error('Models API: GET error', error, logContext);
 
     const fallbackModels = getDefaultModels();
     return NextResponse.json({
@@ -190,7 +206,7 @@ export async function POST(req: Request) {
         .slice(0, 3)
     });
   } catch (error: any) {
-    console.error('[API/models] Error selecting model:', error);
+    logger.error('Models API: select model error', error, logContext);
     return NextResponse.json({
       success: false,
       error: error?.message || 'Failed to select model'

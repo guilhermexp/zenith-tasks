@@ -3,6 +3,8 @@
  * Rastreia uso de tokens, custos estimados e métricas de performance
  */
 
+import { logger } from '@/utils/logger';
+
 export interface TokenUsageMetrics {
   promptTokens: number;
   completionTokens: number;
@@ -64,7 +66,7 @@ export class TokenAnalyticsService {
 
     // Log em desenvolvimento
     if (process.env.NODE_ENV === 'development') {
-      console.log('[TokenAnalytics]', {
+      logger.debug('TokenAnalytics: development metrics', {
         model: metrics.model,
         totalTokens: metrics.totalTokens,
         operation: metrics.operation,
@@ -74,7 +76,10 @@ export class TokenAnalyticsService {
     // Enviar para sistema de monitoramento em produção
     if (process.env.NODE_ENV === 'production') {
       this.sendToMonitoring(metrics).catch((error) => {
-        console.error('[TokenAnalytics] Failed to send metrics:', error);
+        logger.error('TokenAnalytics: failed to send metrics', error, {
+          model: metrics.model,
+          operation: metrics.operation,
+        });
       });
     }
   }

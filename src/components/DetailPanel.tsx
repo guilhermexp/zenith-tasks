@@ -266,13 +266,11 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   };
 
   const handleToggleSubtask = (subtaskId: string) => {
-    console.log('Toggling subtask:', subtaskId);
     const updatedSubtasks = item.subtasks?.map(subtask => 
       subtask.id === subtaskId 
         ? { ...subtask, completed: !subtask.completed }
         : subtask
     );
-    console.log('Updated subtasks:', updatedSubtasks);
     onUpdateItem(item.id, { subtasks: updatedSubtasks });
   };
 

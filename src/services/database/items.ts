@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { Database } from '@/lib/supabase'
 import type { MindFlowItem, Subtask } from '@/types'
+import { logger } from '@/utils/logger'
 
 type DBItem = Database['public']['Tables']['mind_flow_items']['Row']
 type DBSubtask = Database['public']['Tables']['subtasks']['Row']
@@ -12,7 +13,7 @@ export class ItemsService {
   static async loadItems(userId: string): Promise<MindFlowItem[]> {
     // Se Supabase não configurado, retorna vazio (app usa localStorage)
     if (!isSupabaseConfigured) {
-      console.log('[ItemsService] Supabase não configurado, usando localStorage')
+      logger.info('ItemsService: Supabase not configured, using local storage')
       return []
     }
 

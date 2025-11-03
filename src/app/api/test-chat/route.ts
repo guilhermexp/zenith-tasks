@@ -6,8 +6,10 @@ import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 
 import { AIProvider } from '@/server/aiProvider'
+import { logger } from '@/utils/logger'
 
 export async function POST(req: Request) {
+  const logContext = { route: 'test-chat' } as const
   try {
     const { message } = await req.json()
     
@@ -19,7 +21,7 @@ export async function POST(req: Request) {
     const aiProvider = AIProvider.getInstance()
     const { model, settings } = await aiProvider.getModelForContext('chat')
     
-    console.log('[TestChat] Using AIProvider with context: chat')
+    logger.info('Test Chat: using AIProvider with chat context', logContext)
 
     // Generate response using AIProvider settings
     const result = await generateText({
@@ -48,7 +50,7 @@ export async function POST(req: Request) {
     })
 
   } catch (error: any) {
-    console.error('[TestChat] Error:', error)
+    logger.error('Test Chat: error', error, logContext)
     
     return NextResponse.json({
       error: error.message || 'Chat failed',

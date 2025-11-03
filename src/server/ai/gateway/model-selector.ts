@@ -1,5 +1,6 @@
-import { ModelInfo } from './provider';
-import { getGatewayProvider } from './provider';
+import { logger } from '@/utils/logger';
+
+import { getGatewayProvider, ModelInfo } from './provider';
 
 export interface ModelRequirements {
   context: string;
@@ -33,6 +34,8 @@ export class ModelSelector {
     economical: { cost: 0.7, speed: 0.2, quality: 0.1 }
   };
 
+  private logContext = { component: 'ModelSelector' } as const;
+
   /**
    * Select best model based on requirements
    */
@@ -40,14 +43,18 @@ export class ModelSelector {
     const scoredModels = await this.scoreModels(requirements);
 
     if (scoredModels.length === 0) {
-      console.warn('[ModelSelector] No suitable models found');
+      logger.warn('ModelSelector: no suitable models found', this.logContext);
       return null;
     }
 
     // Return highest scoring model
     const best = scoredModels[0];
-    console.log(`[ModelSelector] Selected ${best.model.id} with score ${best.score.toFixed(2)}`);
-    console.log(`[ModelSelector] Reasons: ${best.reasons.join(', ')}`);
+    logger.info('ModelSelector: selected model', {
+      ...this.logContext,
+      modelId: best.model.id,
+      score: Number(best.score.toFixed(2)),
+      reasons: best.reasons,
+    });
 
     return best.model;
   }

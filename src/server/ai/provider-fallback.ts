@@ -116,7 +116,7 @@ export class ProviderFallbackManager {
       if (config.enabled) {
         this.providers.set(config.name, config)
       } else {
-        console.info('[ProviderFallback] Ignorando provedor desabilitado', {
+        logger.info('[ProviderFallback] Ignorando provedor desabilitado', {
           provider: config.name
         })
       }

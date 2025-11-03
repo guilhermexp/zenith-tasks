@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+
 import { logger } from '@/utils/logger';
 
 describe('Logger', () => {

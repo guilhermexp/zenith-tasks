@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 
+import { logger } from '@/utils/logger'
+
 export async function POST(req: Request) {
+  const logContext = { route: 'debug-ai' } as const
   try {
     const { message } = await req.json()
     
@@ -8,7 +11,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Message required' }, { status: 400 })
     }
 
-    console.log('[DebugAI] Testing with direct OpenAI SDK (OpenRouter)...')
+    logger.info('Debug AI: testing OpenAI SDK via OpenRouter', logContext)
     
     const { OpenAI } = await import('openai')
     
@@ -21,7 +24,7 @@ export async function POST(req: Request) {
       }
     })
     
-    console.log('[DebugAI] OpenAI client created')
+    logger.info('Debug AI: OpenAI client created', logContext)
     
     const completion = await client.chat.completions.create({
       model: 'openai/gpt-3.5-turbo',
@@ -39,10 +42,13 @@ export async function POST(req: Request) {
       max_tokens: 1500
     })
     
-    console.log('[DebugAI] Completion successful')
+    logger.info('Debug AI: completion successful', logContext)
     
     const responseText = completion.choices[0]?.message?.content || ''
-    console.log('[DebugAI] Response generated:', responseText.substring(0, 50))
+    logger.info('Debug AI: response generated', {
+      preview: responseText.substring(0, 50),
+      ...logContext
+    })
 
     return NextResponse.json({
       text: responseText,
@@ -52,7 +58,7 @@ export async function POST(req: Request) {
     })
 
   } catch (error: any) {
-    console.error('[DebugAI] Error:', error)
+    logger.error('Debug AI: error', error, logContext)
     
     return NextResponse.json({
       error: error.message || 'Debug AI failed',

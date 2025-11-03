@@ -1,8 +1,9 @@
 
 import { LanguageModel } from 'ai';
 
-import { getGatewayProvider, isGatewayAvailable } from './ai/gateway/provider';
 import { logger } from '@/utils/logger';
+
+import { getGatewayProvider, isGatewayAvailable } from './ai/gateway/provider';
 
 export interface AIProviderConfig {
   provider: 'gateway' | 'google' | 'openrouter' | 'anthropic' | 'openai';
@@ -22,6 +23,11 @@ export interface ModelSettings {
   presencePenalty?: number;
   frequencyPenalty?: number;
   stopSequences?: string[];
+}
+
+export interface ModelMetadata {
+  provider: string;
+  modelId: string;
 }
 
 // Configurações predefinidas para diferentes contextos
@@ -61,6 +67,7 @@ export class AIProvider {
   private models: Map<string, LanguageModel> = new Map();
   private configs: Map<string, AIProviderConfig> = new Map();
   private gatewayFailedAuth: boolean = false; // Track gateway auth failures in memory
+  private lastSelection: ModelMetadata | null = null;
 
   private constructor() {
     // Singleton pattern - construtor privado
@@ -74,6 +81,7 @@ export class AIProvider {
   }
 
   async getModel(config?: Partial<AIProviderConfig>): Promise<LanguageModel> {
+    this.lastSelection = null;
     // Check if we have Gateway API key
     const hasGatewayKey = !!process.env.AI_GATEWAY_API_KEY;
 
@@ -134,7 +142,10 @@ export class AIProvider {
     }
 
     logger.info('Using Gateway model', { provider: 'AIProvider', modelId });
-    return await gateway.getModel(modelId);
+    const languageModel = await gateway.getModel(modelId);
+    const providerName = modelId.includes('/') ? modelId.split('/')[0] : 'gateway';
+    this.lastSelection = { provider: providerName, modelId };
+    return languageModel;
   }
 
   private async getDirectModel(config?: Partial<AIProviderConfig>): Promise<LanguageModel> {
@@ -144,7 +155,13 @@ export class AIProvider {
 
     // Verificar cache
     if (this.models.has(cacheKey)) {
-      return this.models.get(cacheKey)!;
+      const cachedModel = this.models.get(cacheKey)!;
+      const cachedConfig = this.configs.get(cacheKey);
+      if (cachedConfig) {
+        const modelId = this.buildModelIdentifier(cachedConfig.provider, cachedConfig.model);
+        this.lastSelection = { provider: cachedConfig.provider, modelId };
+      }
+      return cachedModel;
     }
 
     // Criar novo modelo com a configuração correta
@@ -154,11 +171,13 @@ export class AIProvider {
     // Armazenar no cache
     this.models.set(cacheKey, languageModel);
     this.configs.set(cacheKey, { provider, model, ...config } as AIProviderConfig);
+    const modelId = this.buildModelIdentifier(provider, model);
+    this.lastSelection = { provider, modelId };
 
     return languageModel;
   }
 
-  async getModelForContext(context: string, config?: Partial<AIProviderConfig>): Promise<{ model: LanguageModel; settings: ModelSettings }> {
+  async getModelForContext(context: string, config?: Partial<AIProviderConfig>): Promise<{ model: LanguageModel; settings: ModelSettings; metadata: ModelMetadata | null }> {
     const settings = modelSettings[context] || modelSettings['chat'];
     
     // Enhanced config with context information
@@ -170,7 +189,8 @@ export class AIProvider {
     };
 
     const model = await this.getModel(enhancedConfig);
-    return { model, settings };
+    const metadata = this.lastSelection;
+    return { model, settings, metadata };
   }
 
   private async createModel(
@@ -247,10 +267,18 @@ export class AIProvider {
     return defaults[provider] || defaults['google'];
   }
 
+  private buildModelIdentifier(provider: string, model?: string): string {
+    if (!model) {
+      return provider;
+    }
+    return model.includes('/') ? model : `${provider}/${model}`;
+  }
+
   // Limpar cache (útil para testes ou reinicialização)
   clearCache(): void {
     this.models.clear();
     this.configs.clear();
+    this.lastSelection = null;
   }
 
   // Obter estatísticas do cache

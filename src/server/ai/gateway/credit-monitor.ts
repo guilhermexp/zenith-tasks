@@ -1,5 +1,6 @@
-import { CreditInfo } from './provider';
-import { getGatewayProvider } from './provider';
+import { logger } from '@/utils/logger';
+
+import { CreditInfo, getGatewayProvider } from './provider';
 
 export interface CreditAlert {
   type: 'warning' | 'critical' | 'info';
@@ -23,6 +24,8 @@ export interface CreditStats {
   projection: UsageProjection;
   recommendations: string[];
 }
+
+const logContext = { component: 'CreditMonitor' } as const;
 
 export class CreditMonitor {
   private provider = getGatewayProvider();
@@ -225,7 +228,11 @@ export class CreditMonitor {
    */
   setAlertThresholds(warning: number, critical: number): void {
     this.alertThresholds = { warning, critical };
-    console.log(`[CreditMonitor] Alert thresholds updated: warning=$${warning}, critical=$${critical}`);
+    logger.info('CreditMonitor: alert thresholds updated', {
+      warning,
+      critical,
+      ...logContext
+    });
   }
 
   /**
@@ -243,7 +250,7 @@ export class CreditMonitor {
       try {
         callback(alert);
       } catch (error) {
-        console.error('[CreditMonitor] Error in alert callback:', error);
+        logger.error('CreditMonitor: error in alert callback', error, logContext);
       }
     }
   }
@@ -314,7 +321,7 @@ export class CreditMonitor {
    */
   clearHistory(): void {
     this.usageHistory = [];
-    console.log('[CreditMonitor] Usage history cleared');
+    logger.info('CreditMonitor: usage history cleared', logContext);
   }
 }
 

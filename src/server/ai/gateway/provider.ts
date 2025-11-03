@@ -1,6 +1,8 @@
 import { gateway, createGateway } from 'ai';
 import type { LanguageModel } from 'ai';
 
+import { logger } from '@/utils/logger';
+
 export interface GatewayConfig {
   apiKey?: string;
   baseURL?: string;
@@ -31,6 +33,8 @@ export interface CreditInfo {
   last_updated: string;
 }
 
+const logContext = { component: 'GatewayProvider' } as const;
+
 export class GatewayProvider {
   private gateway: any;
   private modelsCache: Map<string, ModelInfo[]> = new Map();
@@ -55,11 +59,11 @@ export class GatewayProvider {
         baseURL: config.baseURL || 'https://api.portkey.ai/v1',
         metadataCacheRefreshMillis: this.config.metadataCacheRefreshMillis
       });
-      console.log('[Gateway] Initialized with API key');
+      logger.info('Gateway: initialized with API key', logContext);
     } else {
       // Use default gateway instance
       this.gateway = gateway;
-      console.warn('[Gateway] No API key found, using default gateway');
+      logger.warn('Gateway: no API key found, using default gateway', logContext);
     }
   }
 
@@ -78,7 +82,7 @@ export class GatewayProvider {
     }
 
     try {
-      console.log('[Gateway] Fetching available models...');
+      logger.info('Gateway: fetching available models', logContext);
 
       // Try to use real API if available
       let response;
@@ -86,9 +90,12 @@ export class GatewayProvider {
       if (this.gateway?.metadata) {
         const metadata = await this.gateway.metadata();
         response = { models: metadata.models || [] };
-        console.log('[Gateway] Loaded real models from API');
+        logger.info('Gateway: loaded models from API', {
+          modelCount: response.models.length,
+          ...logContext
+        });
       } else {
-        console.warn('[Gateway] Nenhum provedor de modelos configurado. Retornando lista vazia.');
+        logger.warn('Gateway: no model providers configured, returning empty list', logContext);
         response = { models: [] };
       }
       
@@ -112,14 +119,18 @@ export class GatewayProvider {
       this.modelsCache.set(cacheKey, models);
       this.lastModelRefresh = now;
 
-      console.log(`[Gateway] Loaded ${models.length} models from ${new Set(models.map(m => m.provider)).size} providers`);
+      logger.info('Gateway: models cached', {
+        modelCount: models.length,
+        providerCount: new Set(models.map(m => m.provider)).size,
+        ...logContext
+      });
       return models;
     } catch (error) {
-      console.error('[Gateway] Failed to fetch models:', error);
+      logger.error('Gateway: failed to fetch models', error, logContext);
       
       // Return cached data if available
       if (this.modelsCache.has(cacheKey)) {
-        console.log('[Gateway] Using cached models due to fetch error');
+        logger.warn('Gateway: using cached models due to fetch error', logContext);
         return this.modelsCache.get(cacheKey)!;
       }
       
@@ -158,7 +169,10 @@ export class GatewayProvider {
       // Return gateway model
       return this.gateway(modelId);
     } catch (error) {
-      console.error(`[Gateway] Failed to get model ${modelId}:`, error);
+      logger.error('Gateway: failed to get model', error, {
+        ...logContext,
+        modelId,
+      });
       throw error;
     }
   }
@@ -178,7 +192,7 @@ export class GatewayProvider {
     }
 
     try {
-      console.log('[Gateway] Fetching credit information...');
+      logger.info('Gateway: fetching credit information', logContext);
 
       const credits: CreditInfo = {
         balance: 0,
@@ -192,11 +206,11 @@ export class GatewayProvider {
 
       return credits;
     } catch (error) {
-      console.error('[Gateway] Failed to fetch credits:', error);
+      logger.error('Gateway: failed to fetch credits', error, logContext);
       
       // Return cached data if available
       if (this.creditsCache) {
-        console.log('[Gateway] Using cached credits due to fetch error');
+        logger.warn('Gateway: using cached credits due to fetch error', logContext);
         return this.creditsCache;
       }
       
@@ -278,7 +292,7 @@ export class GatewayProvider {
     this.creditsCache = null;
     this.lastModelRefresh = 0;
     this.lastCreditsRefresh = 0;
-    console.log('[Gateway] Cache cleared');
+    logger.info('Gateway: cache cleared', logContext);
   }
 
   /**
@@ -347,7 +361,7 @@ export async function isGatewayAvailable(): Promise<boolean> {
     const models = await provider.getAvailableModels();
     return models.length > 0;
   } catch (error) {
-    console.error('[Gateway] Availability check failed:', error);
+    logger.error('Gateway: availability check failed', error, logContext);
     return false;
   }
 }

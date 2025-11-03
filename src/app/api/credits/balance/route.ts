@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 
 import { CreditSystem } from '@/services/credits/credit-system';
+import { logger } from '@/utils/logger';
 
 export async function GET(req: Request) {
+  const logContext = { route: 'credits-balance' } as const;
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId') || 'anonymous';
@@ -17,7 +19,7 @@ export async function GET(req: Request) {
       success: true
     });
   } catch (error: any) {
-    console.error('[Credits] Error getting balance:', error);
+    logger.error('Credits API: error getting balance', error, logContext);
     return NextResponse.json(
       { error: 'Failed to get credit balance' },
       { status: 500 }

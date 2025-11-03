@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 
 import { CreditSystem } from '@/services/credits/credit-system';
+import { logger } from '@/utils/logger';
 
 export async function POST(req: Request) {
+  const logContext = { route: 'credits-consume' } as const;
   try {
     const { userId, modelId, inputTokens, outputTokens, description, metadata } = await req.json();
 
@@ -53,7 +55,7 @@ export async function POST(req: Request) {
       balance: result.newBalance
     });
   } catch (error: any) {
-    console.error('[Credits] Error consuming credits:', error);
+    logger.error('Credits API: error consuming credits', error, logContext);
     return NextResponse.json(
       { error: 'Failed to consume credits' },
       { status: 500 }

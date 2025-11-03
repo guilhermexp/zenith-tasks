@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 
 import { getCreditMonitor } from '@/server/ai/gateway/credit-monitor';
 import { extractClientKey, rateLimit } from '@/server/rateLimit';
+import { logger } from '@/utils/logger';
 
 export async function GET(req: Request) {
+  const logContext = { route: 'credits-get' } as const;
   try {
     const key = extractClientKey(req);
     if (!rateLimit({ key, limit: 60, windowMs: 60_000 })) {
@@ -46,7 +48,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(response);
   } catch (error: any) {
-    console.error('[API/credits] Error:', error);
+    logger.error('Credits API: status fetch error', error, logContext);
     return NextResponse.json({
       success: false,
       error: error?.message || 'Failed to fetch credits'
@@ -55,6 +57,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const logContext = { route: 'credits-post' } as const;
   try {
     const key = extractClientKey(req);
     if (!rateLimit({ key, limit: 10, windowMs: 60_000 })) {
@@ -85,7 +88,7 @@ export async function POST(req: Request) {
       }
     });
   } catch (error: any) {
-    console.error('[API/credits] Error updating settings:', error);
+    logger.error('Credits API: update settings error', error, logContext);
     return NextResponse.json({
       success: false,
       error: error?.message || 'Failed to update credit settings'

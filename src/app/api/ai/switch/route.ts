@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 
 import { getGatewayProvider } from '@/server/ai/gateway/provider';
 import { AIProvider } from '@/server/aiProvider';
+import { logger } from '@/utils/logger';
 
 export async function POST(req: Request) {
+  const logContext = { route: 'ai-switch' } as const;
   try {
     const { modelId, context, reason } = await req.json();
 
@@ -35,11 +37,13 @@ export async function POST(req: Request) {
       });
 
       // Log the switch
-      console.log(`[API] Model switched to ${modelId}`, {
+      logger.info('AI Switch: model switched', {
+        modelId,
         context,
         reason,
         provider: modelInfo.provider,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        ...logContext
       });
 
       return NextResponse.json({
@@ -57,7 +61,10 @@ export async function POST(req: Request) {
       });
 
     } catch (modelError: any) {
-      console.error(`[API] Failed to initialize model ${modelId}:`, modelError);
+      logger.error('AI Switch: failed to initialize model', modelError, {
+        modelId,
+        ...logContext
+      });
       
       return NextResponse.json({
         success: false,
@@ -67,7 +74,7 @@ export async function POST(req: Request) {
     }
 
   } catch (error: any) {
-    console.error('[API] Model switch error:', error);
+    logger.error('AI Switch: model switch error', error, logContext);
     
     return NextResponse.json({
       success: false,
@@ -77,6 +84,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const logContext = { route: 'ai-switch-info' } as const;
   try {
     const url = new URL(req.url);
     const context = url.searchParams.get('context') || 'chat';
@@ -99,7 +107,7 @@ export async function GET(req: Request) {
     });
 
   } catch (error: any) {
-    console.error('[API] Model switch info error:', error);
+    logger.error('AI Switch: info retrieval error', error, logContext);
     
     return NextResponse.json({
       success: false,

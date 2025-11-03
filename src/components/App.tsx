@@ -1,22 +1,29 @@
 'use client';
 
-import { useUser, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/nextjs';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { RedirectToSignIn, SignedIn, SignedOut, useUser } from '@clerk/nextjs';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useToast } from '@/components/Toast';
-import { useSupabaseItems } from '../hooks/useSupabaseItems';
 import type { Tools } from '@/services/ai/tools';
-import type { MindFlowItem, NavItem, MindFlowItemType, ChatMessage } from '../types';
 
+import { useSupabaseItems } from '../hooks/useSupabaseItems';
+import type { ChatMessage, MindFlowItem, MindFlowItemType, NavItem } from '../types';
 // Components
 import CalendarPage from './CalendarPage';
 import DebugTools from './DebugTools';
 import DetailPanel from './DetailPanel';
 import FinancePage from './FinancePage';
-import { 
-  CheckCircleIcon, CalendarIcon, TrendingUpIcon, 
-  BellIcon, UsersIcon, HomeIcon, LightbulbIcon,
-  PageIcon, DollarSignIcon, SettingsIcon
+import {
+  BellIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  DollarSignIcon,
+  HomeIcon,
+  LightbulbIcon,
+  PageIcon,
+  SettingsIcon,
+  TrendingUpIcon,
+  UsersIcon
 } from './Icons';
 import ItemsPreviewModal from './ItemsPreviewModal';
 import SettingsPage from './SettingsPage';

@@ -109,7 +109,7 @@ const TalkModeModal: React.FC<TalkModeModalProps> = ({ isOpen, onClose, onAudioR
       setErrorMessage("A permissão para o microfone foi negada. Por favor, habilite nas configurações do seu navegador.");
       setStatus('error');
     }
-  }, [onAudioReady, onClose, stopRecording]);
+  }, [onAudioReady, onClose]);
 
   const handleClose = useCallback(() => {
       stopRecording();

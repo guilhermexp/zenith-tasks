@@ -75,26 +75,27 @@ npm run typecheck # Verificação de tipos TypeScript
 
 ## 📚 Documentação
 
-### 📖 [Documentação Completa de Arquitetura](./docs/architecture/README.md)
-
-Acesse a documentação detalhada incluindo:
-
-- **C4 Model Diagrams** - System Context, Containers, Components
-- **Architecture Decision Records (ADRs)** - Decisões de design documentadas
-- **Deployment Guide** - Guia completo de deploy para produção
-- **Data Models** - Schema do banco de dados e tipos TypeScript
-- **Security** - Práticas de segurança e configurações
-- **Monitoring** - Setup de monitoramento e alertas
-
-### 📑 Quick Links
+### Guides & Documentation
 
 | Documento | Descrição |
 |-----------|-----------|
-| [Arquitetura Overview](./docs/architecture/README.md) | Visão geral completa do sistema |
-| [Guia de Deployment](./docs/architecture/deployment-guide.md) | Como fazer deploy em produção |
-| [ADR-001: Next.js](./docs/architecture/adrs/ADR-001-nextjs-app-router.md) | Por que Next.js App Router? |
-| [ADR-002: Supabase](./docs/architecture/adrs/ADR-002-supabase-backend.md) | Por que Supabase? |
-| [Diagramas PlantUML](./docs/architecture/diagrams/) | Diagramas C4 e fluxos de dados |
+| [CLAUDE.md](./CLAUDE.md) | Architecture overview & best practices |
+| [AGENTS.md](./AGENTS.md) | Repository guidelines & context for developers |
+| [ai_docs/](./ai_docs/) | Technical documentation directory |
+| [ai_specs/](./ai_specs/) | Feature specifications & API documentation |
+
+### AI Documentation
+
+- **[TOOLS_DISPONIVEIS.md](./ai_docs/TOOLS_DISPONIVEIS.md)** - Complete list of 17 AI assistant tools with parameters
+- **[MARKETPLACE_IMPLEMENTATION.md](./ai_docs/MARKETPLACE_IMPLEMENTATION.md)** - MCP marketplace integration guide
+- **[CLERK_CONFIGURADO.md](./ai_docs/CLERK_CONFIGURADO.md)** - Authentication setup documentation
+
+### Documentation Directories
+- **[ai_changelog/](./ai_changelog/)** - Version history and release notes
+- **[ai_docs/](./ai_docs/)** - Technical guides and integration documentation
+- **[ai_issues/](./ai_issues/)** - Bug reports and known issues
+- **[ai_research/](./ai_research/)** - Research notes and experiments
+- **[ai_specs/](./ai_specs/)** - Feature and API specifications
 
 ## 🏗️ Estrutura do Projeto
 
@@ -141,15 +142,18 @@ zenith-tasks/
 
 ## 🔒 Segurança
 
-> ⚠️ **ATENÇÃO**: O projeto está com bypass de autenticação ativo para desenvolvimento.
+> ⚠️ **ATENÇÃO**: O projeto está em fase de desenvolvimento com bypass de autenticação opcional.
 >
-> **Antes de fazer deploy em produção:**
-> 1. Reativar autenticação Clerk
-> 2. Configurar Row-Level Security no Supabase
-> 3. Implementar rate limiting
-> 4. Revisar variáveis de ambiente sensíveis
+> **Status Atual:**
+> - ✅ Clerk configurado e funcional (`./ai_docs/CLERK_CONFIGURADO.md`)
+> - ✅ Autenticação pode ser ativada/desativada via middleware
+> - ⏳ Faltam implementações antes de produção:
+>   1. Configurar Row-Level Security no Supabase
+>   2. Implementar rate limiting
+>   3. Revisar e rotacionar credenciais
+>   4. Adicionar audit logging
 >
-> Ver [Deployment Guide](./docs/architecture/deployment-guide.md) para detalhes.
+> Para mais detalhes, consulte a documentação em `/ai_docs/`
 
 ## 🤝 Contribuindo
 

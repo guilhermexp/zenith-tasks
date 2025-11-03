@@ -8,6 +8,7 @@ import { SecurityManager } from '@/server/ai/security'
 import { getAllTools } from '@/server/ai/tools'
 import { AIProvider, getAISDKModel } from '@/server/aiProvider'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
+import { logger } from '@/utils/logger'
 
 // Schema para plano do assistente
 const planSchema = z.object({
@@ -24,6 +25,7 @@ const planSchema = z.object({
 export async function POST(req: Request) {
   const errorManager = new AIErrorManager()
   const securityManager = SecurityManager.getInstance()
+  const logContext = { route: 'assistant' } as const
   
   try {
     // 1. Rate limiting básico (desabilitado em desenvolvimento)
@@ -94,14 +96,18 @@ export async function POST(req: Request) {
     let modelConfig: any
 
     try {
-      console.log('[Assistant] Getting model from AIProvider...')
+      logger.info('Assistant: retrieving model from AIProvider', logContext)
       const aiProvider = AIProvider.getInstance()
       const result = await aiProvider.getModelForContext('chat')
       model = result.model
       modelConfig = result.settings
-      console.log('[Assistant] Using AIProvider with context: chat')
+      logger.info('Assistant: using AIProvider with context chat', {
+        modelId: result.metadata?.modelId ?? 'unknown',
+        provider: result.metadata?.provider ?? 'unknown',
+        ...logContext
+      })
     } catch (error: any) {
-      console.error('[Assistant] AIProvider failed:', error.message)
+      logger.error('Assistant: AIProvider selection failed', error, logContext)
       
       // Final graceful fallback
       const reply = sanitizedMessage.length <= 3
@@ -153,7 +159,10 @@ export async function POST(req: Request) {
         if (stream) {
           if (useTools && Object.keys(tools).length > 0) {
             // Streaming com ferramentas (modo preferido)
-            console.log(`[Assistant] Iniciando com ${Object.keys(tools).length} ferramentas disponíveis`)
+            logger.info('Assistant: starting stream with tools', {
+              toolCount: Object.keys(tools).length,
+              ...logContext
+            })
             return await streamText({
               model,
               messages: [
@@ -164,10 +173,16 @@ export async function POST(req: Request) {
               temperature: modelConfig.temperature || 0.7,
               onStepFinish: async ({ usage, toolCalls, toolResults }) => {
                 if (toolCalls && toolCalls.length > 0) {
-                  console.log(`[Assistant] Ferramentas executadas:`, toolCalls.map((tc: any) => tc.toolName))
+                  logger.info('Assistant: tools executed', {
+                    tools: toolCalls.map((tc: any) => tc.toolName),
+                    ...logContext
+                  })
                 }
                 if (usage?.totalTokens) {
-                  console.log(`[Assistant] Step concluído, tokens: ${usage.totalTokens}`)
+                  logger.info('Assistant: step tokens used', {
+                    tokens: usage.totalTokens,
+                    ...logContext
+                  })
                 }
               }
             })
@@ -220,10 +235,17 @@ export async function POST(req: Request) {
         delay: 1000,
         onError: (error, attempt) => {
           const errorMessage = error instanceof Error ? error.message : String(error)
-          console.error(`[Assistant] Tentativa ${attempt} falhou:`, errorMessage)
+          logger.error('Assistant: attempt failed', new Error(errorMessage), {
+            attempt,
+            ...logContext
+          })
         },
         onRetry: (attempt, delay) => {
-          console.log(`[Assistant] Tentando novamente em ${delay}ms (tentativa ${attempt})`)
+          logger.info('Assistant: scheduling retry', {
+            delayMs: delay,
+            attempt,
+            ...logContext
+          })
         }
       }
     )
@@ -234,7 +256,7 @@ export async function POST(req: Request) {
         // Retornar stream de texto com ferramentas (AI SDK v5)
         return (result as any).toDataStreamResponse({
           getErrorMessage: (error: Error) => {
-            console.error('[Assistant] Stream error:', error)
+            logger.error('Assistant: stream iteration error', error, logContext)
             return 'Desculpe, ocorreu um erro ao processar sua solicitação.'
           }
         })
@@ -242,7 +264,7 @@ export async function POST(req: Request) {
         // Retornar stream de objeto estruturado
         return (result as any).toTextStreamResponse({
           getErrorMessage: (error: Error) => {
-            console.error('[Assistant] Stream error:', error)
+            logger.error('Assistant: stream handler error', error, logContext)
             return 'Desculpe, ocorreu um erro ao processar sua solicitação.'
           }
         })
@@ -253,7 +275,10 @@ export async function POST(req: Request) {
       const safetyCheck = SecurityManager.validateOutputSafety(outputData)
 
       if (!safetyCheck.safe) {
-        console.warn('[Assistant] Output contém dados sensíveis:', safetyCheck.issues)
+        logger.warn('Assistant: output contains sensitive data', {
+          issues: safetyCheck.issues,
+          ...logContext
+        })
         return NextResponse.json(safetyCheck.sanitized)
       }
 
@@ -267,7 +292,7 @@ export async function POST(req: Request) {
       attempt: 1
     })
 
-    console.error('[Assistant] Erro final:', error.message)
+    logger.error('Assistant: unhandled route error', error, logContext)
 
     return NextResponse.json({ 
       error: errorResult.userMessage,

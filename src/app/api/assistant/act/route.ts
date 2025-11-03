@@ -6,10 +6,12 @@ import { SecurityManager } from '@/server/ai/security'
 import { getAllTools } from '@/server/ai/tools'
 import { AIProvider } from '@/server/aiProvider'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
+import { logger } from '@/utils/logger'
 
 export async function POST(req: Request) {
   const errorManager = new AIErrorManager()
   const securityManager = SecurityManager.getInstance()
+  const logContext = { route: 'assistant-act' } as const
   
   try {
     // Rate limiting
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
       const result = await aiProvider.getModelForContext('chat')
       model = result.model
     } catch (error) {
-      console.error('[Act] Erro ao obter modelo:', error)
+      logger.error('Assistant Act: failed to acquire model', error, logContext)
       return NextResponse.json({ 
         error: 'AI model not available',
         text: 'Desculpe, o assistente não está disponível no momento.'
@@ -137,14 +139,24 @@ Responda em português brasileiro de forma natural e útil.`
           temperature: 0.7,
           onStepFinish: async ({ usage, toolCalls, toolResults }) => {
             if (toolCalls && toolCalls.length > 0) {
-              console.log(`[Act] Ferramentas executadas:`, toolCalls.map((tc: any) => tc.toolName))
+              logger.info('Assistant Act: tools executed', {
+                tools: toolCalls.map((tc: any) => tc.toolName),
+                ...logContext
+              })
             }
             if (usage?.totalTokens) {
-              console.log(`[Act] Tokens usados: ${usage.totalTokens}`)
+              logger.info('Assistant Act: step tokens used', {
+                tokens: usage.totalTokens,
+                ...logContext
+              })
             }
           },
           onFinish: async ({ text, usage, toolCalls, toolResults }) => {
-            console.log(`[Act] Concluído - Texto: ${text?.length || 0} chars, Tools: ${toolCalls?.length || 0}`)
+            logger.info('Assistant Act: stream finished', {
+              textLength: text?.length ?? 0,
+              toolCount: toolCalls?.length ?? 0,
+              ...logContext
+            })
           }
         })
       },
@@ -154,7 +166,10 @@ Responda em português brasileiro de forma natural e útil.`
         delay: 1000,
         onError: (error, attempt) => {
           const errorMessage = error instanceof Error ? error.message : String(error)
-          console.error(`[Act] Tentativa ${attempt} falhou:`, errorMessage)
+          logger.error('Assistant Act: attempt failed', new Error(errorMessage), {
+            attempt,
+            ...logContext
+          })
         }
       }
     )
@@ -163,7 +178,7 @@ Responda em português brasileiro de forma natural e útil.`
     return result.toTextStreamResponse()
 
   } catch (error: any) {
-    console.error('[Act] Erro geral:', error)
+    logger.error('Assistant Act: unhandled error', error, logContext)
     
     const errorResult = await errorManager.handleError(error, {
       userId: req.headers.get('user-id') || undefined,

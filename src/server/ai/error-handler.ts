@@ -1,5 +1,7 @@
 import { NoObjectGeneratedError, APICallError } from "ai";
 
+import { logger } from "@/utils/logger";
+
 type AdjusterFunction = (current: number) => number;
 type MessageAdjuster = (current: ChatMessage[]) => ChatMessage[];
 
@@ -332,10 +334,10 @@ export class AIErrorManager {
     }
 
     // Log no console para desenvolvimento
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`[AIError:${category}]`, errorMessage, {
+    logger.error(`AIError: ${category}`, error, {
       attempt: context.attempt,
       userId: context.userId,
+      category,
     });
 
     // Enviar para sistema de monitoramento em produção

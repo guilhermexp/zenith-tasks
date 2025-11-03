@@ -2,7 +2,10 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 
+import { logger } from '@/utils/logger'
+
 export async function POST(req: Request) {
+  const logContext = { route: 'test-openrouter' } as const
   try {
     const { message } = await req.json()
     
@@ -10,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Message required' }, { status: 400 })
     }
 
-    console.log('[TestOpenRouter] Creating OpenRouter client...')
+    logger.info('Test OpenRouter: creating client', logContext)
     
     // Create OpenRouter client directly
     const openai = createOpenAI({
@@ -22,7 +25,7 @@ export async function POST(req: Request) {
       }
     })
 
-    console.log('[TestOpenRouter] Client created, generating text...')
+    logger.info('Test OpenRouter: generating text', logContext)
 
     const model = openai('openai/gpt-3.5-turbo')
     
@@ -37,7 +40,10 @@ export async function POST(req: Request) {
       temperature: 0.7,
     })
 
-    console.log('[TestOpenRouter] Success:', result.text?.substring(0, 50))
+    logger.info('Test OpenRouter: generation succeeded', {
+      preview: result.text?.substring(0, 50) ?? '',
+      ...logContext
+    })
 
     return NextResponse.json({
       text: result.text,
@@ -46,7 +52,7 @@ export async function POST(req: Request) {
     })
 
   } catch (error: any) {
-    console.error('[TestOpenRouter] Error:', error)
+    logger.error('Test OpenRouter: error', error, logContext)
     
     return NextResponse.json({
       error: error.message || 'OpenRouter test failed',

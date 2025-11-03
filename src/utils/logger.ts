@@ -48,10 +48,12 @@ class Logger {
     switch (level) {
       case 'debug':
         if (this.isDevelopment) {
+          // eslint-disable-next-line no-console
           console.log(formattedMessage);
         }
         break;
       case 'info':
+        // eslint-disable-next-line no-console
         console.log(formattedMessage);
         break;
       case 'warn':

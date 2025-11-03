@@ -71,3 +71,42 @@ AI functionality is server-side only via API routes:
 - **Type safety**: Comprehensive TypeScript interfaces
 - **Component composition**: Props-based data flow from App.tsx
 - **API routes**: All AI/external service calls through Next.js API routes
+
+## Documentation Structure
+
+### AI Documentation Directories
+- **ai_changelog/** - Historical record of changes and versions
+- **ai_docs/** - Technical documentation, guides, and analysis
+- **ai_issues/** - Bug reports and issue tracking
+- **ai_research/** - Research notes and experiments
+- **ai_specs/** - Feature and API specifications
+
+## Important Notes for Developers
+
+### Before Testing
+⚠️ Always use DevTools to verify functionality. Never assume code is working without testing.
+
+### Common Development Tasks
+- **Start dev server**: `npm run dev` (runs on port 3457)
+- **Type checking**: `npm run typecheck` (catches TypeScript errors early)
+- **Linting**: `npm run lint:ci` (strict mode with zero warnings tolerance)
+- **Building**: `npm run build` (always test build before committing)
+
+### Recent Project Status
+- **Last Major Update**: AI SDK v5 upgrade with MCP integration
+- **Current Phase**: Cleanup and code organization (commit: 192c78f)
+- **Modified Files**: 35 files pending review
+- **Documentation**: Recently reorganized into structured ai_* directories
+
+### Best Practices
+1. Test UI changes with DevTools to verify visual appearance
+2. Use TypeScript strict mode - fix all type errors before committing
+3. Keep components small and focused - one component per file
+4. Document complex logic with inline comments
+5. Follow Portuguese naming for user-facing text, English for code
+6. Verify API endpoints with test routes before integrating into UI
+
+### Known Issues & Limitations
+- See `/ai_issues/` directory for open bugs and blockers
+- Clerk authentication has bypass mode for development
+- Supabase fallback to localStorage for offline support
