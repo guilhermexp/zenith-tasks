@@ -27,11 +27,19 @@ export function useSupabaseItems() {
       logger.info('Loaded from Supabase', { count: loadedItems.length, hook: 'useSupabaseItems' })
       setItems(loadedItems)
     } catch (err) {
-      logger.error('Error loading from Supabase', err, { hook: 'useSupabaseItems' })
+      const networkError = ItemsService.isNetworkError(err)
+      if (networkError) {
+        logger.warn('Supabase unavailable (network)', { hook: 'useSupabaseItems' })
+      } else {
+        logger.error('Error loading from Supabase', err, { hook: 'useSupabaseItems' })
+      }
       setError('Erro ao carregar itens')
 
       // Fallback to localStorage if Supabase fails
-      logger.warn('Falling back to localStorage', { hook: 'useSupabaseItems' })
+      logger.warn('Falling back to localStorage', {
+        hook: 'useSupabaseItems',
+        reason: networkError ? 'network' : 'supabase-error'
+      })
       try {
         const stored = localStorage.getItem('zenith-tasks-items')
         if (stored && stored.trim()) {

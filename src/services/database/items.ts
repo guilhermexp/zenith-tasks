@@ -6,12 +6,21 @@ import { logger } from '@/utils/logger'
 type DBItem = Database['public']['Tables']['mind_flow_items']['Row']
 type DBSubtask = Database['public']['Tables']['subtasks']['Row']
 
+type RawItem = DBItem & {
+  subtasks?: DBSubtask[] | null
+}
+
+const ERROR_ALREADY_LOGGED: unique symbol = Symbol('ITEMS_SERVICE_ERROR_ALREADY_LOGGED')
+
+type LoggedError = Error & {
+  [typeof ERROR_ALREADY_LOGGED]?: boolean
+}
+
 export class ItemsService {
   /**
    * Load all items for a specific user
    */
   static async loadItems(userId: string): Promise<MindFlowItem[]> {
-    // Se Supabase não configurado, retorna vazio (app usa localStorage)
     if (!isSupabaseConfigured) {
       logger.info('ItemsService: Supabase not configured, using local storage')
       return []
@@ -28,14 +37,13 @@ export class ItemsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error loading items:', error)
-        throw error
+        throw this.logAndWrapError('loadItems.query', error, { userId })
       }
 
-      return (data || []).map(this.mapToMindFlowItem)
+      const items = (data ?? []).map(item => this.mapToMindFlowItem(item as RawItem))
+      return items
     } catch (error) {
-      console.error('Failed to load items:', error)
-      return []
+      throw this.logAndWrapError('loadItems', error, { userId })
     }
   }
 
@@ -48,14 +56,13 @@ export class ItemsService {
     }
 
     try {
-      // First create the main item
       const { data: newItem, error } = await supabase!
         .from('mind_flow_items')
         .insert({
           user_id: userId,
           title: item.title,
           item_type: item.type,
-          completed: item.completed || false,
+          completed: item.completed ?? false,
           summary: item.summary,
           due_date: item.dueDate,
           due_date_iso: item.dueDateISO,
@@ -65,27 +72,33 @@ export class ItemsService {
           is_recurring: item.isRecurring,
           payment_method: item.paymentMethod,
           is_paid: item.isPaid,
-          chat_history: item.chatHistory || [],
+          chat_history: item.chatHistory ?? [],
           notes: item.notes
         })
         .select()
         .single()
 
       if (error) {
-        console.error('Error creating item:', error)
-        throw error
+        throw this.logAndWrapError('createItem.insert', error, { userId, title: item.title })
       }
 
-      // Create subtasks if they exist
+      if (!newItem) {
+        throw this.logAndWrapError('createItem.insert', 'Supabase returned no item payload', {
+          userId,
+          title: item.title
+        })
+      }
+
       if (item.subtasks && item.subtasks.length > 0) {
         await this.createSubtasks(newItem.id, item.subtasks)
       }
 
-      // Return the complete item with subtasks
-      return this.mapToMindFlowItem({ ...newItem, subtasks: item.subtasks || [] })
+      return this.mapToMindFlowItem({
+        ...newItem,
+        subtasks: item.subtasks ?? []
+      } as RawItem)
     } catch (error) {
-      console.error('Failed to create item:', error)
-      throw error
+      throw this.logAndWrapError('createItem', error, { userId })
     }
   }
 
@@ -94,9 +107,8 @@ export class ItemsService {
    */
   static async updateItem(itemId: string, updates: Partial<MindFlowItem>): Promise<void> {
     try {
-      const updateData: any = {}
-      
-      // Map fields that exist in updates
+      const updateData: Record<string, unknown> = {}
+
       if (updates.title !== undefined) updateData.title = updates.title
       if (updates.completed !== undefined) updateData.completed = updates.completed
       if (updates.summary !== undefined) updateData.summary = updates.summary
@@ -112,32 +124,31 @@ export class ItemsService {
       if (updates.chatHistory !== undefined) updateData.chat_history = updates.chatHistory
       if (updates.notes !== undefined) updateData.notes = updates.notes
 
-      const { error } = await supabase!
+      const { error: updateError } = await supabase!
         .from('mind_flow_items')
         .update(updateData)
         .eq('id', itemId)
 
-      if (error) {
-        console.error('Error updating item:', error)
-        throw error
+      if (updateError) {
+        throw this.logAndWrapError('updateItem.update', updateError, { itemId })
       }
 
-      // Handle subtasks update if provided
       if (updates.subtasks !== undefined) {
-        // Delete existing subtasks
-        await supabase!
+        const { error: deleteError } = await supabase!
           .from('subtasks')
           .delete()
           .eq('parent_item_id', itemId)
 
-        // Create new subtasks
+        if (deleteError) {
+          throw this.logAndWrapError('updateItem.clearSubtasks', deleteError, { itemId })
+        }
+
         if (updates.subtasks.length > 0) {
           await this.createSubtasks(itemId, updates.subtasks)
         }
       }
     } catch (error) {
-      console.error('Failed to update item:', error)
-      throw error
+      throw this.logAndWrapError('updateItem', error, { itemId })
     }
   }
 
@@ -152,12 +163,10 @@ export class ItemsService {
         .eq('id', itemId)
 
       if (error) {
-        console.error('Error deleting item:', error)
-        throw error
+        throw this.logAndWrapError('deleteItem.delete', error, { itemId })
       }
     } catch (error) {
-      console.error('Failed to delete item:', error)
-      throw error
+      throw this.logAndWrapError('deleteItem', error, { itemId })
     }
   }
 
@@ -166,7 +175,6 @@ export class ItemsService {
    */
   static async toggleItem(itemId: string): Promise<void> {
     try {
-      // First get current status
       const { data: item, error: fetchError } = await supabase!
         .from('mind_flow_items')
         .select('completed')
@@ -174,23 +182,23 @@ export class ItemsService {
         .single()
 
       if (fetchError) {
-        console.error('Error fetching item:', fetchError)
-        throw fetchError
+        throw this.logAndWrapError('toggleItem.fetch', fetchError, { itemId })
       }
 
-      // Update with toggled status
+      if (!item) {
+        throw this.logAndWrapError('toggleItem.fetch', 'Supabase returned no item payload', { itemId })
+      }
+
       const { error } = await supabase!
         .from('mind_flow_items')
         .update({ completed: !item.completed })
         .eq('id', itemId)
 
       if (error) {
-        console.error('Error toggling item:', error)
-        throw error
+        throw this.logAndWrapError('toggleItem.update', error, { itemId })
       }
     } catch (error) {
-      console.error('Failed to toggle item:', error)
-      throw error
+      throw this.logAndWrapError('toggleItem', error, { itemId })
     }
   }
 
@@ -206,12 +214,10 @@ export class ItemsService {
         .eq('completed', true)
 
       if (error) {
-        console.error('Error clearing completed items:', error)
-        throw error
+        throw this.logAndWrapError('clearCompleted.delete', error, { userId })
       }
     } catch (error) {
-      console.error('Failed to clear completed items:', error)
-      throw error
+      throw this.logAndWrapError('clearCompleted', error, { userId })
     }
   }
 
@@ -223,7 +229,7 @@ export class ItemsService {
       const subtasksToInsert = subtasks.map((subtask, index) => ({
         parent_item_id: parentItemId,
         title: subtask.title,
-        completed: subtask.completed || false,
+        completed: subtask.completed ?? false,
         position: index
       }))
 
@@ -232,43 +238,50 @@ export class ItemsService {
         .insert(subtasksToInsert)
 
       if (error) {
-        console.error('Error creating subtasks:', error)
-        throw error
+        throw this.logAndWrapError('createSubtasks.insert', error, {
+          parentItemId,
+          count: subtasks.length
+        })
       }
     } catch (error) {
-      console.error('Failed to create subtasks:', error)
-      throw error
+      throw this.logAndWrapError('createSubtasks', error, { parentItemId })
     }
   }
 
   /**
    * Map database item to MindFlowItem type
    */
-  private static mapToMindFlowItem(data: any): MindFlowItem {
+  private static mapToMindFlowItem(data: RawItem): MindFlowItem {
+    const subtasks = Array.isArray(data.subtasks)
+      ? [...data.subtasks]
+          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+          .map(subtask => ({
+            id: subtask.id,
+            title: subtask.title,
+            completed: subtask.completed,
+            createdAt: subtask.created_at
+          }))
+      : []
+
     return {
       id: data.id,
       title: data.title,
-      completed: data.completed || false,
+      completed: data.completed ?? false,
       createdAt: data.created_at,
-      summary: data.summary,
+      summary: data.summary ?? undefined,
       type: data.item_type,
-      dueDate: data.due_date,
-      dueDateISO: data.due_date_iso,
-      subtasks: data.subtasks?.sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
-        id: s.id,
-        title: s.title,
-        completed: s.completed,
-        createdAt: s.created_at
-      })) || [],
-      suggestions: data.suggestions,
+      dueDate: data.due_date ?? undefined,
+      dueDateISO: data.due_date_iso ?? undefined,
+      subtasks,
+      suggestions: data.suggestions ?? undefined,
       isGeneratingSubtasks: data.is_generating_subtasks,
-      chatHistory: data.chat_history,
-      transactionType: data.transaction_type,
-      amount: data.amount,
+      chatHistory: data.chat_history ?? [],
+      transactionType: data.transaction_type ?? undefined,
+      amount: data.amount ?? undefined,
       isRecurring: data.is_recurring,
-      paymentMethod: data.payment_method,
+      paymentMethod: data.payment_method ?? undefined,
       isPaid: data.is_paid,
-      notes: data.notes
+      notes: data.notes ?? undefined
     }
   }
 
@@ -277,8 +290,8 @@ export class ItemsService {
    */
   static async setDueDate(itemId: string, date: Date | null): Promise<void> {
     try {
-      const updateData: any = {}
-      
+      const updateData: Record<string, string | null> = {}
+
       if (date) {
         updateData.due_date = date.toLocaleDateString('pt-BR')
         updateData.due_date_iso = date.toISOString()
@@ -293,12 +306,161 @@ export class ItemsService {
         .eq('id', itemId)
 
       if (error) {
-        console.error('Error setting due date:', error)
-        throw error
+        throw this.logAndWrapError('setDueDate.update', error, { itemId })
       }
     } catch (error) {
-      console.error('Failed to set due date:', error)
-      throw error
+      throw this.logAndWrapError('setDueDate', error, { itemId })
     }
+  }
+
+  static isNetworkError(error: unknown): error is Error {
+    return error instanceof Error && error.name === 'SupabaseNetworkError'
+  }
+
+  private static logAndWrapError(operation: string, error: unknown, context: Record<string, unknown> = {}): Error {
+    const fallbackMessage = `ItemsService.${operation} failed`
+    const normalized = this.normalizeError(error, fallbackMessage) as LoggedError
+
+    if (!normalized[ERROR_ALREADY_LOGGED]) {
+      const metadata = this.extractSupabaseErrorContext(error)
+      const networkContext = this.isNetworkError(normalized) ? { isNetworkError: true } : {}
+      logger.error(fallbackMessage, normalized, {
+        operation,
+        ...context,
+        ...(metadata ?? {}),
+        ...networkContext
+      })
+      normalized[ERROR_ALREADY_LOGGED] = true
+    }
+
+    return normalized
+  }
+
+  private static normalizeError(error: unknown, fallbackMessage: string): Error {
+    if (error instanceof Error) {
+      if (!error.message) {
+        error.message = fallbackMessage
+      }
+
+      if (this.isNetworkErrorMessage(error.message)) {
+        return this.createNetworkError(fallbackMessage, error)
+      }
+
+      return error
+    }
+
+    if (typeof error === 'string' && error.trim().length > 0) {
+      const trimmed = error.trim()
+
+      if (this.isNetworkErrorMessage(trimmed)) {
+        return this.createNetworkError(fallbackMessage, trimmed)
+      }
+
+      return new Error(trimmed)
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const errRecord = error as Record<string, unknown>
+      const code = typeof errRecord.code === 'string' && errRecord.code.trim().length > 0
+        ? errRecord.code.trim()
+        : undefined
+      const textCandidates = (['message', 'details', 'hint', 'error', 'statusText'] as const)
+        .map(key => {
+          const value = errRecord[key]
+          return typeof value === 'string' ? value.trim() : undefined
+        })
+        .filter((value): value is string => !!value)
+
+      if (textCandidates.some(value => this.isNetworkErrorMessage(value))) {
+        return this.createNetworkError(fallbackMessage, errRecord)
+      }
+
+      const seen = new Set<string>()
+      const normalizedParts = textCandidates
+        .map(value => value.replace(/\s+/g, ' ').trim())
+        .filter(value => {
+          if (!value) return false
+          const key = value.toLowerCase()
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+
+      const parts: string[] = [fallbackMessage]
+      if (code) {
+        parts.push(`[${code}]`)
+      }
+      parts.push(...normalizedParts)
+
+      const message = parts.join(' ').trim()
+      return new Error(message || fallbackMessage)
+    }
+
+    if (error !== undefined) {
+      const stringified = String(error).trim()
+
+      if (this.isNetworkErrorMessage(stringified)) {
+        return this.createNetworkError(fallbackMessage, error)
+      }
+
+      return stringified
+        ? new Error(`${fallbackMessage}: ${stringified}`)
+        : new Error(fallbackMessage)
+    }
+
+    return new Error(fallbackMessage)
+  }
+
+  private static extractSupabaseErrorContext(error: unknown): Record<string, unknown> | undefined {
+    if (typeof error !== 'object' || error === null) {
+      return undefined
+    }
+
+    const errRecord = error as Record<string, unknown>
+    const context: Record<string, unknown> = {}
+
+    const assignIfPresent = (key: string, targetKey = key) => {
+      const value = errRecord[key]
+      if (value === undefined || value === null) {
+        return
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (trimmed.length > 0) {
+          context[targetKey] = trimmed
+        }
+      } else {
+        context[targetKey] = value
+      }
+    }
+
+    assignIfPresent('code')
+    assignIfPresent('details')
+    assignIfPresent('hint')
+    assignIfPresent('message', 'supabaseMessage')
+    assignIfPresent('status')
+
+    return Object.keys(context).length > 0 ? context : undefined
+  }
+
+  private static createNetworkError(fallbackMessage: string, raw: unknown): LoggedError {
+    const error = new Error(`${fallbackMessage}: network request failed`) as LoggedError & { cause?: unknown }
+    error.name = 'SupabaseNetworkError'
+    error.cause = raw
+    return error
+  }
+
+  private static isNetworkErrorMessage(value?: string | null): boolean {
+    if (!value) {
+      return false
+    }
+
+    const normalized = value.toLowerCase()
+    return normalized.includes('failed to fetch')
+      || normalized.includes('network request failed')
+      || normalized.includes('network error')
+      || normalized.includes('net::err')
+      || normalized.includes('dns lookup')
   }
 }

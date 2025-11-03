@@ -9,7 +9,7 @@ Um aplicativo moderno de gerenciamento de tarefas com IA integrada, desenvolvido
 - 📅 **Calendário Interativo** - Visualização temporal de compromissos
 - 💰 **Gestão Financeira** - Controle de entrada e saídas
 - 📋 **Notas de Reunião** - Transcrição e resumo automático com IA
-- 🔌 **MCP Integration** - Suporte ao Model Context Protocol para extensibilidade
+
 - ☁️ **Sincronização em Tempo Real** - Via Supabase (PostgreSQL + Realtime)
 - 🔐 **Autenticação Segura** - Via Clerk (com bypass opcional para dev)
 
@@ -32,7 +32,7 @@ Um aplicativo moderno de gerenciamento de tarefas com IA integrada, desenvolvido
 ### Infrastructure
 - **Vercel** - Hosting & deployment
 - **Supabase Cloud** - Database & realtime subscriptions
-- **Upstash Redis** - Optional caching (MCP registry)
+
 
 ## 🚀 Quick Start
 
@@ -87,7 +87,7 @@ npm run typecheck # Verificação de tipos TypeScript
 ### AI Documentation
 
 - **[TOOLS_DISPONIVEIS.md](./ai_docs/TOOLS_DISPONIVEIS.md)** - Complete list of 17 AI assistant tools with parameters
-- **[MARKETPLACE_IMPLEMENTATION.md](./ai_docs/MARKETPLACE_IMPLEMENTATION.md)** - MCP marketplace integration guide
+
 - **[CLERK_CONFIGURADO.md](./ai_docs/CLERK_CONFIGURADO.md)** - Authentication setup documentation
 
 ### Documentation Directories
@@ -106,7 +106,7 @@ zenith-tasks/
 │   │   ├── api/                # API Routes
 │   │   │   ├── assistant/      # Assistente IA com tools
 │   │   │   ├── inbox/          # Análise de texto
-│   │   │   ├── mcp/            # MCP servers
+
 │   │   │   ├── models/         # Lista de modelos
 │   │   │   └── ...
 │   │   ├── layout.tsx          # Root layout
@@ -127,7 +127,6 @@ zenith-tasks/
 │   ├── services/               # Business logic
 │   │   ├── ai/                 # AI services
 │   │   ├── database/           # Database services
-│   │   ├── mcp/                # MCP client
 │   │   └── ...
 │   ├── types/                  # TypeScript types
 │   └── utils/                  # Utilities
