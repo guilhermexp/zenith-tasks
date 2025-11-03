@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
+import { logger } from '@/utils/logger';
+
 import { MicIcon, SoundWaveIcon, SpinnerIcon, CheckIcon } from './Icons';
 
 interface TalkModeModalProps {
@@ -11,6 +13,8 @@ interface TalkModeModalProps {
 }
 
 type Status = 'idle' | 'permission' | 'recording' | 'transcribing' | 'analyzing' | 'done' | 'error';
+
+const logContext = { component: 'TalkModeModal' } as const;
 
 const TalkModeModal: React.FC<TalkModeModalProps> = ({ isOpen, onClose, onAudioReady }) => {
   const [status, setStatusState] = useState<Status>('idle');
@@ -60,28 +64,28 @@ const TalkModeModal: React.FC<TalkModeModalProps> = ({ isOpen, onClose, onAudioR
         // Process audio if we have chunks
         if (audioChunksRef.current.length > 0) {
             const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-            console.log('Audio blob size:', audioBlob.size);
+            logger.debug('Audio blob recorded', { size: audioBlob.size, ...logContext });
             
             if (audioBlob.size === 0) {
-              console.warn("Audio blob is empty, closing modal.");
+              logger.warn('Audio blob is empty, closing modal.', logContext);
               onClose();
               return;
             }
 
             // Only process if we're in the transcribing state (set by handleFinish)
             const currentStatus = statusRef.current;
-            console.log('Current status when stopping:', currentStatus);
+            logger.debug('Recorder stopped', { currentStatus, ...logContext });
             
             if (currentStatus === 'transcribing' || currentStatus === 'analyzing') {
               const reader = new FileReader();
               reader.readAsDataURL(audioBlob);
               reader.onloadend = async () => {
                 const base64data = (reader.result as string).split(',')[1];
-                console.log('Base64 audio data length:', base64data.length);
+                logger.debug('Base64 audio data prepared', { length: base64data.length, ...logContext });
                 
                 try {
                   const onProgressUpdate = () => {
-                    console.log('Progress update: moving to analyzing');
+                    logger.info('Progress update: moving to analyzing', logContext);
                     setStatus('analyzing');
                   };
                   const newItems = await onAudioReady(base64data, onProgressUpdate);
@@ -89,7 +93,7 @@ const TalkModeModal: React.FC<TalkModeModalProps> = ({ isOpen, onClose, onAudioR
                   setStatus('done');
                   setTimeout(onClose, 2500);
                 } catch (e) {
-                  console.error("Error processing audio with Gemini:", e);
+                  logger.error('Error processing audio with Gemini', e, logContext);
                   setErrorMessage(`Erro: ${e instanceof Error ? e.message : 'Não foi possível processar o áudio'}`);
                   setStatus('error');
                 }
@@ -101,16 +105,16 @@ const TalkModeModal: React.FC<TalkModeModalProps> = ({ isOpen, onClose, onAudioR
       recorder.start();
 
     } catch (err) {
-      console.error("Error accessing microphone:", err);
+      logger.error('Error accessing microphone', err, logContext);
       setErrorMessage("A permissão para o microfone foi negada. Por favor, habilite nas configurações do seu navegador.");
       setStatus('error');
     }
-  }, [onAudioReady, onClose]);
+  }, [onAudioReady, onClose, stopRecording]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
       stopRecording();
       onClose();
-  };
+  }, [stopRecording, onClose]);
   
   const handleRetry = () => {
     setErrorMessage('');
@@ -130,8 +134,7 @@ const TalkModeModal: React.FC<TalkModeModalProps> = ({ isOpen, onClose, onAudioR
         setCreatedItems([]);
       }, 300); // Delay cleanup for exit animation
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, startRecording, stopRecording]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

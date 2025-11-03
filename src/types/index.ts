@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-export type MindFlowItemType = 'Tarefa' | 'Ideia' | 'Nota' | 'Lembrete' | 'Financeiro' | 'Reunião';
+export type MindFlowItemType = 'Tarefa' | 'Ideia' | 'Nota' | 'Lembrete' | 'Financeiro';
 
 export interface Subtask {
   id: string;
@@ -22,29 +22,6 @@ export interface ChatMessage {
   groundingMetadata?: GroundingChunk[];
 }
 
-export interface ChatBubble {
-  speaker: string;
-  text: string;
-  isCurrentUser: boolean;
-}
-
-export interface MeetingActionItem {
-  task: string;
-  responsible?: string;
-  deadline?: string;
-}
-
-export interface MeetingDetails {
-  summary: string;
-  topics: { title: string; content: string }[];
-  actionItems: MeetingActionItem[];
-  participants?: string[];
-  startTime?: string;
-  duration?: string;
-  decisions?: string[];
-  nextSteps?: string[];
-}
-
 export interface MindFlowItem {
   id:string;
   title: string;
@@ -64,9 +41,6 @@ export interface MindFlowItem {
   isRecurring?: boolean;
   paymentMethod?: string;
   isPaid?: boolean;
-  // Campos de Reunião
-  meetingDetails?: MeetingDetails;
-  transcript?: ChatBubble[];
   // Campo de anotações
   notes?: string;
 }

@@ -40,8 +40,6 @@ export function getItemsForNav(items: MindFlowItem[], navId: string): MindFlowIt
       return filterItemsByType(items, 'Nota')
     case 'lembretes':
       return filterItemsByType(items, 'Lembrete')
-    case 'reunioes':
-      return filterItemsByType(items, 'Reunião')
     default:
       return items
   }

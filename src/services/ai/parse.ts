@@ -2,7 +2,7 @@ import type { MindFlowItem, MindFlowItemType, Subtask, ChatMessage } from "@/typ
 import { naturalToISO } from "@/utils/date"
 
 export const ALLOWED_TYPES: MindFlowItemType[] = [
-  'Tarefa', 'Ideia', 'Nota', 'Lembrete', 'Financeiro', 'Reunião'
+  'Tarefa', 'Ideia', 'Nota', 'Lembrete', 'Financeiro'
 ]
 
 export function extractJson(text: string): any | null {

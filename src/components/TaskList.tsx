@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import type { MindFlowItem, MindFlowItemType } from '../types';
-import { 
-  MoreHorizontalIcon, CalendarIcon, CheckIcon, MicIcon, CheckCircleIcon, 
-  LightbulbIcon, PageIcon, BellIcon, MenuIcon, ChevronLeftIcon, 
-  ChevronRightIcon, PlusIcon, DollarSignIcon, SpinnerIcon, TrashIcon, UsersIcon, SearchIcon,
+import {
+  MoreHorizontalIcon, CalendarIcon, CheckIcon, MicIcon, CheckCircleIcon,
+  LightbulbIcon, PageIcon, BellIcon, MenuIcon, ChevronLeftIcon,
+  ChevronRightIcon, PlusIcon, DollarSignIcon, SpinnerIcon, TrashIcon, SearchIcon,
   ListIcon, MessageCircleIcon
 } from './Icons';
 
@@ -31,8 +31,7 @@ const typeStyles: Record<MindFlowItemType, { icon: React.FC<{className?: string}
   Ideia: { icon: LightbulbIcon, color: 'text-neutral-400', bg: 'bg-neutral-900/40' },
   Nota: { icon: PageIcon, color: 'text-neutral-500', bg: 'bg-neutral-900/40' },
   Lembrete: { icon: BellIcon, color: 'text-neutral-400', bg: 'bg-neutral-900/40' },
-  Financeiro: { icon: DollarSignIcon, color: 'text-neutral-300', bg: 'bg-neutral-900/40' },
-  Reunião: { icon: UsersIcon, color: 'text-neutral-300', bg: 'bg-neutral-900/40' },
+  Financeiro: { icon: DollarSignIcon, color: 'text-neutral-300', bg: 'bg-neutral-900/40' }
 };
 
 const DatePickerModal: React.FC<{
@@ -290,9 +289,6 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
       </div>
       
       <div className="ml-3 flex items-center gap-1">
-        {item.type === 'Reunião' && (
-          <UsersIcon className="w-4 h-4 text-accent-soft" />
-        )}
         {item.type === 'Ideia' && (
           <LightbulbIcon className="w-4 h-4 text-accent-soft" />
         )}
@@ -406,18 +402,7 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
             {isMenuOpen && (
               <div className="absolute top-full right-0 mt-2 w-56 bg-neutral-900 border border-neutral-700/50 rounded-xl shadow-2xl overflow-hidden animate-fade-in-fast z-10">
                 <div className="p-2">
-                  <button 
-                    onClick={() => {
-                      onAddItem("new_meeting_note");
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full text-left flex items-center gap-3 px-3 py-2 text-sm rounded-lg text-neutral-200 hover:bg-neutral-800/60 transition-colors"
-                  >
-                    <UsersIcon className="w-4 h-4 text-neutral-400" />
-                    <span>Nova nota de reunião</span>
-                  </button>
-                  <div className="border-t border-neutral-700/50 my-1"></div>
-                  <button 
+                  <button
                     onClick={() => {
                       onClearCompleted();
                       setIsMenuOpen(false);

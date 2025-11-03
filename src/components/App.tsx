@@ -6,7 +6,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/Toast';
 import { useSupabaseItems } from '../hooks/useSupabaseItems';
 import type { Tools } from '@/services/ai/tools';
-import type { MindFlowItem, NavItem, MindFlowItemType, ChatMessage, ChatBubble, MeetingDetails } from '../types';
+import type { MindFlowItem, NavItem, MindFlowItemType, ChatMessage } from '../types';
 
 // Components
 import CalendarPage from './CalendarPage';
@@ -19,7 +19,6 @@ import {
   PageIcon, DollarSignIcon, SettingsIcon
 } from './Icons';
 import ItemsPreviewModal from './ItemsPreviewModal';
-import MeetingPage from './MeetingPage';
 import SettingsPage from './SettingsPage';
 import Sidebar from './Sidebar';
 import TalkModeModal from './TalkModeModal';
@@ -109,8 +108,6 @@ const App: React.FC = () => {
         return baseItems.filter(item => item.type === 'Nota');
       case 'lembretes':
         return baseItems.filter(item => item.type === 'Lembrete');
-      case 'reunioes':
-        return baseItems.filter(item => item.type === 'Reunião');
       default:
         return baseItems;
     }
@@ -151,26 +148,11 @@ const App: React.FC = () => {
       icon: PageIcon, 
       count: getItemsForNav('notas').length 
     },
-    { 
-      id: 'lembretes', 
-      label: 'Lembretes', 
-      icon: BellIcon, 
-      count: getItemsForNav('lembretes').length 
-    },
-    
-    { id: 'meetings-header', label: 'MEETINGS', isHeader: true },
-    { 
-      id: 'reunioes', 
-      label: 'Reuniões', 
-      icon: UsersIcon, 
-      count: getItemsForNav('reunioes').length,
-      children: items.filter(item => item.type === 'Reunião')
-        .slice(0, 5)
-        .map(item => ({
-          id: `meeting-${item.id}`,
-          label: item.title.substring(0, 30) + (item.title.length > 30 ? '...' : ''),
-          icon: undefined
-        }))
+    {
+      id: 'lembretes',
+      label: 'Lembretes',
+      icon: BellIcon,
+      count: getItemsForNav('lembretes').length
     }
   ];
 
@@ -225,28 +207,6 @@ const App: React.FC = () => {
 
   // Item Management Functions
   const addItem = async (text: string): Promise<any> => {
-    if (text === "new_meeting_note") {
-      // Create a new meeting note
-      const newMeeting = await addItemToDb({
-        title: `Reunião ${new Date().toLocaleDateString('pt-BR')}`,
-        type: 'Reunião',
-        completed: false,
-        meetingDetails: {
-          summary: '',
-          topics: [],
-          actionItems: []
-        },
-        transcript: []
-      });
-      
-      if (newMeeting) {
-        setActiveItem(newMeeting);
-        setActiveNavItem('reunioes');
-        return [newMeeting];
-      }
-      return [];
-    }
-
     setIsLoading(true);
     try {
       const newItems = await analyzeTextWithAI(text);
@@ -394,28 +354,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Meeting Functions
-  const createMeetingNote = async (transcript: ChatBubble[], details: MeetingDetails): Promise<MindFlowItem> => {
-    const newMeeting: MindFlowItem = {
-      id: Date.now().toString(),
-      title: `Reunião - ${new Date().toLocaleDateString('pt-BR')}`,
-      type: 'Reunião',
-      completed: false,
-      createdAt: new Date().toISOString(),
-      transcript,
-      meetingDetails: details
-    };
-
-    const addedMeeting = await addItemToDb({
-      title: newMeeting.title,
-      type: newMeeting.type,
-      completed: newMeeting.completed,
-      transcript: newMeeting.transcript,
-      meetingDetails: newMeeting.meetingDetails
-    });
-    return addedMeeting || newMeeting;
-  };
-
   // Financial Functions
   const addFinancialItem = async (transactionType: 'Entrada' | 'Saída') => {
     const newItem = await addItemToDb({
@@ -436,9 +374,8 @@ const App: React.FC = () => {
   const getCurrentPageTitle = () => {
     const specialPages = {
       'calendario': 'Calendário',
-      'atualizacoes': 'Atualizações', 
+      'atualizacoes': 'Atualizações',
       'financas': 'Finanças',
-      'reunioes': 'Reuniões',
       'caixa-entrada': 'Caixa de Entrada'
     };
     
@@ -452,19 +389,6 @@ const App: React.FC = () => {
 
   // Render current page content
   const renderCurrentPage = () => {
-    // Check if it's a meeting detail page
-    if (activeNavItem.startsWith('meeting-')) {
-      return (
-        <MeetingPage 
-          items={items}
-          onSelectItem={setActiveItem}
-          onUpdateItem={updateItem}
-          onCreateMeetingNote={createMeetingNote}
-          onDeleteItem={deleteItem}
-        />
-      );
-    }
-    
     switch (activeNavItem) {
       case 'calendario':
         return (
@@ -492,16 +416,6 @@ const App: React.FC = () => {
       case 'config':
         return (
           <SettingsPage />
-        );
-      case 'reunioes':
-        return (
-          <MeetingPage 
-            items={items}
-            onSelectItem={setActiveItem}
-            onUpdateItem={updateItem}
-            onCreateMeetingNote={createMeetingNote}
-            onDeleteItem={deleteItem}
-          />
         );
       default:
         return (
@@ -555,7 +469,7 @@ const App: React.FC = () => {
         </div>
         
         {/* Detail Panel Sidebar */}
-        {activeItem && !['calendario', 'atualizacoes', 'financas', 'reunioes'].includes(activeNavItem) && !activeNavItem.startsWith('meeting-') && (
+        {activeItem && !['calendario', 'atualizacoes', 'financas'].includes(activeNavItem) && (
           <DetailPanel
             item={items.find(i => i.id === activeItem.id) || activeItem}
             onClose={() => setActiveItem(null)}

@@ -153,8 +153,6 @@ export class PromptOptimizer {
       switch (context.item.type) {
         case 'Financeiro':
           return PROMPT_TEMPLATES.financial_assistant
-        case 'Reunião':
-          return PROMPT_TEMPLATES.meeting_assistant
         case 'Tarefa':
         case 'Lembrete':
           return PROMPT_TEMPLATES.task_management

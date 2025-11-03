@@ -101,7 +101,7 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
     if (selectedModel && selectedModel !== value) {
       onChange?.(selectedModel);
     }
-  }, [selectedModel]);
+  }, [selectedModel, value, onChange]);
 
   const handleSelect = (modelId: string) => {
     setSelectedModel(modelId);

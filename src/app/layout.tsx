@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-
 import Providers from './providers';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Zenith Tasks - Gerenciador de Tarefas Inteligente',
@@ -58,7 +54,7 @@ export default function RootLayout({
             }
           />
         </head>
-        <body className={`${inter.className} h-full antialiased`}>
+        <body className="font-sans h-full antialiased">
           {children}
         </body>
       </html>

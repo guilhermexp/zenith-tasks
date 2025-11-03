@@ -65,8 +65,6 @@ export class ItemsService {
           payment_method: item.paymentMethod,
           is_paid: item.isPaid,
           chat_history: item.chatHistory || [],
-          meeting_details: item.meetingDetails,
-          transcript: item.transcript || [],
           notes: item.notes
         })
         .select()
@@ -111,8 +109,6 @@ export class ItemsService {
       if (updates.paymentMethod !== undefined) updateData.payment_method = updates.paymentMethod
       if (updates.isPaid !== undefined) updateData.is_paid = updates.isPaid
       if (updates.chatHistory !== undefined) updateData.chat_history = updates.chatHistory
-      if (updates.meetingDetails !== undefined) updateData.meeting_details = updates.meetingDetails
-      if (updates.transcript !== undefined) updateData.transcript = updates.transcript
       if (updates.notes !== undefined) updateData.notes = updates.notes
 
       const { error } = await supabase!
@@ -271,8 +267,6 @@ export class ItemsService {
       isRecurring: data.is_recurring,
       paymentMethod: data.payment_method,
       isPaid: data.is_paid,
-      meetingDetails: data.meeting_details,
-      transcript: data.transcript,
       notes: data.notes
     }
   }

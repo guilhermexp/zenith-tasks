@@ -12,16 +12,6 @@ export function useSupabaseItems() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Load items when user is authenticated
-  useEffect(() => {
-    if (!isLoaded || !user) {
-      setIsLoading(false)
-      return
-    }
-
-    loadItems()
-  }, [user, isLoaded])
-
   const loadItems = useCallback(async () => {
     if (!user) {
       logger.debug('No user found for Supabase', { hook: 'useSupabaseItems' })
@@ -60,6 +50,16 @@ export function useSupabaseItems() {
       setIsLoading(false)
     }
   }, [user])
+
+  // Load items when user is authenticated
+  useEffect(() => {
+    if (!isLoaded || !user) {
+      setIsLoading(false)
+      return
+    }
+
+    loadItems()
+  }, [user, isLoaded, loadItems])
 
   const addItem = useCallback(async (item: Omit<MindFlowItem, 'id' | 'createdAt'>): Promise<MindFlowItem | null> => {
     if (!user) {
