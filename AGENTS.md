@@ -79,12 +79,6 @@ See `/ai_docs/TOOLS_DISPONIVEIS.md` for complete tool specifications:
 - Streaming: Supported for chat and assistant endpoints
 - Error handling: Automatic fallback and retry logic
 
-### MCP (Model Context Protocol)
-- Registry: `/api/mcp/servers/`
-- Marketplace: Available servers in `src/services/mcp/marketplace-registry.ts`
-- Client: TypeScript MCP client in `src/services/mcp/client.ts`
-- Auth: OAuth2, API key, and Basic auth support
-- See `/ai_docs/MARKETPLACE_IMPLEMENTATION.md` for details
 
 ## Documentation Structure
 

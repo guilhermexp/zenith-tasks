@@ -159,7 +159,6 @@ C4Container
   - `/api/subtasks/generate` - Geração de subtarefas
   - `/api/chat/for-item` - Chat contextual
   - `/api/assistant/*` - Assistente IA com tools
-  - `/api/mcp/*` - Gerenciamento de servidores MCP
   - `/api/speech/transcribe` - Transcrição de áudio
   - `/api/models` - Lista modelos disponíveis
   - `/api/credits/*` - Gerenciamento de créditos
@@ -231,7 +230,7 @@ src/
 │       ├── SiriOrb.tsx           # Animação de IA
 │       └── visualize-booking.tsx # Calendário interativo
 ├── hooks/                        # React Hooks customizados
-│   ├── useSupabaseItems.ts       # Hook para itens do Supabase
+│   ├── useItems.ts               # Hook para itens persistidos no banco
 │   ├── useRealTimeTranscription.ts # Transcrição em tempo real
 │   └── use-click-outside.tsx     # Detectar cliques externos
 ├── lib/                          # Bibliotecas e configurações
@@ -303,7 +302,7 @@ Responsabilidades:
 - Gerenciamento de estado global de itens
 - Roteamento entre páginas (caixa-entrada, tarefas, calendário, etc)
 - Orquestração de operações CRUD
-- Integração com Supabase via useSupabaseItems hook
+- Integração com Neon via useItems hook
 - Bypass de autenticação Clerk (usuário fake: local-user-bypass)
 ```
 
@@ -526,7 +525,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant App as App.tsx
-    participant Hook as useSupabaseItems
+    participant Hook as useItems
     participant Service as ItemsService
     participant Supabase as Supabase DB
     participant LS as localStorage

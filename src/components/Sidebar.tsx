@@ -58,15 +58,15 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
           </li>
         );
       }
-      
+
       const isActive = !searchQuery && activeItem === item.id;
       const isExpanded = expandedItems.includes(item.id);
       const hasChildren = item.children && item.children.length > 0;
-      
+
       const handleItemClick = () => {
         if (hasChildren) {
-          setExpandedItems(prev => 
-            prev.includes(item.id) 
+          setExpandedItems(prev =>
+            prev.includes(item.id)
               ? prev.filter(id => id !== item.id)
               : [...prev, item.id]
           );
@@ -74,7 +74,7 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
           onSelectItem(item.id);
         }
       };
-      
+
       return (
         <React.Fragment key={item.id}>
           <li
@@ -98,11 +98,11 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
             <ul className="space-y-0.5 mt-1">
               {(item.children || []).map((child) => {
                 return (
-                  <li 
+                  <li
                     key={child.id}
                     className={`ml-6 pr-2 py-1.5 text-sm rounded-md cursor-pointer transition-colors overflow-hidden ${
-                      activeItem === child.id 
-                        ? 'bg-neutral-800/60' 
+                      activeItem === child.id
+                        ? 'bg-neutral-800/60'
                         : 'hover:bg-white/5'
                     }`}
                     onClick={(e) => {
@@ -160,13 +160,13 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
                 />
             </div>
         </div>
-      
+
       <div className="flex-1 pr-2">
         <nav className="space-y-1">
           <ul>{renderNavItems(navItems)}</ul>
         </nav>
       </div>
-      
+
       <div ref={dropdownRef} className="mt-auto relative">
         <div className="flex items-center justify-between p-2">
             <button
@@ -193,13 +193,6 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
             </div>
         </div>
       </div>
-      <style jsx>{`
-        @keyframes fade-in-fast {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-fast { animation: fade-in-fast 0.1s ease-out forwards; }
-      `}</style>
     </aside>
   );
 };

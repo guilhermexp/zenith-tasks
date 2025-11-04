@@ -116,13 +116,6 @@ const DatePickerModal: React.FC<{
           Remover data
         </button>
       </div>
-      <style jsx>{`
-        @keyframes fade-in-fast {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-fast { animation: fade-in-fast 0.15s ease-out forwards; }
-      `}</style>
     </div>
   );
 };
@@ -130,28 +123,28 @@ const DatePickerModal: React.FC<{
 const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSelect: () => void; onDelete: (id: string) => void; isActive: boolean; onOpenDatePicker: (itemId: string, e: React.MouseEvent<HTMLButtonElement>) => void; }> = ({ item, onToggle, onSelect, onDelete, isActive, onOpenDatePicker }) => {
   const completedSubtasks = item.subtasks?.filter(s => s.completed).length || 0;
   const totalSubtasks = item.subtasks?.length || 0;
-  
+
   // Calculate days for due date display
   const getDueDateText = (dateStr: string | undefined) => {
     if (!dateStr) return '';
-    
+
     try {
       // Parse the date string properly (handle YYYY-MM-DD format)
       const parts = dateStr.split('-');
       if (parts.length !== 3) return dateStr;
-      
+
       const year = parseInt(parts[0]);
       const month = parseInt(parts[1]) - 1; // JavaScript months are 0-based
       const day = parseInt(parts[2]);
-      
+
       const date = new Date(year, month, day);
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       date.setHours(0, 0, 0, 0);
-      
+
       const diffTime = date.getTime() - now.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays < 0) {
         const absDays = Math.abs(diffDays);
         if (absDays === 1) return 'ontem';
@@ -171,7 +164,7 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
     const now = new Date();
     const diffTime = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) {
       const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
       if (diffHours === 0) {
@@ -188,43 +181,43 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
   // Check if item is overdue
   const isOverdue = (dueDate: string | undefined) => {
     if (!dueDate || item.completed) return false;
-    
+
     try {
       const parts = dueDate.split('-');
       if (parts.length !== 3) return false;
-      
+
       const year = parseInt(parts[0]);
       const month = parseInt(parts[1]) - 1;
       const day = parseInt(parts[2]);
-      
+
       const date = new Date(year, month, day);
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       date.setHours(0, 0, 0, 0);
-      
+
       return date < now;
     } catch (e) {
       return false;
     }
   };
-  
+
   // Get days overdue
   const getDaysOverdue = (dueDate: string | undefined) => {
     if (!dueDate || !isOverdue(dueDate)) return 0;
-    
+
     try {
       const parts = dueDate.split('-');
       if (parts.length !== 3) return 0;
-      
+
       const year = parseInt(parts[0]);
       const month = parseInt(parts[1]) - 1;
       const day = parseInt(parts[2]);
-      
+
       const date = new Date(year, month, day);
       const now = new Date();
       now.setHours(0, 0, 0, 0);
       date.setHours(0, 0, 0, 0);
-      
+
       const diffTime = now.getTime() - date.getTime();
       return Math.floor(diffTime / (1000 * 60 * 60 * 24));
     } catch (e) {
@@ -233,12 +226,12 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
   };
 
   return (
-    <div 
+    <div
       className={`flex items-start py-3 group cursor-pointer transition-all ${isActive ? 'bg-neutral-900/20' : 'hover:bg-neutral-900/10'}`}
       onClick={onSelect}
     >
       <div className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0 flex items-center justify-center">
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); onToggle(item.id); }}
           className={`w-5 h-5 rounded-full border-2 ${item.completed ? 'bg-neutral-700 border-neutral-700' : 'border-neutral-700 hover:border-neutral-500'} transition-all flex items-center justify-center`}
           aria-label={item.completed ? 'Marcar como incompleta' : 'Marcar como completa'}
@@ -246,7 +239,7 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
           {item.completed && <CheckIcon className="w-3 h-3 text-neutral-400" />}
         </button>
       </div>
-      
+
       <div className="flex-1 min-w-0">
         <p className={`${item.completed ? 'line-through text-neutral-600' : 'text-neutral-100'} text-sm`}>
           {item.title}
@@ -258,11 +251,11 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
               ○ {completedSubtasks}/{totalSubtasks}
             </span>
           )}
-          
+
           {/* Due date or creation date */}
           {item.dueDate ? (
             <>
-              <button 
+              <button
                 className={`flex items-center gap-1 hover:text-neutral-400 transition-colors ${isOverdue(item.dueDate) ? 'text-orange-500/80' : ''}`}
                 onClick={(e) => { e.stopPropagation(); onOpenDatePicker(item.id, e); }}
               >
@@ -276,7 +269,7 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
           ) : (
             <>
               <span className="text-neutral-600">{getCreatedAgo(item.createdAt)}</span>
-              <button 
+              <button
                 className="flex items-center gap-1 hover:text-neutral-400 transition-colors opacity-0 group-hover:opacity-100"
                 onClick={(e) => { e.stopPropagation(); onOpenDatePicker(item.id, e); }}
               >
@@ -287,7 +280,7 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
           )}
         </div>
       </div>
-      
+
       <div className="ml-3 flex items-center gap-1">
         {item.type === 'Ideia' && (
           <LightbulbIcon className="w-4 h-4 text-accent-soft" />
@@ -298,7 +291,7 @@ const Item: React.FC<{ item: MindFlowItem; onToggle: (id: string) => void; onSel
         {item.chatHistory && item.chatHistory.length > 0 && (
           <MessageCircleIcon className="w-4 h-4 text-neutral-600" />
         )}
-        <button 
+        <button
           onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
           className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-900/20 text-neutral-600 hover:text-red-400 transition-all"
           title="Excluir"
@@ -330,7 +323,7 @@ const SmartInput: React.FC<{ onAddItem: (text: string) => Promise<any>, isLoadin
         >
           <MicIcon className="w-4 h-4" />
         </button>
-       <input 
+       <input
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
@@ -393,7 +386,7 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
             <h1 className="text-2xl lg:text-3xl font-semibold text-neutral-100 tracking-tight">{title}</h1>
           </div>
           <div className="relative hidden md:flex" ref={menuRef}>
-            <button 
+            <button
               onClick={() => setIsMenuOpen(prev => !prev)}
               className="p-2 rounded-lg bg-neutral-800/60 hover:bg-neutral-700/60 text-neutral-400 transition-colors"
             >
@@ -417,15 +410,15 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
             )}
           </div>
         </header>
-        
+
         <SmartInput onAddItem={onAddItem} isLoading={isLoading} onOpenTalkMode={onOpenTalkMode} />
-        
+
         <div>
           {items.length > 0 ? (
             items.map(item => (
-              <Item 
-                key={item.id} 
-                item={item} 
+              <Item
+                key={item.id}
+                item={item}
                 onToggle={onToggleItem}
                 onSelect={() => onSelectItem(item)}
                 onDelete={onDeleteItem}
@@ -459,13 +452,6 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
             onSelect={handleDateSelect}
         />
       )}
-      <style jsx>{`
-        @keyframes fade-in-fast {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-fast { animation: fade-in-fast 0.1s ease-out forwards; }
-      `}</style>
     </main>
   );
 };

@@ -55,7 +55,7 @@ body {
     /* warm highlights (subtle amber) */
     radial-gradient(1200px 600px at -10% -20%, rgba(255, 220, 185, 0.045), transparent 55%),
     radial-gradient(900px 500px at 110% -10%, rgba(255, 210, 170, 0.028), transparent 50%),
-    radial-gradient(800px 600px at 50% 120%, rgba(15,15,15,0.92), rgba(10,10,10,0.98));
+    linear-gradient(180deg, rgba(11, 11, 11, 0.98) 0%, rgba(11, 11, 11, 0.98) 100%);
 }
 
 /* Reusable glass surface */

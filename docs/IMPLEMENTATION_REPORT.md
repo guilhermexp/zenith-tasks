@@ -80,13 +80,6 @@ Integração completa de capacidades AI avançadas no sistema Zenith Tasks, incl
 - `ErrorHandler` - Tratamento robusto de erros
 - `SecurityManager` - Validação e sanitização
 
-### 6. **MCP Integration** ✅
-**Localização**: `/src/app/api/mcp/`
-
-- Endpoints para gestão de servidores MCP
-- Discovery de ferramentas
-- Execução remota de tools
-- Sistema de autenticação
 
 ---
 

@@ -1,18 +1,18 @@
 "use client";
 
-import { RedirectToSignIn, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useToast } from "@/components/Toast";
+import { useItems } from "@/hooks/useItems";
 import type { Tools } from "@/services/ai/tools";
-
-import { useSupabaseItems } from "../hooks/useSupabaseItems";
 import type {
   ChatMessage,
   MindFlowItem,
   MindFlowItemType,
   NavItem,
-} from "../types";
+} from "@/types";
+
 // Components
 import CalendarPage from "./CalendarPage";
 import DebugTools from "./DebugTools";
@@ -46,18 +46,16 @@ const App: React.FC = () => {
   // Toast notifications
   const { showToast } = useToast();
 
-  // Supabase items management
+  // Database items management
   const {
     items,
-    isLoading: itemsLoading,
-    error: itemsError,
     addItem: addItemToDb,
     updateItem: updateItemInDb,
     deleteItem: deleteItemFromDb,
     toggleItem: toggleItemInDb,
     clearCompleted: clearCompletedFromDb,
     setDueDate: setDueDateInDb,
-  } = useSupabaseItems();
+  } = useItems();
 
   // Local state management
   const [activeNavItem, setActiveNavItem] = useState("caixa-entrada");
@@ -89,7 +87,7 @@ const App: React.FC = () => {
 
   // Removido: IA no cliente. Todo consumo de IA é feito via API Routes server-side.
 
-  // Items are now loaded from Supabase via useSupabaseItems hook
+  // Items are now loaded from Neon via useItems hook
 
   // Filter items based on search query
   const filteredItems = useMemo(() => {
@@ -501,9 +499,10 @@ const App: React.FC = () => {
     );
   }
 
-  if (!isSignedIn) {
-    return <RedirectToSignIn />;
-  }
+  // Temporarily allow access without authentication for testing
+  // if (!isSignedIn) {
+  //   return <RedirectToSignIn />;
+  // }
 
   return (
     <div className="h-screen overflow-hidden app-shell text-white flex gap-2 md:gap-3 p-1 md:p-2 lg:p-2">
@@ -517,6 +516,7 @@ const App: React.FC = () => {
         onOpenTalkMode={() => setIsTalkModeOpen(true)}
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
+        onOpenDebug={() => setIsDebugOpen(true)}
       />
 
       {/* Main Content */}

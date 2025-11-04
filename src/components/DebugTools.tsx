@@ -20,7 +20,6 @@ interface HealthData {
     database: ServiceStatus;
     auth: ServiceStatus;
     ai: ServiceStatus;
-    mcp: ServiceStatus;
   };
   environment: {
     nodeVersion: string;
@@ -293,27 +292,7 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
                     )}
                   </div>
 
-                  {/* MCP */}
-                  <div className="bg-neutral-800 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Server className="w-5 h-5 text-neutral-400" />
-                        <span className="font-medium">MCP Servers</span>
-                      </div>
-                      {getStatusIcon(health.services.mcp.status)}
-                    </div>
-                    {health.services.mcp.servers !== undefined && (
-                      <div className="text-sm text-neutral-400">
-                        Servers: {health.services.mcp.servers}
-                      </div>
-                    )}
-                    {health.services.mcp.error && (
-                      <div className="text-sm text-red-400 mt-2">
-                        {health.services.mcp.error}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                                  </div>
               </div>
 
               {/* Environment */}

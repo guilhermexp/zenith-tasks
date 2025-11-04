@@ -6,8 +6,7 @@ import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
 
 // Mock environment variables for testing
 process.env.NODE_ENV = 'test'
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key'
+process.env.DATABASE_URL = 'postgresql://localhost:5432/testdb'
 
 describe('API Integration Tests', () => {
   const baseUrl = 'http://localhost:3000'
@@ -26,24 +25,6 @@ describe('API Integration Tests', () => {
       expect(data.services).toHaveProperty('ai')
     })
 
-    it('should handle database test requests', async () => {
-      const response = await fetch(`${baseUrl}/api/debug/health`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          service: 'database',
-          test: 'write'
-        })
-      })
-
-      const data = await response.json()
-      expect(response.status).toBe(200)
-      expect(data).toHaveProperty('timestamp')
-      expect(data).toHaveProperty('service', 'database')
-      expect(data).toHaveProperty('test', 'write')
-    })
   })
 
   describe('Chat API', () => {

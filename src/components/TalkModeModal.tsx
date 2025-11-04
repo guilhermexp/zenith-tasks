@@ -239,23 +239,6 @@ const TalkModeModal: React.FC<TalkModeModalProps> = ({ isOpen, onClose, onAudioR
           </button>
         )}
       </div>
-      <style jsx>{`
-        @keyframes fade-in-fast {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes scale-in {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes pulse-slow {
-            0%, 100% { transform: scale(1); opacity: 0.5; }
-            50% { transform: scale(1.2); opacity: 1; }
-        }
-        .animate-fade-in-fast { animation: fade-in-fast 0.2s ease-out forwards; }
-        .animate-scale-in { animation: scale-in 0.2s ease-out forwards; }
-        .animate-pulse-slow { animation: pulse-slow 2s infinite ease-in-out; }
-      `}</style>
     </div>
   );
 };

@@ -1,6 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
+import { sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+
+import { mindFlowItems } from "@/db/schema";
+import { db } from "@/lib/db";
 
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
@@ -50,32 +53,18 @@ export async function GET(request: NextRequest) {
 
   // Check database connection
   try {
-    if (
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    ) {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-      );
+    const dbStart = Date.now();
+    const [result] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(mindFlowItems);
+    const latency = Date.now() - dbStart;
 
-      const dbStart = Date.now();
-      const { error } = await supabase
-        .from("items")
-        .select("count", { count: "exact", head: true });
-      const latency = Date.now() - dbStart;
-
-      if (error) {
-        health.services.database.status = "error";
-        health.services.database.error = error.message;
-        health.status = "degraded";
-      } else {
-        health.services.database.latency = latency;
-      }
-    } else {
+    if (!result) {
       health.services.database.status = "error";
-      health.services.database.error = "Database configuration missing";
+      health.services.database.error = "Database returned no result";
       health.status = "degraded";
+    } else {
+      health.services.database.latency = latency;
     }
   } catch (error) {
     health.services.database.status = "error";
@@ -171,45 +160,7 @@ export async function POST(request: NextRequest) {
       test,
     };
 
-    if (service === "database" && test === "write") {
-      // Test database write
-      if (
-        process.env.NEXT_PUBLIC_SUPABASE_URL &&
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      ) {
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL,
-          process.env.SUPABASE_SERVICE_ROLE_KEY,
-        );
-
-        const testItem = {
-          id: `test-${Date.now()}`,
-          title: "Health check test item",
-          type: "Nota" as const,
-          completed: false,
-          createdAt: new Date().toISOString(),
-        };
-
-        const { data, error: insertError } = await supabase
-          .from("items")
-          .insert([testItem])
-          .select()
-          .single();
-
-        if (insertError) {
-          results.error = insertError.message;
-          results.success = false;
-        } else {
-          // Clean up test item
-          await supabase.from("items").delete().eq("id", testItem.id);
-          results.success = true;
-          results.data = data;
-        }
-      } else {
-        results.error = "Database not configured";
-        results.success = false;
-      }
-    } else if (service === "ai" && test === "generate") {
+    if (service === "ai" && test === "generate") {
       // Test AI generation
       const provider = process.env.AI_SDK_PROVIDER;
       if (provider === "google" && process.env.GEMINI_API_KEY) {

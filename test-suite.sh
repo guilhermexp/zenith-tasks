@@ -80,13 +80,6 @@ test_endpoint "POST" "/api/inbox/analyze" \
     '{"text":"Reunião com time às 14h, enviar relatório até sexta, pagar conta de luz"}' \
     "Inbox: Multiple items parsing"
 
-# Test MCP APIs
-test_endpoint "POST" "/api/mcp/servers" \
-    '{"name":"Test Server","baseUrl":"https://httpbin.org","callPath":"/post"}' \
-    "MCP: Register server"
-
-test_endpoint "GET" "/api/mcp/servers" "" \
-    "MCP: List servers"
 
 echo ""
 echo "2. TYPESCRIPT & BUILD TESTS"
