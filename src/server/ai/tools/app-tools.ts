@@ -34,6 +34,10 @@ export const appTools = {
         .string()
         .optional()
         .describe("Descrição detalhada ou notas adicionais"),
+      notes: z
+        .string()
+        .optional()
+        .describe("Anotações adicionais (campo livre)"),
       dueDate: z
         .string()
         .optional()
@@ -49,6 +53,17 @@ export const appTools = {
       transactionType: TransactionTypeSchema.optional().describe(
         "Tipo de transação (apenas para tipo Financeiro)",
       ),
+      meetingDetails: z
+        .object({
+          date: z.string().optional(),
+          time: z.string().optional(),
+          participants: z.array(z.string()).optional(),
+          location: z.string().optional(),
+          agenda: z.array(z.string()).optional(),
+          links: z.array(z.string()).optional(),
+        })
+        .optional()
+        .describe("Detalhes de reunião (apenas para tipo Reunião)"),
     }),
     execute: async (params: any) => {
       // Esta tool será chamada pelo assistente
@@ -86,6 +101,22 @@ export const appTools = {
       transactionType: TransactionTypeSchema.optional().describe(
         "Novo tipo de transação",
       ),
+      notes: z.string().optional().describe("Atualizar anotações do item"),
+      isRecurring: z.boolean().optional().describe("Marcar como recorrente (Financeiro)"),
+      paymentMethod: z.string().optional().describe("Forma de pagamento (Financeiro)"),
+      isPaid: z.boolean().optional().describe("Marcar conta como paga (Financeiro)"),
+      meetingDetails: z
+        .object({
+          date: z.string().optional(),
+          time: z.string().optional(),
+          participants: z.array(z.string()).optional(),
+          location: z.string().optional(),
+          agenda: z.array(z.string()).optional(),
+          links: z.array(z.string()).optional(),
+        })
+        .partial()
+        .optional()
+        .describe("Atualizar detalhes de reunião"),
     }),
     execute: async (params: any) => {
       return {

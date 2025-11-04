@@ -2,14 +2,16 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
   "/api(.*)",
   "/login",
   "/signup",
 ]);
 
 export default clerkMiddleware((auth, req) => {
-  // For now, allow all routes without authentication
-  // Uncomment below when ready to enable authentication
+  // Temporarily disabled - Clerk middleware needs adjustment for v6.x
+  // TODO: Fix auth().protect() syntax for Clerk v6.34.1
   // if (!isPublicRoute(req)) {
   //   auth().protect();
   // }

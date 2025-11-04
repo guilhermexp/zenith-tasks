@@ -28,7 +28,8 @@
       "Bash(vercel env rm:*)",
       "Bash(vercel:*)",
       "Bash(kill:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "WebFetch(domain:zenith-tasks.vercel.app)"
     ],
     "deny": [],
     "ask": []

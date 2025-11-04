@@ -60,7 +60,6 @@ export default function SignUpPage() {
             colorInputText: '#ffffff',
           }
         }}
-        showDevModeWarnings={false}
         redirectUrl="/"
         signInUrl="/sign-in"
       />

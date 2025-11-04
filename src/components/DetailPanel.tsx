@@ -9,7 +9,7 @@ import {
   XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon, 
   SparklesIcon, ChevronLeftIcon, TrashIcon, CheckCircleIcon, TagIcon, 
   LightbulbIcon, PageIcon, BellIcon, LinkIcon, DollarSignIcon, UsersIcon,
-  ClipboardIcon
+  ClipboardIcon, EditIcon
 } from './Icons';
 
 interface DetailPanelProps {
@@ -201,6 +201,18 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(item.chatHistory || []);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLDivElement>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(item.title);
+  const [isEditingSummary, setIsEditingSummary] = useState(false);
+  const [summaryDraft, setSummaryDraft] = useState(item.summary || '');
+
+  useEffect(() => {
+    setTitleDraft(item.title);
+  }, [item.title]);
+
+  useEffect(() => {
+    setSummaryDraft(item.summary || '');
+  }, [item.summary]);
 
   // Resize logic
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -323,6 +335,14 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         </div>
        
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setIsEditingTitle((v) => !v)}
+            className="p-2 rounded-lg hover:bg-neutral-800/60 text-neutral-500 hover:text-neutral-200 transition-colors"
+            title={isEditingTitle ? 'Cancelar edição' : 'Editar título'}
+            aria-label={isEditingTitle ? 'Cancelar edição' : 'Editar título'}
+          >
+            <EditIcon className="w-5 h-5" />
+          </button>
           <button 
             onClick={() => onDeleteItem(item.id)} 
             className="p-2 rounded-lg hover:bg-red-900/20 text-neutral-500 hover:text-red-400 transition-colors"
@@ -349,7 +369,36 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               {item.completed && <CheckIcon className="w-4 h-4 text-neutral-100" />}
             </button>
             <div className="flex-1">
-              <h3 className="text-xl font-semibold text-neutral-100 mb-1">{item.title}</h3>
+              {isEditingTitle ? (
+                <input
+                  value={titleDraft}
+                  onChange={(e) => setTitleDraft(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = titleDraft.trim();
+                    if (trimmed && trimmed !== item.title) {
+                      onUpdateItem(item.id, { title: trimmed });
+                    }
+                    setIsEditingTitle(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const trimmed = titleDraft.trim();
+                      if (trimmed && trimmed !== item.title) {
+                        onUpdateItem(item.id, { title: trimmed });
+                      }
+                      setIsEditingTitle(false);
+                    } else if (e.key === 'Escape') {
+                      setTitleDraft(item.title);
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  className="w-full bg-transparent border-b border-neutral-700 focus:border-neutral-500 outline-none text-xl font-semibold text-neutral-100 mb-1"
+                  placeholder="Título do item"
+                  autoFocus
+                />
+              ) : (
+                <h3 className="text-xl font-semibold text-neutral-100 mb-1">{item.title}</h3>
+              )}
               <p className="text-xs text-neutral-500">{formatRelativeTime(item.createdAt)}</p>
             </div>
           </div>
@@ -385,10 +434,58 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </div>
 
           {/* Description */}
-          {item.summary && (
+          {(item.summary !== undefined) && (
             <div className="mb-6">
               <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Descrição</h4>
-              <p className="text-sm text-neutral-300">{item.summary}</p>
+              {isEditingSummary ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={summaryDraft}
+                    onChange={(e) => setSummaryDraft(e.target.value)}
+                    className="w-full min-h-[100px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-700/50 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 resize-none"
+                    placeholder="Editar descrição..."
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setSummaryDraft(item.summary || '');
+                        setIsEditingSummary(false);
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => {
+                        setSummaryDraft(item.summary || '');
+                        setIsEditingSummary(false);
+                      }}
+                      className="px-3 py-1.5 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => {
+                        onUpdateItem(item.id, { summary: summaryDraft });
+                        setIsEditingSummary(false);
+                      }}
+                      className="px-3 py-1.5 text-sm bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg transition-colors"
+                    >
+                      Salvar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="min-h-[60px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-800/50 hover:border-neutral-700/50 cursor-text transition-colors"
+                  onClick={() => setIsEditingSummary(true)}
+                  title="Clique para editar a descrição"
+                >
+                  {item.summary ? (
+                    <p className="text-sm text-neutral-300 whitespace-pre-wrap">{item.summary}</p>
+                  ) : (
+                    <p className="text-sm text-neutral-600 italic">Clique para adicionar uma descrição...</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
