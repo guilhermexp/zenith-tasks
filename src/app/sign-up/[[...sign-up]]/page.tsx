@@ -1,6 +1,27 @@
 import { SignUp } from '@clerk/nextjs';
 
 export default function SignUpPage() {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
+  const clerkEnabled = publishableKey.trim().startsWith('pk_');
+
+  if (!clerkEnabled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-4">
+        <div className="glass-card max-w-md w-full px-6 py-8 text-center space-y-4">
+          <h1 className="text-xl font-semibold text-neutral-100">Cadastro indisponível</h1>
+          <p className="text-sm text-neutral-400">
+            O fluxo de criação de contas via Clerk está desativado neste ambiente. Para habilitar, configure
+            as variáveis <code className="font-mono">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code> e
+            <code className="font-mono">CLERK_SECRET_KEY</code> com valores válidos.
+          </p>
+          <p className="text-xs text-neutral-500">
+            Enquanto a autenticação estiver em bypass, utilize o app sem registrar um usuário.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-950">
       <SignUp 
@@ -39,6 +60,7 @@ export default function SignUpPage() {
             colorInputText: '#ffffff',
           }
         }}
+        showDevModeWarnings={false}
         redirectUrl="/"
         signInUrl="/sign-in"
       />

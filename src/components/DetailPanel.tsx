@@ -28,7 +28,8 @@ const typeIcons: Record<MindFlowItemType, React.FC<{className?: string}>> = {
   Ideia: LightbulbIcon,
   Nota: PageIcon,
   Lembrete: BellIcon,
-  Financeiro: DollarSignIcon
+  Financeiro: DollarSignIcon,
+  'Reunião': UsersIcon,
 };
 
 const SubtaskItem: React.FC<{ 

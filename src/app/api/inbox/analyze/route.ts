@@ -26,6 +26,14 @@ export async function POST(req: Request) {
       const title = text.slice(0, 80)
       return NextResponse.json({ items: [{ title, type: 'Nota', summary: text.slice(0, 280) }] })
     }
+    const meetingDetailsSchema = z.object({
+      date: z.string().optional(),
+      time: z.string().optional(),
+      participants: z.array(z.string()).optional(),
+      location: z.string().optional(),
+      agenda: z.array(z.string()).optional(),
+      links: z.array(z.string()).optional()
+    }).partial()
     const itemSchema = z.object({
       title: z.string(),
       type: z.enum(['Tarefa','Ideia','Nota','Lembrete','Financeiro','Reunião']),
@@ -33,7 +41,8 @@ export async function POST(req: Request) {
       dueDate: z.string().nullable().optional(),
       subtasks: z.array(z.object({ title: z.string() })).optional(),
       amount: z.number().optional(),
-      transactionType: z.enum(['Entrada','Saída']).optional()
+      transactionType: z.enum(['Entrada','Saída']).optional(),
+      meetingDetails: meetingDetailsSchema.optional()
     })
     const schema = z.object({ items: z.array(itemSchema).default([]) })
     const prompt = buildAnalyzePrompt(text)

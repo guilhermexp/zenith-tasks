@@ -12,6 +12,14 @@ export async function analyzeWithAI(text: string): Promise<MindFlowItem[]> {
   // Let the API layer validate shape when needed; keep parser fallback here
   try {
     const { z } = await import('zod')
+    const meetingDetailsSchema = z.object({
+      date: z.string().optional(),
+      time: z.string().optional(),
+      participants: z.array(z.string()).optional(),
+      location: z.string().optional(),
+      agenda: z.array(z.string()).optional(),
+      links: z.array(z.string()).optional()
+    }).partial()
     const itemSchema = z.object({
       title: z.string(),
       type: z.enum(['Tarefa','Ideia','Nota','Lembrete','Financeiro','Reunião']),
@@ -19,7 +27,8 @@ export async function analyzeWithAI(text: string): Promise<MindFlowItem[]> {
       dueDate: z.string().nullable().optional(),
       subtasks: z.array(z.object({ title: z.string() })).optional(),
       amount: z.number().optional(),
-      transactionType: z.enum(['Entrada','Saída']).optional()
+      transactionType: z.enum(['Entrada','Saída']).optional(),
+      meetingDetails: meetingDetailsSchema.optional()
     })
     const schema = z.object({ items: z.array(itemSchema).default([]) })
     const res = await generateObject({ model, schema, prompt })
@@ -58,10 +67,35 @@ export async function subtasksWithAI(item: { title: string; summary?: string; ty
 
 export function estimateComplexity(title: string, summary?: string): 'simple'|'medium'|'complex' {
   const text = `${title} ${summary || ''}`.toLowerCase()
-  const simpleHints = [/passear/, /caminh(ar|ada)/, /ligar/, /enviar e?-?mail/, /pagar conta/, /comprar pão|leite/, /ir ao mercado/, /levar.*(lixo|cachorro)/]
-  if (simpleHints.some(r => r.test(text)) || text.split(' ').length <= 4) return 'simple'
-  const complexHints = [/planejar|organizar|projeto|lançamento|apresenta(ç|c)ão|estrat(é|e)gia|pesquisa|integrar|arquitetura|especifica(ç|c)ão/, /reuni(ã|a)o|workshop/]
-  if (complexHints.some(r => r.test(text)) || text.split(' ').length >= 10) return 'complex'
+  const words = text.replace(/[^a-z0-9áàâãéêíóôõúüç\s]/gi, ' ').split(/\s+/).filter(Boolean)
+  const wordCount = words.length
+
+  const simpleHints = [
+    /passear/, /caminh(ar|ada)/, /ligar( para)?/, /enviar e?-?mail/, /pagar (a )?conta/,
+    /compr(ar|as)( (pão|leite|café|mercado))?/, /ir ao mercado/, /levar.*(lixo|cachorro|filho)/,
+    /lavar/, /arrumar cama/, /reg(ar|a) plantas/
+  ]
+  if (simpleHints.some(r => r.test(text))) return 'simple'
+
+  const meetingKeywords = /(reuni(ã|a)o|one[-\s]?on[-\s]?one|1:1|sync|alinhamento|call|meet|encontro)/
+  const projectKeywords = /(planejar|planejamento|organizar|estruturar|preparar|cronograma|roadmap|campanha|projeto|lançamento|implementa|integrar|arquitet|diagn[oó]stic|auditoria|apresenta(ç|c)ão|estrat(é|e)gia|briefing|kickoff|okrs|keynote|proposta|orçamento|pesquisa|workshop|onboarding|treinamento|revis(ão|ar)|relat[óo]rio|retro|sprint|deploy|migra(ç|c)ão|configur(ar|ação)|backup|atualiz(ar|ação)|documentar|corrig(ir|indo|ido|e|a)|analis(ar|e)|auditar)/
+  const complexTriggers = /(projeto|lançamento|implementa|integra|arquitet|especifica(ç|c)ão|workshop|roadmap|campanha|cronograma|okrs|apresenta(ç|c)ão|estrat(é|e)gia|due diligence|benchmark|planejamento estratégico|oficina|treinamento intensivo)/
+
+  if (complexTriggers.test(text)) return 'complex'
+  if (wordCount >= 12) return 'complex'
+
+  if (meetingKeywords.test(text)) {
+    return wordCount >= 8 ? 'complex' : 'medium'
+  }
+
+  if (projectKeywords.test(text)) {
+    if (wordCount >= 9) return 'complex'
+    return 'medium'
+  }
+
+  if (wordCount <= 3) return 'simple'
+  if (wordCount <= 5) return 'medium'
+
   return 'medium'
 }
 

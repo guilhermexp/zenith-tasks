@@ -66,6 +66,7 @@ export class ItemsService {
             paymentMethod: item.paymentMethod ?? null,
             isPaid: item.isPaid ?? false,
             chatHistory: item.chatHistory ?? [],
+            meetingDetails: item.meetingDetails ?? null,
             notes: item.notes ?? null,
           })
           .returning();
@@ -136,6 +137,9 @@ export class ItemsService {
         }
         if (updates.isPaid !== undefined) updateData.isPaid = updates.isPaid;
         if (updates.chatHistory !== undefined) updateData.chatHistory = updates.chatHistory ?? [];
+        if (updates.meetingDetails !== undefined) {
+          updateData.meetingDetails = updates.meetingDetails ?? null;
+        }
         if (updates.notes !== undefined) updateData.notes = updates.notes ?? null;
 
         if (Object.keys(updateData).length > 0) {
@@ -286,6 +290,7 @@ export class ItemsService {
       paymentMethod: data.paymentMethod ?? undefined,
       isPaid: data.isPaid ?? false,
       notes: data.notes ?? undefined,
+      meetingDetails: (data.meetingDetails as MindFlowItemDTO['meetingDetails']) ?? undefined,
     };
   }
 

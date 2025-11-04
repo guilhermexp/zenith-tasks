@@ -7,7 +7,7 @@ import {
   MoreHorizontalIcon, CalendarIcon, CheckIcon, MicIcon, CheckCircleIcon,
   LightbulbIcon, PageIcon, BellIcon, MenuIcon, ChevronLeftIcon,
   ChevronRightIcon, PlusIcon, DollarSignIcon, SpinnerIcon, TrashIcon, SearchIcon,
-  ListIcon, MessageCircleIcon
+  ListIcon, MessageCircleIcon, UsersIcon
 } from './Icons';
 
 interface MainContentProps {
@@ -31,7 +31,8 @@ const typeStyles: Record<MindFlowItemType, { icon: React.FC<{className?: string}
   Ideia: { icon: LightbulbIcon, color: 'text-neutral-400', bg: 'bg-neutral-900/40' },
   Nota: { icon: PageIcon, color: 'text-neutral-500', bg: 'bg-neutral-900/40' },
   Lembrete: { icon: BellIcon, color: 'text-neutral-400', bg: 'bg-neutral-900/40' },
-  Financeiro: { icon: DollarSignIcon, color: 'text-neutral-300', bg: 'bg-neutral-900/40' }
+  Financeiro: { icon: DollarSignIcon, color: 'text-neutral-300', bg: 'bg-neutral-900/40' },
+  'Reunião': { icon: UsersIcon, color: 'text-neutral-300', bg: 'bg-neutral-900/40' }
 };
 
 const DatePickerModal: React.FC<{

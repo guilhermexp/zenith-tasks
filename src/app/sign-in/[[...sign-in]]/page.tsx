@@ -1,6 +1,27 @@
 import { SignIn } from '@clerk/nextjs';
 
 export default function SignInPage() {
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
+  const clerkEnabled = publishableKey.trim().startsWith('pk_');
+
+  if (!clerkEnabled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-4">
+        <div className="glass-card max-w-md w-full px-6 py-8 text-center space-y-4">
+          <h1 className="text-xl font-semibold text-neutral-100">Autenticação desabilitada</h1>
+          <p className="text-sm text-neutral-400">
+            O fluxo de login via Clerk está desativado neste ambiente. Para habilitar, configure
+            as variáveis <code className="font-mono">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code> e
+            <code className="font-mono">CLERK_SECRET_KEY</code> com credenciais válidas.
+          </p>
+          <p className="text-xs text-neutral-500">
+            Enquanto o bypass de autenticação estiver ativo, use o aplicativo normalmente sem efetuar login.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-950">
       <SignIn 
@@ -39,6 +60,7 @@ export default function SignInPage() {
             colorInputText: '#ffffff',
           }
         }}
+        showDevModeWarnings={false}
         redirectUrl="/"
         signUpUrl="/sign-up"
       />

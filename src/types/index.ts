@@ -1,6 +1,6 @@
 import type { ComponentType } from 'react';
 
-export type MindFlowItemType = 'Tarefa' | 'Ideia' | 'Nota' | 'Lembrete' | 'Financeiro';
+export type MindFlowItemType = 'Tarefa' | 'Ideia' | 'Nota' | 'Lembrete' | 'Financeiro' | 'Reunião';
 
 export interface Subtask {
   id: string;
@@ -43,6 +43,14 @@ export interface MindFlowItem {
   isPaid?: boolean;
   // Campo de anotações
   notes?: string;
+  meetingDetails?: {
+    date?: string;
+    time?: string;
+    participants?: string[];
+    location?: string;
+    agenda?: string[];
+    links?: string[];
+  };
 }
 
 export interface NavItem {

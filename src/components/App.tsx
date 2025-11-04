@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -43,6 +43,8 @@ import UpdatesPage from "./UpdatesPage";
 const App: React.FC = () => {
   // Clerk authentication
   const { isLoaded, isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
+  const hasClerkKeys = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "").startsWith("pk_");
   const router = useRouter();
 
   // Toast notifications
@@ -120,6 +122,8 @@ const App: React.FC = () => {
           return baseItems.filter((item) => item.type === "Nota");
         case "lembretes":
           return baseItems.filter((item) => item.type === "Lembrete");
+        case "reunioes":
+          return baseItems.filter((item) => item.type === "Reunião");
         default:
           return baseItems;
       }
@@ -166,6 +170,12 @@ const App: React.FC = () => {
       label: "Lembretes",
       icon: BellIcon,
       count: getItemsForNav("lembretes").length,
+    },
+    {
+      id: "reunioes",
+      label: "Reuniões",
+      icon: UsersIcon,
+      count: getItemsForNav("reunioes").length,
     },
   ];
 
@@ -296,6 +306,19 @@ const App: React.FC = () => {
     }
   };
 
+  const normalizeTranscript = (input: string) => {
+    if (!input) return "";
+    let text = input
+      .replace(/\b(hm+|hum+|uh+|ah+|né|então tá|tá bom|beleza|okey|ok)\b/gi, " ")
+      .replace(/\btipo(?=\s*(assim|que|,|\.|$))/gi, " ")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    const boundaryRegex = /\b(além disso|também|outra coisa|outro ponto|por fim|finalmente|depois disso)\b/gi;
+    text = text.replace(boundaryRegex, (match) => `. ${match.charAt(0).toUpperCase()}${match.slice(1)}`);
+    text = text.replace(/\.(\s*\.)+/g, ".");
+    return text.trim();
+  };
+
   const generateSubtasks = async (
     itemId: string,
     opts?: { force?: boolean },
@@ -372,15 +395,21 @@ const App: React.FC = () => {
 
   // Talk Mode Functions
   const handleAudioReady = async (
-    audioBase64: string,
+    audio: Blob,
     onProgressUpdate: () => void,
-  ): Promise<any[]> => {
+  ): Promise<MindFlowItem[]> => {
     try {
       // Transcrever via API server-side
+      const formData = new FormData();
+      formData.append(
+        "audio",
+        audio,
+        `talk-mode-${Date.now()}.${(audio.type || "audio/webm").split("/").pop() || "webm"}`,
+      );
+      formData.append("mimeType", audio.type || "audio/webm");
       const tr = await fetch("/api/speech/transcribe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ audioBase64, mimeType: "audio/webm" }),
+        body: formData,
       });
       const trJson = await tr.json();
       if (!tr.ok) throw new Error(trJson?.error || "Falha na transcrição");
@@ -391,18 +420,27 @@ const App: React.FC = () => {
       onProgressUpdate();
 
       // Gerar itens a partir da transcrição
-      const newItems = await analyzeTextWithAI(transcription);
-      if (newItems && newItems.length > 0) {
-        for (const item of newItems) {
-          const { id, createdAt, ...itemData } = item;
-          await addItemToDb(itemData);
-        }
-      }
-      return newItems;
+      const cleanedTranscript = normalizeTranscript(transcription) || transcription;
+      return await analyzeTextWithAI(cleanedTranscript);
     } catch (error: any) {
       console.error("Erro ao processar áudio:", error);
       const msg = error?.message || "Não foi possível transcrever o áudio.";
       throw new Error(msg);
+    }
+  };
+
+  const handleCommitTalkModeItems = async (itemsToCreate: MindFlowItem[]) => {
+    if (!itemsToCreate.length) return;
+    try {
+      for (const item of itemsToCreate) {
+        const { id, createdAt, ...itemData } = item;
+        await addItemToDb(itemData);
+      }
+      showToast(`${itemsToCreate.length} item(ns) criado(s) com sucesso.`, "success");
+    } catch (error) {
+      console.error("Erro ao salvar itens transcritos:", error);
+      showToast("Não foi possível salvar todos os itens. Tente novamente.", "error");
+      throw error;
     }
   };
 
@@ -518,9 +556,20 @@ const App: React.FC = () => {
         onOpenTalkMode={() => setIsTalkModeOpen(true)}
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
-        onLogout={() => {
+        onLogout={async () => {
           setIsSidebarOpen(false);
-          router.push("/sign-in");
+          if (!hasClerkKeys) {
+            showToast("Logout indisponível no modo bypass.", "info");
+            router.push("/");
+            return;
+          }
+          try {
+            await signOut({ redirectUrl: "/sign-in" });
+          } catch (error) {
+            console.error("Erro ao finalizar sessão via Clerk:", error);
+            showToast("Não foi possível encerrar a sessão. Tente novamente.", "error");
+            router.push("/sign-in");
+          }
         }}
       />
 
@@ -560,6 +609,7 @@ const App: React.FC = () => {
         isOpen={isTalkModeOpen}
         onClose={() => setIsTalkModeOpen(false)}
         onAudioReady={handleAudioReady}
+        onCommitItems={handleCommitTalkModeItems}
       />
 
       {/* Mobile Sidebar Overlay */}

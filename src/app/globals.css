@@ -75,6 +75,8 @@ body {
   .bg-accent-soft { background-color: rgba(var(--accent-rgb), 0.08); }
   .border-accent-soft { border-color: rgba(var(--accent-rgb), 0.18); }
   .indicator-accent { background-color: rgba(var(--accent-rgb), 0.40); }
+  /* Hide Clerk dev-mode toast banners in auth screens */
+  div[class*="DevToast_toast"] { display: none !important; }
 }
 
 /* Scrollbar Styling */
