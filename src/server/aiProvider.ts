@@ -82,40 +82,7 @@ export class AIProvider {
 
   async getModel(config?: Partial<AIProviderConfig>): Promise<LanguageModel> {
     this.lastSelection = null;
-    // Check if we have Gateway API key
-    const hasGatewayKey = !!process.env.AI_GATEWAY_API_KEY;
-
-    // Check if we should use Gateway
-    const useGateway = config?.useGateway ||
-                      config?.provider === 'gateway' ||
-                      process.env.USE_AI_GATEWAY === 'true';
-
-    // Try Gateway first if enabled, we have a valid key, and auth hasn't failed before
-    if (useGateway && hasGatewayKey && !this.gatewayFailedAuth) {
-      try {
-        logger.info('Attempting to use AI Gateway', { provider: 'AIProvider' });
-        const gatewayAvailable = await isGatewayAvailable();
-        if (gatewayAvailable) {
-          return await this.getGatewayModel(config);
-        } else {
-          logger.info('Gateway not available, falling back to direct providers', { provider: 'AIProvider' });
-        }
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.error('Gateway error, falling back', error, { provider: 'AIProvider' });
-        // If it's an auth error, mark as failed in instance state
-        if (errorMessage.includes('Invalid API Key') || (error as { statusCode?: number }).statusCode === 401) {
-          logger.warn('Gateway API key invalid, disabling gateway for this instance', { provider: 'AIProvider' });
-          this.gatewayFailedAuth = true;
-        }
-      }
-    } else if (useGateway && !hasGatewayKey) {
-      logger.warn('Gateway requested but AI_GATEWAY_API_KEY not found', { provider: 'AIProvider' });
-    } else if (useGateway && this.gatewayFailedAuth) {
-      logger.info('Gateway authentication failed previously, skipping', { provider: 'AIProvider' });
-    }
-
-    // Fallback to direct providers
+    // Always use direct providers (simplified configuration)
     return await this.getDirectModel(config);
   }
 

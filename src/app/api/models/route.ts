@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 
-import { getModelSelector } from '@/server/ai/gateway/model-selector';
-import { getGatewayProvider } from '@/server/ai/gateway/provider';
 import { extractClientKey, rateLimit } from '@/server/rateLimit';
 import { logger } from '@/utils/logger';
 
@@ -24,102 +22,60 @@ export async function GET(req: Request) {
     const budget = (url.searchParams.get('budget') as 'low' | 'medium' | 'high') || 'medium';
     const priority = (url.searchParams.get('priority') as 'speed' | 'quality' | 'balanced') || 'balanced';
 
-    const gatewayProvider = getGatewayProvider();
-    const selector = getModelSelector();
-
-    let allModels: any[] = [];
-
-    try {
-      allModels = await gatewayProvider.getAvailableModels();
-      logger.info('Models API: loaded models from gateway', {
-        total: allModels.length,
-        ...logContext
-      });
-    } catch (gatewayError: any) {
-      logger.warn('Models API: gateway unavailable, using default catalog', {
-        error: gatewayError instanceof Error ? gatewayError.message : String(gatewayError),
-        ...logContext
-      });
-    }
-
-    if (!allModels?.length) {
-      allModels = getDefaultModels();
-    }
+    // Simplified: use default models directly (no gateway)
+    let allModels = getDefaultModels();
+    logger.info('Models API: using default model catalog', {
+      total: allModels.length,
+      ...logContext
+    });
 
     if (recommended && context) {
-      try {
-        const recommendations = await selector.getRecommendations(context, {
+      const contextModels = filterModelsByContext(allModels, context);
+      return NextResponse.json({
+        success: true,
+        context,
+        models: contextModels.slice(0, limit),
+        metadata: {
           budget,
           priority
-        });
-
-        return NextResponse.json({
-          success: true,
-          context,
-          models: recommendations.slice(0, limit).map(r => ({
-            ...r.model,
-            score: r.score,
-            reasons: r.reasons,
-            costEstimate: r.costEstimate
-          })),
-          metadata: {
-            budget,
-            priority
-          }
-        });
-      } catch (selectorError) {
-        logger.warn('Models API: recommendation failed, applying heuristic filter', {
-          error: selectorError instanceof Error ? selectorError.message : String(selectorError),
-          context,
-          ...logContext
-        });
-        const contextModels = filterModelsByContext(allModels, context);
-        return NextResponse.json({
-          success: true,
-          context,
-          models: contextModels.slice(0, limit),
-          fallback: true
-        });
-      }
+        }
+      });
     }
 
     if (optimized) {
       const optimizedLimit = Math.max(1, parseInt(url.searchParams.get('limit') || '5'));
+      let models = allModels;
 
-      try {
-        let models;
-        switch (optimized) {
-          case 'cost':
-            models = await selector.getCostOptimizedModels(optimizedLimit);
-            break;
-          case 'performance':
-            models = await selector.getPerformanceOptimizedModels(optimizedLimit);
-            break;
-          case 'quality':
-            models = await selector.getQualityOptimizedModels(optimizedLimit);
-            break;
-          default:
-            return NextResponse.json({ success: false, error: 'Invalid optimization type' }, { status: 400 });
-        }
-
-        return NextResponse.json({
-          success: true,
-          optimization: optimized,
-          models
-        });
-      } catch (optimizationError) {
-        logger.warn('Models API: optimization failed, using fallback list', {
-          error: optimizationError instanceof Error ? optimizationError.message : String(optimizationError),
-          optimization: optimized,
-          ...logContext
-        });
-        return NextResponse.json({
-          success: true,
-          optimization: optimized,
-          models: getDefaultModels().slice(0, optimizedLimit),
-          fallback: true
-        });
+      switch (optimized) {
+        case 'cost':
+          models = models
+            .sort((a, b) => {
+              const aCost = (a.pricing?.input || 0) + (a.pricing?.output || 0);
+              const bCost = (b.pricing?.input || 0) + (b.pricing?.output || 0);
+              return aCost - bCost;
+            });
+          break;
+        case 'performance':
+          models = models.filter(m => {
+            const id = m.id.toLowerCase();
+            return id.includes('flash') || id.includes('turbo');
+          });
+          break;
+        case 'quality':
+          models = models.filter(m => {
+            const id = m.id.toLowerCase();
+            return id.includes('pro') || id.includes('opus') || id.includes('4o');
+          });
+          break;
+        default:
+          return NextResponse.json({ success: false, error: 'Invalid optimization type' }, { status: 400 });
       }
+
+      return NextResponse.json({
+        success: true,
+        optimization: optimized,
+        models: models.slice(0, optimizedLimit)
+      });
     }
 
     let filteredModels = allModels;
@@ -167,43 +123,52 @@ export async function POST(req: Request) {
       minContextWindow,
       maxCost,
       requiredCapabilities,
-      preferredProviders,
+      preferredProviders = ['google'],
       avoidProviders,
       speedPriority,
       maxResponseTokens
     } = body;
 
-    const selector = getModelSelector();
-    const model = await selector.selectModel({
-      context,
-      minContextWindow,
-      maxCost,
-      requiredCapabilities,
-      preferredProviders,
-      avoidProviders,
-      speedPriority,
-      maxResponseTokens
-    });
+    // Simplified: use default models without gateway
+    const defaultModels = getDefaultModels();
+    let filteredModels = defaultModels;
 
-    if (!model) {
+    // Filter by preferred providers
+    if (preferredProviders && preferredProviders.length > 0) {
+      filteredModels = filteredModels.filter(m => preferredProviders.includes(m.provider));
+    }
+
+    // Filter by context
+    if (context) {
+      filteredModels = filterModelsByContext(filteredModels, context);
+    }
+
+    // Filter by capabilities
+    if (requiredCapabilities && requiredCapabilities.length > 0) {
+      filteredModels = filteredModels.filter(m =>
+        requiredCapabilities.every(cap => m.capabilities?.includes(cap))
+      );
+    }
+
+    // Filter by context window
+    if (minContextWindow) {
+      filteredModels = filteredModels.filter(m => m.contextWindow >= minContextWindow);
+    }
+
+    if (filteredModels.length === 0) {
       return NextResponse.json({
         success: false,
         error: 'No suitable model found for requirements'
       }, { status: 404 });
     }
 
-    const scores = await selector.scoreModels(body);
-    const selectedScore = scores.find(score => score.model.id === model.id);
+    // Select best model (first one after filtering)
+    const selected = filteredModels[0];
 
     return NextResponse.json({
       success: true,
-      selected: model,
-      score: selectedScore?.score,
-      reasons: selectedScore?.reasons,
-      costEstimate: selectedScore?.costEstimate,
-      alternatives: scores
-        .filter(score => score.model.id !== model.id)
-        .slice(0, 3)
+      selected,
+      alternatives: filteredModels.slice(1, 4)
     });
   } catch (error: any) {
     logger.error('Models API: select model error', error, logContext);
