@@ -62,7 +62,10 @@ body {
 @layer components {
   .glass-card {
     /* Dark neutral surface matching AI modal */
-    @apply bg-neutral-950/60 border border-neutral-800/60 backdrop-blur-xl rounded-xl;
+    @apply bg-neutral-950 border border-neutral-800 backdrop-blur-xl rounded-xl;
+    /* Use CSS custom properties for opacity */
+    --glass-bg: 0.6;
+    background-color: rgba(var(--color-neutral-950-rgb, 11, 11, 11), var(--glass-bg));
   }
   .soft-scroll {
     scrollbar-width: thin;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useToast } from "@/components/Toast";
@@ -42,6 +43,7 @@ import UpdatesPage from "./UpdatesPage";
 const App: React.FC = () => {
   // Clerk authentication
   const { isLoaded, isSignedIn, user } = useUser();
+  const router = useRouter();
 
   // Toast notifications
   const { showToast } = useToast();
@@ -516,7 +518,10 @@ const App: React.FC = () => {
         onOpenTalkMode={() => setIsTalkModeOpen(true)}
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
-        onOpenDebug={() => setIsDebugOpen(true)}
+        onLogout={() => {
+          setIsSidebarOpen(false);
+          router.push("/sign-in");
+        }}
       />
 
       {/* Main Content */}

@@ -1,9 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
-
-import { logger } from '@/utils/logger';
-
 export default function Error({
   error,
   reset,
@@ -11,10 +7,6 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    logger.error('Unhandled application error', error, { component: 'AppErrorBoundary' });
-  }, [error]);
-
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
       <div className="text-center space-y-4">

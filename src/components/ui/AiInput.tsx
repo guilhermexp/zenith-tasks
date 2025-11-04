@@ -28,7 +28,8 @@ interface MorphSurfaceProps {
 }
 
 export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceProps) {
-  const rootRef = React.useRef<HTMLDivElement>(null)
+  const rootRef = React.useRef<HTMLElement>(null)
+  const modalRef = React.useRef<HTMLDivElement>(null)
 
   const feedbackRef = React.useRef<HTMLTextAreaElement | null>(null)
   const [showFeedback, setShowFeedback] = React.useState(false)
@@ -148,7 +149,7 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
     })
   }, [])
 
-  useClickOutside(rootRef, closeFeedback)
+  useClickOutside(modalRef, closeFeedback)
 
   const context = React.useMemo(
     () => ({
@@ -191,7 +192,7 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
               <div className="fixed inset-0 z-[1001] flex items-center justify-center p-4 sm:p-6">
                 {/* Modal de feedback */}
                 <motion.div
-                  ref={rootRef}
+                  ref={modalRef}
                   className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl"
                   style={{
                     width: "min(500px, 90vw)",

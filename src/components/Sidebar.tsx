@@ -2,13 +2,13 @@
 
 // Clerk desabilitado - bypass de autenticação
 // import { UserButton } from '@clerk/nextjs';
-import { Activity, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 
 import type { NavItem } from '../types';
 import {
-  PlusIcon, XIcon, MoreHorizontalIcon, SearchIcon,
-  SettingsIcon, HelpCircleIcon, LogOutIcon, SoundWaveIcon, MicIcon,
+  PlusIcon, XIcon, SearchIcon,
+  SettingsIcon, LogOutIcon, MicIcon,
   CalendarIcon
 } from './Icons';
 
@@ -21,10 +21,20 @@ interface SidebarProps {
   onOpenTalkMode: () => void;
   searchQuery: string;
   onSearch: (query: string) => void;
-  onOpenDebug?: () => void;
+  onLogout?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, isOpen, onClose, onOpenTalkMode, searchQuery, onSearch, onOpenDebug }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  navItems,
+  activeItem,
+  onSelectItem,
+  isOpen,
+  onClose,
+  onOpenTalkMode,
+  searchQuery,
+  onSearch,
+  onLogout,
+}) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['reunioes']);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -177,21 +187,53 @@ const Sidebar: React.FC<SidebarProps> = ({ navItems, activeItem, onSelectItem, i
                 <span>Talk mode</span>
             </button>
             <div className="flex items-center gap-2">
-              {onOpenDebug && (
-                <button
-                  onClick={onOpenDebug}
-                  className="p-1.5 rounded-md hover:bg-neutral-700 transition-colors"
-                  title="Debug Tools"
-                >
-                  <Activity className="w-5 h-5 text-neutral-400" />
-                </button>
-              )}
-              {/* UserButton do Clerk removido - bypass ativo */}
-              <div className="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center">
-                <User className="w-4 h-4 text-neutral-400" />
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen((prev) => !prev)}
+                className="flex items-center justify-center px-1.5 py-1 rounded-full text-neutral-200 hover:bg-neutral-800/60 transition-colors"
+                aria-haspopup="menu"
+                aria-expanded={isDropdownOpen}
+              >
+                {/* UserButton do Clerk removido - bypass ativo */}
+                <div className="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center ring-1 ring-white/5">
+                  <User className="w-4 h-4 text-neutral-400" />
+                </div>
+              </button>
             </div>
         </div>
+        {isDropdownOpen && (
+          <div className="absolute bottom-14 right-2 z-30 w-56 rounded-xl border border-white/10 bg-neutral-900/95 backdrop-blur-sm shadow-lg overflow-hidden">
+            <div className="px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+              Conta
+            </div>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-200 hover:bg-white/5 transition-colors"
+              onClick={() => {
+                onSelectItem('config');
+                setIsDropdownOpen(false);
+              }}
+            >
+              <SettingsIcon className="w-4 h-4 text-neutral-400" />
+              Configurações
+            </button>
+            <button
+              type="button"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-200 hover:bg-white/5 transition-colors"
+              onClick={() => {
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  window.location.href = "/sign-in";
+                }
+                setIsDropdownOpen(false);
+              }}
+            >
+              <LogOutIcon className="w-4 h-4 text-red-400" />
+              Fazer logout
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );
