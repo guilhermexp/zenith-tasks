@@ -291,97 +291,29 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
 // Default models as fallback
 function getDefaultModels(): Model[] {
   return [
-    // 🌐 AI GATEWAY (Recomendado - usa o melhor modelo disponível)
-    {
-      id: 'gateway/auto',
-      name: '🌐 AI Gateway (Auto)',
-      provider: 'gateway',
-      description: 'Gateway inteligente - seleciona o melhor modelo',
-      contextWindow: 200000,
-      capabilities: ['auto-select', 'fallback', 'reliable']
-    },
-    {
-      id: 'gateway/openai/gpt-4o',
-      name: '🌐 GPT-4o (Gateway)',
-      provider: 'gateway',
-      description: 'GPT-4o via Gateway - Confiável',
-      contextWindow: 128000,
-      capabilities: ['text', 'vision', 'function-calling']
-    },
-    {
-      id: 'gateway/anthropic/claude-3.5-sonnet',
-      name: '🌐 Claude 3.5 (Gateway)',
-      provider: 'gateway',
-      description: 'Claude via Gateway - Análise e código',
-      contextWindow: 200000,
-      capabilities: ['text', 'vision', 'code', 'analysis']
-    },
-    {
-      id: 'gateway/google/gemini-2.5-pro',
-      name: '🌐 Gemini 2.5 Pro (Gateway)',
-      provider: 'gateway',
-      description: 'Gemini via Gateway - Contexto grande',
-      contextWindow: 2000000,
-      capabilities: ['text', 'vision', 'huge-context']
-    },
-
-    // 🟢 GOOGLE GEMINI (Fallback - gratuito)
     {
       id: 'google/gemini-2.5-pro',
       name: '🟢 Gemini 2.5 Pro',
       provider: 'google',
-      description: 'Google Gemini 2.5 - Grátis com API key',
+      description: 'Google Gemini 2.5 - Alta qualidade com grande contexto',
       contextWindow: 2000000,
-      capabilities: ['text', 'vision', 'huge-context', 'free']
+      capabilities: ['text', 'vision', 'huge-context']
     },
     {
       id: 'google/gemini-2.5-flash',
       name: '⚡ Gemini 2.5 Flash',
       provider: 'google',
-      description: 'Google Gemini Flash - Rápido e gratuito',
+      description: 'Google Gemini Flash - Respostas rápidas e eficientes',
       contextWindow: 1000000,
-      capabilities: ['text', 'vision', 'fast', 'free']
-    },
-
-    // 🔵 Z.AI (Desenvolvimento)
-    {
-      id: 'zai/glm-4.6',
-      name: '🔵 GLM-4.6 (Z.AI)',
-      provider: 'zai',
-      description: 'Z.AI GLM - Para desenvolvimento',
-      contextWindow: 128000,
-      capabilities: ['text', 'code', 'development']
-    },
-
-    // 🟣 ANTHROPIC CLAUDE (Direto)
-    {
-      id: 'anthropic/claude-3.5-sonnet',
-      name: '🟣 Claude 3.5 Sonnet',
-      provider: 'anthropic',
-      description: 'Anthropic Claude - Análise e código premium',
-      contextWindow: 200000,
-      capabilities: ['text', 'vision', 'code', 'analysis']
-    },
-
-    // 🟠 OPENAI (Direto)
-    {
-      id: 'openai/gpt-4o',
-      name: '🟠 GPT-4o',
-      provider: 'openai',
-      description: 'OpenAI GPT-4o - Modelo mais recente',
-      contextWindow: 128000,
-      capabilities: ['text', 'vision', 'function-calling']
+      capabilities: ['text', 'vision', 'fast']
     },
     {
-      id: 'openai/gpt-4o-mini',
-      name: '🟠 GPT-4o Mini',
-      provider: 'openai',
-      description: 'OpenAI GPT-4o compacto',
-      contextWindow: 128000,
-      capabilities: ['text', 'vision', 'function-calling', 'economical']
+      id: 'google/gemini-2.0-flash-exp',
+      name: '🧪 Gemini 2.0 Flash Experimental',
+      provider: 'google',
+      description: 'Versão experimental focada em velocidade e multimídia',
+      contextWindow: 1000000,
+      capabilities: ['text', 'vision', 'audio', 'multimodal', 'experimental']
     }
-
-    // NOTA: OpenRouter foi desabilitado devido a problemas com AI SDK v5
-    // Use AI Gateway (opções acima) para acesso a múltiplos provedores
   ];
 }

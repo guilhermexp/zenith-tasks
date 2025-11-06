@@ -21,6 +21,7 @@ interface DetailPanelProps {
   onChatWithAI: (itemId: string, message: string) => Promise<any>;
   width?: number;
   onResize?: (width: number) => void;
+  isMobile?: boolean;
 }
 
 const typeIcons: Record<MindFlowItemType, React.FC<{className?: string}>> = {
@@ -196,6 +197,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   onChatWithAI,
   width,
   onResize,
+  isMobile = false,
 }) => {
   const [isSending, setIsSending] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(item.chatHistory || []);
@@ -216,7 +218,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 
   // Resize logic
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!onResize) return;
+    if (!onResize || isMobile) return;
     const startX = e.clientX;
     const startWidth = width || asideRef.current?.getBoundingClientRect().width || 720;
     const onMove = (ev: MouseEvent) => {
@@ -317,15 +319,21 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   return (
     <aside
       ref={asideRef as any}
-      className="relative shrink-0 w-[560px] md:w-[640px] lg:w-[720px] xl:w-[820px] max-w-[92vw] flex flex-col h-full glass-card ml-2"
-      style={width ? { width } : undefined}
+      className={`relative flex flex-col h-full glass-card ${
+        isMobile
+          ? "w-full max-w-full flex-1 rounded-none border border-white/10 shadow-2xl"
+          : "shrink-0 w-[560px] md:w-[640px] lg:w-[720px] xl:w-[820px] max-w-[92vw] ml-2"
+      }`}
+      style={!isMobile && width ? { width } : undefined}
     >
       {/* Resize handle */}
-      <div
-        onMouseDown={startDrag}
-        title="Arraste para redimensionar"
-        className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-neutral-700/30 transition-colors"
-      />
+      {!isMobile && onResize && (
+        <div
+          onMouseDown={startDrag}
+          title="Arraste para redimensionar"
+          className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-neutral-700/30 transition-colors"
+        />
+      )}
       <header className="flex items-center justify-between p-4 border-b border-neutral-800/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-neutral-800/50">
@@ -429,6 +437,28 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 <PropertyRow icon={LinkIcon} label="Tipo">
                   <span>{item.transactionType}</span>
                 </PropertyRow>
+                {item.transactionType === 'Saída' && (
+                  <div className="flex items-center justify-between py-2.5 border-b border-neutral-800/50">
+                    <div className="flex items-center gap-2">
+                      <svg className="w-3.5 h-3.5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span className="text-xs text-neutral-400">Recorrente</span>
+                    </div>
+                    <button
+                      onClick={() => onUpdateItem(item.id, { isRecurring: !item.isRecurring })}
+                      className={`relative w-10 h-5 rounded-full transition-colors ${
+                        item.isRecurring ? 'bg-blue-500/30' : 'bg-neutral-700/50'
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${
+                          item.isRecurring ? 'left-5' : 'left-0.5'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>

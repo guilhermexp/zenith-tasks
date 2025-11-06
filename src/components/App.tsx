@@ -71,6 +71,7 @@ const App: React.FC = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewItems, setPreviewItems] = useState<MindFlowItem[] | null>(null);
   const [isDebugOpen, setIsDebugOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
   const [detailWidth, setDetailWidth] = useState<number>(() => {
     if (typeof window === "undefined") return 720;
     try {
@@ -88,6 +89,35 @@ const App: React.FC = () => {
       localStorage.setItem("detailPanelWidth", String(detailWidth));
     } catch {}
   }, [detailWidth]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const updateIsMobile = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+    return () => window.removeEventListener("resize", updateIsMobile);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const body = document.body;
+    const previous = body.style.overflow;
+    const shouldLock =
+      isMobileView &&
+      !!activeItem &&
+      !["calendario", "atualizacoes", "financas"].includes(activeNavItem);
+
+    if (shouldLock) {
+      body.style.overflow = "hidden";
+    }
+
+    return () => {
+      body.style.overflow = previous;
+    };
+  }, [isMobileView, activeItem, activeNavItem]);
 
   // Removido: IA no cliente. Todo consumo de IA é feito via API Routes server-side.
 
@@ -412,7 +442,15 @@ const App: React.FC = () => {
         body: formData,
       });
       const trJson = await tr.json();
-      if (!tr.ok) throw new Error(trJson?.error || "Falha na transcrição");
+      if (!tr.ok) {
+        const fallbackError =
+          tr.status === 503
+            ? "O serviço de transcrição está temporariamente sobrecarregado. Tente novamente em instantes."
+            : tr.status === 504
+              ? "A transcrição demorou demais para responder. Por favor, tente novamente."
+              : "Falha na transcrição";
+        throw new Error(trJson?.error || fallbackError);
+      }
       const transcription = String(trJson?.text || "");
       if (!transcription.trim()) throw new Error("Transcrição vazia");
 
@@ -421,7 +459,27 @@ const App: React.FC = () => {
 
       // Gerar itens a partir da transcrição
       const cleanedTranscript = normalizeTranscript(transcription) || transcription;
-      return await analyzeTextWithAI(cleanedTranscript);
+      const analyzedItems = await analyzeTextWithAI(cleanedTranscript);
+
+      const nowISO = new Date().toISOString();
+      const idPrefix = `talk-mode-${Date.now()}`;
+      const cryptoApi =
+        typeof globalThis !== "undefined" && typeof globalThis.crypto !== "undefined"
+          ? globalThis.crypto
+          : undefined;
+      return analyzedItems.map((item, index) => {
+        const fallbackId =
+          typeof cryptoApi?.randomUUID === "function"
+            ? cryptoApi.randomUUID()
+            : `${idPrefix}-${Math.random().toString(36).slice(2, 9)}-${index}`;
+
+        return {
+          ...item,
+          id: item.id?.trim() ? item.id : fallbackId,
+          createdAt: item.createdAt || nowISO,
+          completed: typeof item.completed === "boolean" ? item.completed : false,
+        };
+      });
     } catch (error: any) {
       console.error("Erro ao processar áudio:", error);
       const msg = error?.message || "Não foi possível transcrever o áudio.";
@@ -552,6 +610,7 @@ const App: React.FC = () => {
         activeItem={activeNavItem}
         onSelectItem={setActiveNavItem}
         isOpen={isSidebarOpen}
+        isMobile={isMobileView}
         onClose={() => setIsSidebarOpen(false)}
         onOpenTalkMode={() => setIsTalkModeOpen(true)}
         searchQuery={searchQuery}
@@ -576,13 +635,16 @@ const App: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
         {/* Current Page */}
-        <div className="flex-1">{renderCurrentPage()}</div>
+        <div
+          className={`flex-1 ${isMobileView && activeItem ? "hidden md:block" : ""}`}
+        >
+          {renderCurrentPage()}
+        </div>
 
         {/* Detail Panel Sidebar */}
-        {activeItem &&
-          !["calendario", "atualizacoes", "financas"].includes(
-            activeNavItem,
-          ) && (
+        {!isMobileView &&
+          activeItem &&
+          !["calendario", "atualizacoes"].includes(activeNavItem) && (
             <DetailPanel
               item={items.find((i) => i.id === activeItem.id) || activeItem}
               onClose={() => setActiveItem(null)}
@@ -604,6 +666,22 @@ const App: React.FC = () => {
           )}
       </div>
 
+      {isMobileView &&
+        activeItem &&
+        !["calendario", "atualizacoes"].includes(activeNavItem) && (
+          <div className="fixed inset-0 z-40 flex flex-col bg-neutral-950/95 backdrop-blur-sm overflow-hidden">
+            <DetailPanel
+              item={items.find((i) => i.id === activeItem.id) || activeItem}
+              onClose={() => setActiveItem(null)}
+              onUpdateItem={updateItem}
+              onDeleteItem={deleteItem}
+              onGenerateSubtasks={generateSubtasks}
+              onChatWithAI={chatWithAI}
+              isMobile
+            />
+          </div>
+        )}
+
       {/* Talk Mode Modal */}
       <TalkModeModal
         isOpen={isTalkModeOpen}
@@ -621,7 +699,15 @@ const App: React.FC = () => {
       )}
 
       {/* AI Input - CANTO INFERIOR DIREITO RESPONSIVO */}
-      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 z-50">
+      <div
+        className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 z-50 ${
+          isMobileView &&
+          !!activeItem &&
+          !["calendario", "atualizacoes", "financas"].includes(activeNavItem)
+            ? "hidden"
+            : ""
+        }`}
+      >
         <MorphSurface placeholder="Adicione uma tarefa, ideia ou nota..." />
         {/* AI Input integrado com novo sistema useChat oficial */}
       </div>

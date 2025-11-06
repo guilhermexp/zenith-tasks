@@ -22,6 +22,7 @@ interface SidebarProps {
   searchQuery: string;
   onSearch: (query: string) => void;
   onLogout?: () => void;
+  isMobile?: boolean;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -34,6 +35,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   searchQuery,
   onSearch,
   onLogout,
+  isMobile = false,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['reunioes']);
@@ -82,6 +84,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           );
         } else {
           onSelectItem(item.id);
+          if (isMobile) {
+            onClose();
+          }
         }
       };
 
@@ -118,7 +123,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelectItem(child.id);
-                    }}
+                    if (isMobile) {
+                      onClose();
+                    }
+                  }}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <CalendarIcon className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
@@ -140,14 +148,22 @@ const Sidebar: React.FC<SidebarProps> = ({
       transition-transform duration-300 ease-in-out
       w-64 md:relative md:translate-x-0
       ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      bg-neutral-950/70 md:bg-neutral-950/60 md:border md:border-neutral-800/60 md:backdrop-blur-xl md:rounded-2xl
+      ${isMobile
+        ? 'bg-neutral-950 shadow-2xl border border-white/10 backdrop-blur-lg'
+        : 'bg-neutral-950/70 md:bg-neutral-950/60 md:border md:border-neutral-800/60 md:backdrop-blur-xl md:rounded-2xl'
+      }
     `}>
         <div className="px-1 mb-3">
             <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-neutral-300">Zenith Tasks</h2>
                 <div className="flex items-center gap-2">
                     <button
-                      onClick={() => onSelectItem('caixa-entrada')}
+                    onClick={() => {
+                      onSelectItem('caixa-entrada');
+                      if (isMobile) {
+                        onClose();
+                      }
+                    }}
                       className="p-1.5 rounded-md hover:bg-neutral-800/60 transition-colors"
                       title="Novo"
                     >
@@ -180,7 +196,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div ref={dropdownRef} className="mt-auto relative">
         <div className="flex items-center justify-between p-2">
             <button
-              onClick={() => onOpenTalkMode()}
+              onClick={() => {
+                onOpenTalkMode();
+                if (isMobile) {
+                  onClose();
+                }
+              }}
               className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-neutral-200 hover:bg-neutral-700"
             >
                 <MicIcon className="w-4 h-4 text-neutral-400" />
@@ -212,6 +233,9 @@ const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => {
                 onSelectItem('config');
                 setIsDropdownOpen(false);
+                if (isMobile) {
+                  onClose();
+                }
               }}
             >
               <SettingsIcon className="w-4 h-4 text-neutral-400" />
@@ -227,6 +251,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   window.location.href = "/sign-in";
                 }
                 setIsDropdownOpen(false);
+                if (isMobile) {
+                  onClose();
+                }
               }}
             >
               <LogOutIcon className="w-4 h-4 text-red-400" />

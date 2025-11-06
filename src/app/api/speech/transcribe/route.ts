@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { getAISDKModel } from '@/server/aiProvider'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 import { parseRequestBody } from '@/utils/json-helpers'
+import { logger } from '@/utils/logger'
 
 export async function POST(req: Request) {
   try {
@@ -100,6 +101,51 @@ export async function POST(req: Request) {
 
     return NextResponse.json(response)
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'transcription error' }, { status: 500 })
+    const rawMessage = typeof e?.message === 'string' ? e.message : ''
+    const normalizedMessage = rawMessage.toLowerCase()
+
+    if (normalizedMessage.includes('model is overloaded')) {
+      logger.warn('Gemini transcription service overloaded', {
+        component: 'speech-transcribe-route',
+        message: rawMessage,
+      })
+
+      return NextResponse.json(
+        {
+          error:
+            'O serviço de transcrição está temporariamente sobrecarregado. Tente novamente em instantes.',
+        },
+        {
+          status: 503,
+          headers: { 'Retry-After': '5' },
+        },
+      )
+    }
+
+    if (normalizedMessage.includes('timeout')) {
+      logger.warn('Gemini transcription timed out', {
+        component: 'speech-transcribe-route',
+        message: rawMessage,
+      })
+
+      return NextResponse.json(
+        {
+          error: 'A transcrição demorou demais para responder. Por favor, tente novamente.',
+        },
+        {
+          status: 504,
+        },
+      )
+    }
+
+    logger.error('Gemini transcription failed', e, {
+      component: 'speech-transcribe-route',
+      message: rawMessage || undefined,
+    })
+
+    return NextResponse.json(
+      { error: rawMessage || 'transcription error' },
+      { status: 500 },
+    )
   }
 }

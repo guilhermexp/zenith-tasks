@@ -17,7 +17,7 @@ const FinancePage: React.FC<FinancePageProps> = ({
   onAddFinancialItem 
 }) => {
   const [activeTab, setActiveTab] = useState<'transacoes' | 'status'>('transacoes');
-  const [filter, setFilter] = useState<'todos' | 'entradas' | 'saidas' | 'cartoes'>('todos');
+  const [filter, setFilter] = useState<'todos' | 'entradas' | 'saidas' | 'cartoes' | 'assinaturas'>('todos');
 
   // Get financial items
   const financialItems = useMemo(() => {
@@ -33,12 +33,16 @@ const FinancePage: React.FC<FinancePageProps> = ({
     } else if (filter === 'saidas') {
       filtered = filtered.filter(item => item.transactionType === 'Saída');
     } else if (filter === 'cartoes') {
-      filtered = filtered.filter(item => 
+      filtered = filtered.filter(item =>
         item.paymentMethod && item.paymentMethod.toLowerCase().includes('cartão')
+      );
+    } else if (filter === 'assinaturas') {
+      filtered = filtered.filter(item =>
+        item.isRecurring === true && item.transactionType === 'Saída'
       );
     }
 
-    return filtered.sort((a, b) => 
+    return filtered.sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [financialItems, filter]);
@@ -132,7 +136,7 @@ const FinancePage: React.FC<FinancePageProps> = ({
               
               {/* Filter buttons */}
               <div className="flex gap-2">
-                {(['todos', 'entradas', 'saidas', 'cartoes'] as const).map((filterType) => (
+                {(['todos', 'entradas', 'saidas', 'assinaturas', 'cartoes'] as const).map((filterType) => (
                   <button
                     key={filterType}
                     onClick={() => setFilter(filterType)}
@@ -142,9 +146,10 @@ const FinancePage: React.FC<FinancePageProps> = ({
                         : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800/30'
                     }`}
                   >
-                    {filterType === 'todos' ? 'Todos' : 
-                     filterType === 'entradas' ? 'Entradas' : 
-                     filterType === 'saidas' ? 'Saídas' : 'Cartões'}
+                    {filterType === 'todos' ? 'Todos' :
+                     filterType === 'entradas' ? 'Entradas' :
+                     filterType === 'saidas' ? 'Saídas' :
+                     filterType === 'assinaturas' ? 'Assinaturas' : 'Cartões'}
                   </button>
                 ))}
               </div>
@@ -160,19 +165,29 @@ const FinancePage: React.FC<FinancePageProps> = ({
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-2 h-2 rounded-full ${
-                        item.transactionType === 'Entrada' 
-                          ? 'bg-green-500/60' 
+                        item.transactionType === 'Entrada'
+                          ? 'bg-green-500/60'
                           : 'bg-red-500/60'
                       }`}></div>
-                      
+
                       <div className="flex-1">
-                        <h4 className="text-sm text-neutral-300">{item.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm text-neutral-300">{item.title}</h4>
+                          {item.isRecurring && (
+                            <span className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-[10px] text-blue-400">
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                              </svg>
+                              recorrente
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-neutral-600 mt-0.5">
                           {new Date(item.createdAt).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
                     </div>
-                    
+
                     <p className={`text-sm ${
                       item.transactionType === 'Entrada' ? 'text-green-500/80' : 'text-red-500/80'
                     }`}>

@@ -9,6 +9,14 @@ import { createPortal } from "react-dom"
 import { ModelSelector } from "@/components/ModelSelector"
 import { Button } from "@/components/ui/button"
 import SiriOrb from "@/components/ui/SiriOrb"
+import { EmptyState } from "@/components/ai-elements/EmptyState"
+import { Conversation, ConversationContent } from "@/components/ai-elements/conversation"
+import { Message, MessageContent } from "@/components/ai-elements/message"
+import { MessageRouter } from "@/components/ai-elements/MessageRouter"
+import { AIElementErrorBoundary } from "@/components/ai-elements/AIElementErrorBoundary"
+import { Loader } from "@/components/ai-elements/loader"
+import { Shimmer } from "@/components/ai-elements/shimmer"
+import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion"
 import { useClickOutside } from "@/hooks/use-click-outside"
 
 const SPEED = 1
@@ -42,9 +50,12 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
   const [input, setInput] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<Error | undefined>()
+  const [isPending, setIsPending] = React.useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
+    const value = e.target.value
+    setInput(value)
+    setIsPending(value.trim().length > 0)
   }
 
   // Persist last 10 messages between sessions
@@ -71,6 +82,7 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
     setMessages(prev => [...prev, userMessage])
     const currentInput = input
     setInput('')
+    setIsPending(false)
     setIsLoading(true)
     setError(undefined)
 
@@ -195,8 +207,8 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
                   ref={modalRef}
                   className="bg-neutral-950 border border-neutral-800 rounded-2xl overflow-hidden shadow-2xl"
                   style={{
-                    width: "min(500px, 90vw)",
-                    height: "min(600px, 85vh)",
+                    width: "min(800px, 90vw)",
+                    height: "min(750px, 85vh)",
                     maxWidth: "90vw",
                     maxHeight: "85vh"
                   }}
@@ -226,6 +238,7 @@ export function MorphSurface({ placeholder = "Pergunte algo..." }: MorphSurfaceP
                       handleInputChange={handleInputChange}
                       handleSubmit={handleSubmit}
                       isLoading={isLoading}
+                      isPending={isPending}
                       error={error}
                       reload={reload}
                       stop={stop}
@@ -301,6 +314,7 @@ function Feedback({
   handleInputChange,
   handleSubmit,
   isLoading,
+  isPending,
   error,
   reload,
   stop,
@@ -313,6 +327,7 @@ function Feedback({
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   isLoading: boolean
+  isPending: boolean
   error?: Error
   reload?: () => void
   stop?: () => void
@@ -321,6 +336,19 @@ function Feedback({
   onModelChange?: (model: string) => void
 }) {
   const { closeFeedback, showFeedback } = useFooter()
+
+  // Suggestion chips
+  const suggestions = [
+    'What are the latest trends in AI?',
+    'How does machine learning work?',
+    'Explain quantum computing',
+    'Best practices for React hooks'
+  ]
+
+  function onSuggestionClick(text: string) {
+    handleInputChange({ target: { value: text } } as any)
+    handleSubmit(new Event('submit') as any)
+  }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Escape") {
@@ -370,39 +398,38 @@ function Feedback({
             </div>
             
             {/* Área de chat */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-gradient-to-b from-neutral-950 to-neutral-900/50">
+            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-neutral-950 to-neutral-900/50">
               {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center">
-                  <div className="mb-4">
-                    <SiriOrb size="48px" colors={{ bg: "oklch(22.64% 0 0)" }} />
-                  </div>
-                  <h3 className="text-neutral-300 text-lg font-medium mb-2">Capture um pensamento para começar</h3>
-                  <p className="text-neutral-500 text-sm max-w-xs">
-                    Como posso ajudar você hoje? Digite abaixo ou pressione ESC para fechar.
-                  </p>
+                <div className="p-4 sm:p-6">
+                  <EmptyState />
                 </div>
               ) : (
-                messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-neutral-800/70 text-neutral-200 border border-neutral-700/60' 
-                        : 'bg-neutral-900/70 text-neutral-300 border border-neutral-800/60'
-                    }`}>
-                      {renderMessage(msg.content)}
-                    </div>
-                  </div>
-                ))
+                <Conversation>
+                  <ConversationContent className="space-y-0">
+                    {messages.map((msg) => {
+                      // Convert simple message to UIMessage format
+                      const uiMessage = {
+                        id: msg.id,
+                        role: msg.role as "user" | "assistant" | "system",
+                        parts: [{ type: "text" as const, text: msg.content || "" }],
+                      };
+
+                      return (
+                        <Message key={msg.id} from={msg.role}>
+                          <MessageContent>
+                            <AIElementErrorBoundary>
+                              <MessageRouter message={uiMessage} />
+                            </AIElementErrorBoundary>
+                          </MessageContent>
+                        </Message>
+                      );
+                    })}
+                  </ConversationContent>
+                </Conversation>
               )}
               {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-neutral-900/60 text-neutral-300 border border-neutral-800/60 px-3 py-2 rounded-lg text-sm">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce delay-100"></div>
-                      <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce delay-200"></div>
-                    </div>
-                  </div>
+                <div className="flex justify-start px-4">
+                  <Loader />
                 </div>
               )}
               {error && (
@@ -421,7 +448,25 @@ function Feedback({
                 </div>
               )}
             </div>
-            
+
+            {/* Suggestions section */}
+            {messages.length === 0 && (
+              <div className="px-4 pb-4">
+                <div className="mb-2">
+                  <span className="text-xs text-neutral-500 font-medium">Sugestões:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {suggestions.map((text) => (
+                    <Suggestion
+                      key={text}
+                      suggestion={text}
+                      onClick={() => onSuggestionClick(text)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Input area */}
             <div className="p-4 sm:p-6 border-t border-neutral-800 bg-neutral-900/30 space-y-3">
               {/* Model Selector */}
@@ -435,19 +480,24 @@ function Feedback({
               </div>
 
               {/* Text Input */}
-              <div className="relative">
-                <textarea
-                  value={input}
-                  onChange={handleInputChange}
-                  placeholder={placeholder || "Pergunte algo ou adicione uma tarefa..."}
-                  name="message"
-                  className="w-full bg-neutral-950 text-neutral-100 resize-none rounded-lg p-3 sm:p-4 pr-16 outline-0 placeholder:text-neutral-500 min-h-[60px] max-h-32 border border-neutral-800 focus:border-neutral-700 transition-colors"
-                  rows={2}
-                  onKeyDown={onKeyDown}
-                  spellCheck={false}
-                  disabled={isLoading}
-                />
-                <div className="absolute right-3 bottom-3 flex gap-2">
+              <div className="space-y-2">
+                <div className="relative">
+                  <textarea
+                    value={input}
+                    onChange={handleInputChange}
+                    placeholder={placeholder || "Pergunte algo ou adicione uma tarefa..."}
+                    name="message"
+                    className={cx(
+                      "w-full bg-neutral-950 text-neutral-100 resize-none rounded-lg p-3 sm:p-4 pr-16 outline-0 placeholder:text-neutral-500 min-h-[60px] max-h-32 border transition-all",
+                      "text-base leading-relaxed",
+                      isPending ? "border-blue-800 ring-1 ring-blue-900/50" : "border-neutral-800 focus:border-neutral-700"
+                    )}
+                    rows={2}
+                    onKeyDown={onKeyDown}
+                    spellCheck={false}
+                    disabled={isLoading}
+                  />
+                  <div className="absolute right-3 bottom-3 flex gap-2">
                   {isLoading && stop && (
                     <button
                       type="button"
@@ -471,6 +521,24 @@ function Feedback({
                     </svg>
                   </button>
                 </div>
+                </div>
+
+                {/* Pending indicator */}
+                {isPending && !isLoading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="flex items-center gap-2 text-xs text-blue-400"
+                  >
+                    <div className="flex gap-1">
+                      <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                      <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                    </div>
+                    <span>Digite Enter para enviar</span>
+                  </motion.div>
+                )}
               </div>
             </div>
           </motion.div>
@@ -478,32 +546,6 @@ function Feedback({
       </AnimatePresence>
     </form>
   )
-}
-
-function renderMessage(text: string) {
-  // Colapsável para plano de execução (delimitadores :::plan ... :::)
-  if (text.startsWith('Entendi. Vou executar:') || text.startsWith('Entendi. Vou executar')) {
-    const rest = text.replace(/^Entendi\. Vou executar:\s*/,'')
-    return (
-      <details>
-        <summary className="cursor-pointer text-neutral-200">Plano de execução</summary>
-        <ul className="mt-2 list-disc pl-5 space-y-1 text-neutral-300">
-          {rest.split(/,\s*/).map((a,i)=> <li key={i}>{a}</li>)}
-        </ul>
-      </details>
-    )
-  }
-  // Bullets simples
-  const lines = text.split('\n')
-  const isList = lines.every(l => l.trim().startsWith('•') || l.trim().startsWith('-') || l.trim().length===0)
-  if (isList) {
-    return (
-      <ul className="list-disc pl-5 space-y-1">
-        {lines.filter(l=>l.trim().length>0).map((l,i)=> <li key={i}>{l.replace(/^[-•]\s*/,'')}</li>)}
-      </ul>
-    )
-  }
-  return <pre className="whitespace-pre-wrap font-sans">{text}</pre>
 }
 
 const LOGO_SPRING = {

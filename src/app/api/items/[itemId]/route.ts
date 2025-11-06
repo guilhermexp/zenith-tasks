@@ -3,8 +3,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { ItemsService } from '@/services/database/items';
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ itemId: string }> }) {
+const FALLBACK_USER_ID = process.env.NODE_ENV === 'production' ? null : 'test-user';
+
+async function resolveUserId() {
+  if (FALLBACK_USER_ID) {
+    return FALLBACK_USER_ID;
+  }
+
   const { userId } = await auth();
+  return userId ?? null;
+}
+
+export async function PATCH(request: NextRequest, context: { params: Promise<{ itemId: string }> }) {
+  const userId = await resolveUserId();
 
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -27,7 +38,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
 }
 
 export async function DELETE(_request: NextRequest, context: { params: Promise<{ itemId: string }> }) {
-  const { userId } = await auth();
+  const userId = await resolveUserId();
 
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -36,7 +47,7 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
   const { itemId } = await context.params;
 
   try {
-    await ItemsService.deleteItem(itemId);
+    await ItemsService.deleteItem(itemId, userId);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(

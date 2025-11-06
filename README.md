@@ -6,6 +6,7 @@ Um aplicativo moderno de gerenciamento de tarefas com IA integrada, desenvolvido
 
 - 📝 **Gerenciamento Inteligente de Tarefas** - Análise e categorização automática via IA
 - 🤖 **Assistente AI Integrado** - Conversa contextual com execução de ferramentas
+- 💬 **AI Elements Integration** - Interface rica com syntax highlighting, fontes citadas, e planejamento multi-etapas
 - 📅 **Calendário Interativo** - Visualização temporal de compromissos
 - 💰 **Gestão Financeira** - Controle de entrada e saídas
 - 📋 **Notas de Reunião** - Transcrição e resumo automático com IA
@@ -24,8 +25,10 @@ Um aplicativo moderno de gerenciamento de tarefas com IA integrada, desenvolvido
 
 ### Backend & AI
 - **Next.js API Routes** - Backend endpoints
-- **Vercel AI SDK 5.0** - AI abstraction layer
+- **Vercel AI SDK 5.0** - AI abstraction layer with UI Elements
+- **Vercel AI Elements** - Composable AI UI components (48+ components)
 - **Google Gemini** - Primary AI model (gemini-2.5-flash)
+- **Shiki** - Syntax highlighting with github-dark theme
 - **Supabase 2.57.4** - PostgreSQL + Realtime + Auth
 - **Clerk 6.33.1** - Authentication (optional bypass for dev)
 
@@ -81,6 +84,7 @@ npm run typecheck # Verificação de tipos TypeScript
 |-----------|-----------|
 | [CLAUDE.md](./CLAUDE.md) | Architecture overview & best practices |
 | [AGENTS.md](./AGENTS.md) | Repository guidelines & context for developers |
+| [AI Elements](./docs/ai-elements.md) | **NEW** - Comprehensive AI Elements integration guide |
 | [ai_docs/](./ai_docs/) | Technical documentation directory |
 | [ai_specs/](./ai_specs/) | Feature specifications & API documentation |
 

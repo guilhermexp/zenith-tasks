@@ -127,8 +127,19 @@ const TalkModeModal: React.FC<TalkModeModalProps> = ({
                 }
                 setStatus('review');
               } catch (e) {
-                logger.error('Error processing audio with Gemini', e, logContext);
-                setErrorMessage(`Erro: ${e instanceof Error ? e.message : 'Não foi possível processar o áudio'}`);
+                const message = e instanceof Error ? e.message : '';
+                const normalized = message.toLowerCase();
+
+                if (normalized.includes('sobrecarreg') || normalized.includes('transcrição demorou demais')) {
+                  logger.warn('TalkMode transcription temporarily unavailable', {
+                    ...logContext,
+                    message: message || undefined,
+                  });
+                } else {
+                  logger.error('Error processing audio with Gemini', e, logContext);
+                }
+
+                setErrorMessage(`Erro: ${message || 'Não foi possível processar o áudio'}`);
                 setStatus('error');
               }
             }

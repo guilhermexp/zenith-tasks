@@ -174,9 +174,13 @@ export class ItemsService {
   /**
    * Delete an item
    */
-  static async deleteItem(itemId: string): Promise<void> {
+  static async deleteItem(itemId: string, userId?: string): Promise<void> {
     try {
-      await db.delete(mindFlowItems).where(eq(mindFlowItems.id, itemId));
+      const conditions = userId
+        ? and(eq(mindFlowItems.id, itemId), eq(mindFlowItems.userId, userId))
+        : eq(mindFlowItems.id, itemId);
+
+      await db.delete(mindFlowItems).where(conditions);
     } catch (error) {
       throw this.logAndWrapError('deleteItem', error, { itemId });
     }

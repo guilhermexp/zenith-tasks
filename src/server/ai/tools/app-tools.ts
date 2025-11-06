@@ -436,6 +436,78 @@ export const appTools = {
     },
   }),
 
+  addSubscription: tool({
+    description:
+      "Adiciona uma assinatura/pagamento recorrente ao sistema. Use para Netflix, Spotify, contas fixas mensais, etc. Automaticamente marca como recorrente.",
+    inputSchema: z.object({
+      title: z.string().describe("Nome da assinatura (ex: Netflix, Spotify, Aluguel)"),
+      amount: z.number().positive().describe("Valor mensal da assinatura"),
+      paymentMethod: z
+        .string()
+        .optional()
+        .describe("Forma de pagamento (Cartão de Crédito, Débito automático, etc)"),
+      dueDate: z
+        .string()
+        .optional()
+        .describe("Data de vencimento mensal em formato brasileiro (DD/MM/YYYY)"),
+      dueDateISO: z
+        .string()
+        .optional()
+        .describe("Data de vencimento em formato ISO 8601"),
+      notes: z
+        .string()
+        .optional()
+        .describe("Anotações adicionais sobre a assinatura"),
+      isPaid: z
+        .boolean()
+        .default(false)
+        .describe("Se o pagamento deste mês já foi efetuado"),
+    }),
+    execute: async (params: any) => {
+      // Cria um item financeiro do tipo Saída com isRecurring = true
+      const subscriptionParams = {
+        title: params.title,
+        type: "Financeiro",
+        amount: params.amount,
+        transactionType: "Saída",
+        isRecurring: true,
+        paymentMethod: params.paymentMethod,
+        isPaid: params.isPaid || false,
+        dueDate: params.dueDate,
+        dueDateISO: params.dueDateISO,
+        notes: params.notes,
+      };
+
+      return {
+        action: "create_item",
+        params: subscriptionParams,
+        message: `Assinatura "${params.title}" de R$ ${params.amount.toFixed(2)} será adicionada como pagamento recorrente`,
+      };
+    },
+  }),
+
+  listSubscriptions: tool({
+    description:
+      "Lista todas as assinaturas/pagamentos recorrentes cadastrados no sistema.",
+    inputSchema: z.object({
+      includeInactive: z
+        .boolean()
+        .default(false)
+        .describe("Incluir assinaturas marcadas como concluídas/canceladas"),
+      sortBy: z
+        .enum(["amount", "title", "dueDate"])
+        .default("amount")
+        .describe("Ordenar por valor, nome ou data de vencimento"),
+    }),
+    execute: async (params: any) => {
+      return {
+        action: "list_subscriptions",
+        params,
+        message: "Listando assinaturas recorrentes...",
+      };
+    },
+  }),
+
   // ============================================
   // Reuniões
   // ============================================

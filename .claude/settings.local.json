@@ -29,9 +29,14 @@
       "Bash(vercel:*)",
       "Bash(kill:*)",
       "Bash(npm run typecheck:*)",
-      "WebFetch(domain:zenith-tasks.vercel.app)"
+      "WebFetch(domain:zenith-tasks.vercel.app)",
+      "mcp__TestSprite__testsprite_bootstrap_tests"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "TestSprite"
+  ]
 }
