@@ -30,7 +30,9 @@
       "Bash(kill:*)",
       "Bash(npm run typecheck:*)",
       "WebFetch(domain:zenith-tasks.vercel.app)",
-      "mcp__TestSprite__testsprite_bootstrap_tests"
+      "mcp__TestSprite__testsprite_bootstrap_tests",
+      "mcp__TestSprite__testsprite_generate_code_summary",
+      "Bash(cat /Users/guilhermevarela/Documents/Projetos/zenith-tasks/testsprite_tests/tmp/code_summary.json)"
     ],
     "deny": [],
     "ask": []
