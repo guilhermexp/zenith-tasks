@@ -94,3 +94,32 @@ export async function safeRequestJson<T = any>(request: Request, fallback: T): P
     return fallback
   }
 }
+
+/**
+ * Alias for backward compatibility - provides default empty object fallback
+ */
+export async function parseRequestBody<T = any>(request: Request): Promise<T> {
+  return safeRequestJson(request, {} as T)
+}
+
+/**
+ * Extract JSON from text that may contain other content
+ * Looks for JSON between markers or tries direct parse
+ */
+export function extractJson<T = any>(text: string): T | null {
+  try {
+    // First try direct parse
+    return JSON.parse(text)
+  } catch {
+    // Try to find JSON between common markers
+    const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/)
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[0])
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+}

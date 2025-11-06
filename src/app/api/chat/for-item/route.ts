@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { ChatService } from '@/server/ai/chat-service'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 import type { ChatMessage } from '@/types'
-import { parseRequestBody } from '@/utils/json-helpers'
+import { parseRequestBody } from '@/utils/safe-json'
 import { logger } from '@/utils/logger'
 
 export async function POST(req: Request) {

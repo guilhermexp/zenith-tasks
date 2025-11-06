@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 import { getAISDKModel } from '@/server/aiProvider'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
-import { parseRequestBody } from '@/utils/json-helpers'
+import { parseRequestBody } from '@/utils/safe-json'
 import { logger } from '@/utils/logger'
 
 export async function POST(req: Request) {
