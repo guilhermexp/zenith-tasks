@@ -6,7 +6,7 @@ import { logger } from '@/utils/logger';
 import { getGatewayProvider, isGatewayAvailable } from './ai/gateway/provider';
 
 export interface AIProviderConfig {
-  provider: 'gateway' | 'google' | 'openrouter' | 'anthropic' | 'openai';
+  provider: 'gateway' | 'google' | 'openrouter' | 'anthropic' | 'openai' | 'zai' | 'xai';
   model?: string;
   apiKey?: string;
   baseURL?: string;
@@ -172,10 +172,11 @@ export class AIProvider {
           throw new Error('ZAI_API_KEY not configured');
         }
 
-        const { createOpenAI } = await import('@ai-sdk/openai');
-        const zai = createOpenAI({
+        const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible');
+        const zai = createOpenAICompatible({
+          name: 'zai',
           apiKey,
-          baseURL: 'https://api.z.ai/api/coding/paas/v4'
+          baseURL: 'https://api.z.ai/api/paas/v4'
         });
 
         const modelName = config?.model || process.env.ZAI_MODEL || 'glm-4.6';
@@ -218,6 +219,19 @@ export class AIProvider {
         return openai(modelName) as LanguageModel;
       }
 
+      case 'xai': {
+        const apiKey = config?.apiKey || process.env.XAI_API_KEY;
+        if (!apiKey) {
+          logger.warn('XAI_API_KEY not found, falling back to other providers', { provider: 'AIProvider' });
+          throw new Error('XAI_API_KEY not configured');
+        }
+
+        const { createXai } = await import('@ai-sdk/xai');
+        const xai = createXai({ apiKey });
+        const modelName = config?.model || process.env.XAI_MODEL || 'grok-4-fast-reasoning';
+        return xai(modelName) as LanguageModel;
+      }
+
       default:
         throw new Error(`Provider ${provider} not supported`);
     }
@@ -226,6 +240,7 @@ export class AIProvider {
   private getDefaultModel(provider: string): string {
     const defaults: Record<string, string> = {
       'zai': 'glm-4.6',
+      'xai': 'grok-4-fast-reasoning',
       'google': 'gemini-2.5-pro',
       'openrouter': 'google/gemma-2-9b-it:free', // Modelo gratuito como padrão
       'anthropic': 'claude-3-5-sonnet-20241022',

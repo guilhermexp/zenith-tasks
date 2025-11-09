@@ -122,6 +122,11 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
       return <Zap className="h-4 w-4 text-emerald-400" />;
     }
 
+    // XAI Grok Models
+    if (provider === 'xai') {
+      return <Zap className="h-4 w-4 text-violet-400" />;
+    }
+
     // Provider-based icons
     if (provider === 'openai') {
       if (modelId.includes('gpt-4o') && !modelId.includes('mini')) {
@@ -288,9 +293,17 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
   );
 }
 
-// Default models as fallback
+// Default models as fallback (Grok como primeiro = padrão)
 function getDefaultModels(): Model[] {
   return [
+    {
+      id: 'xai/grok-4-fast-reasoning',
+      name: '⚡ Grok 4 Fast Reasoning',
+      provider: 'xai',
+      description: 'xAI Grok 4 - Raciocínio rápido e eficiente',
+      contextWindow: 2000000,
+      capabilities: ['text', 'fast', 'reasoning']
+    },
     {
       id: 'google/gemini-2.5-pro',
       name: '🟢 Gemini 2.5 Pro',
@@ -300,20 +313,20 @@ function getDefaultModels(): Model[] {
       capabilities: ['text', 'vision', 'huge-context']
     },
     {
+      id: 'zai/glm-4.6',
+      name: '🚀 GLM-4.6',
+      provider: 'zai',
+      description: 'Zhipu AI GLM-4.6 - Especialista em código e agentes',
+      contextWindow: 200000,
+      capabilities: ['text', 'code', 'agentic']
+    },
+    {
       id: 'google/gemini-2.5-flash',
       name: '⚡ Gemini 2.5 Flash',
       provider: 'google',
       description: 'Google Gemini Flash - Respostas rápidas e eficientes',
       contextWindow: 1000000,
       capabilities: ['text', 'vision', 'fast']
-    },
-    {
-      id: 'google/gemini-2.0-flash-exp',
-      name: '🧪 Gemini 2.0 Flash Experimental',
-      provider: 'google',
-      description: 'Versão experimental focada em velocidade e multimídia',
-      contextWindow: 1000000,
-      capabilities: ['text', 'vision', 'audio', 'multimodal', 'experimental']
     }
   ];
 }

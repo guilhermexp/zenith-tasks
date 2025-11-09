@@ -1,4 +1,4 @@
-import type { MindFlowItem, MindFlowItemType, Subtask, ChatMessage } from "@/types"
+import type { MindFlowItem, MindFlowItemType, Subtask } from "@/types"
 import { naturalToISO } from "@/utils/date"
 
 export const ALLOWED_TYPES: MindFlowItemType[] = [
@@ -87,9 +87,4 @@ export function coerceItems(json: any): MindFlowItem[] {
     }
     return base
   })
-}
-
-export function trimHistory(history: ChatMessage[], limit = 10): ChatMessage[] {
-  if (!history) return []
-  return history.slice(Math.max(0, history.length - limit))
 }

@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 
 import SiriOrb from '@/components/ui/SiriOrb';
 
-import type { MindFlowItem, Subtask, ChatMessage, MindFlowItemType } from '../types';
+import type { MindFlowItem, Subtask, MindFlowItemType } from '../types';
 import { 
   XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon, 
   SparklesIcon, ChevronLeftIcon, TrashIcon, CheckCircleIcon, TagIcon, 
@@ -18,7 +18,6 @@ interface DetailPanelProps {
   onUpdateItem: (itemId: string, updates: Partial<MindFlowItem>) => void;
   onDeleteItem: (itemId: string) => void;
   onGenerateSubtasks: (itemId: string, opts?: { force?: boolean }) => void;
-  onChatWithAI: (itemId: string, message: string) => Promise<any>;
   width?: number;
   onResize?: (width: number) => void;
   isMobile?: boolean;
@@ -194,14 +193,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   onUpdateItem, 
   onDeleteItem, 
   onGenerateSubtasks, 
-  onChatWithAI,
   width,
   onResize,
   isMobile = false,
 }) => {
-  const [isSending, setIsSending] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(item.chatHistory || []);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
   const asideRef = useRef<HTMLDivElement>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(item.title);
@@ -232,39 +227,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  };
-
-  useEffect(() => {
-    if (chatContainerRef.current && chatMessages.length > 0) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
-
-  const handleSendMessage = async (message: string) => {
-    if (!message.trim() || isSending) return;
-
-    setIsSending(true);
-    
-    try {
-      // Add user message to chat
-      const userMessage: ChatMessage = {
-        role: 'user',
-        parts: [{ text: message }]
-      };
-      setChatMessages(prev => [...prev, userMessage]);
-
-      // Send to AI
-      const response = await onChatWithAI(item.id, message);
-      
-      if (response) {
-        // AI response will be added through the item update
-        setChatMessages(prev => [...prev, response]);
-      }
-    } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
-    } finally {
-      setIsSending(false);
-    }
   };
 
   const handleAddSubtask = (title: string) => {
@@ -588,27 +550,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             )}
           </div>
 
-          {/* Chat Messages */}
-          {chatMessages.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-neutral-800/50">
-              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-4">
-                Conversa com IA
-              </h4>
-              <div ref={chatContainerRef} className="space-y-3 max-h-[50vh] overflow-y-auto">
-                {chatMessages.map((msg, index) => (
-                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-neutral-800/70 text-neutral-200 border border-neutral-700/60' 
-                        : 'bg-neutral-900/70 text-neutral-300 border border-neutral-800/60'
-                    }`}>
-                      <p className="whitespace-pre-wrap">{msg.parts[0]?.text || ''}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

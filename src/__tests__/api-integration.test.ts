@@ -48,44 +48,6 @@ describe('API Integration Tests', () => {
       expect(Array.isArray(data.commands)).toBe(true)
     })
 
-    it('should handle chat for item requests', async () => {
-      const response = await fetch(`${baseUrl}/api/chat/for-item`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: 'Test Task',
-          type: 'Tarefa',
-          message: 'How can I complete this task?',
-          summary: 'This is a test task for integration testing'
-        })
-      })
-
-      expect(response.status).toBe(200)
-      const data = await response.json()
-      expect(data).toHaveProperty('text')
-      expect(typeof data.text).toBe('string')
-    })
-
-    it('should validate required fields for chat requests', async () => {
-      const response = await fetch(`${baseUrl}/api/chat/for-item`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          title: '',
-          type: 'Tarefa',
-          message: ''
-        })
-      })
-
-      expect(response.status).toBe(400)
-      const data = await response.json()
-      expect(data).toHaveProperty('error')
-    })
-
     it('should handle rate limiting', async () => {
       // Make multiple rapid requests to trigger rate limiting
       const requests = Array(65).fill(null).map(() => 
@@ -415,25 +377,6 @@ describe('API Security Tests', () => {
     const responseText = JSON.stringify(data)
     expect(responseText).not.toContain('<script>')
     expect(responseText).not.toContain('alert(')
-  })
-
-  it('should handle SQL injection attempts', async () => {
-    const sqlInjection = "'; DROP TABLE users; --"
-    
-    const response = await fetch(`${baseUrl}/api/chat/for-item`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        title: sqlInjection,
-        type: 'Tarefa',
-        message: 'test message'
-      })
-    })
-
-    // Should handle gracefully without exposing database errors
-    expect([200, 400]).toContain(response.status)
   })
 
   it('should validate content length', async () => {

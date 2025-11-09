@@ -1,9 +1,9 @@
 import { generateObject, generateText } from 'ai'
 
 import { getAISDKModel } from '@/server/aiProvider'
-import type { MindFlowItem, ChatMessage, MindFlowItemType } from '@/types'
+import type { MindFlowItem, MindFlowItemType } from '@/types'
 
-import { extractJson, coerceItems, trimHistory } from './parse'
+import { extractJson, coerceItems } from './parse'
 import { buildAnalyzePrompt, buildSubtasksPrompt } from './prompts'
 
 export async function analyzeWithAI(text: string): Promise<MindFlowItem[]> {
@@ -97,21 +97,4 @@ export function estimateComplexity(title: string, summary?: string): 'simple'|'m
   if (wordCount <= 5) return 'medium'
 
   return 'medium'
-}
-
-export async function chatForItem(itemContext: { title: string; type: string; summary?: string; financeInfo?: string; history?: ChatMessage[] }, message: string) {
-  const model = await getAISDKModel()
-  const history = trimHistory(itemContext.history || [], 10).map(m => ({
-    role: m.role === 'model' ? 'assistant' as const : 'user' as const,
-    content: [{ type: 'text' as const, text: m.parts?.[0]?.text || '' }]
-  }))
-  const context = `Você está ajudando com este item. Seja conciso e prático.\nTítulo: ${itemContext.title}\nTipo: ${itemContext.type}\nResumo: ${itemContext.summary || '—'}\n${itemContext.financeInfo || ''}`
-  const { text } = await generateText({
-    model,
-    messages: [
-      ...history,
-      { role: 'user', content: [ { type: 'text', text: context + '\n\nPergunta: ' + message } ] }
-    ]
-  })
-  return text
 }

@@ -182,6 +182,15 @@ export async function POST(req: Request) {
 function getDefaultModels() {
   return [
     {
+      id: 'xai/grok-4-fast-reasoning',
+      name: 'Grok 4 Fast Reasoning',
+      provider: 'xai',
+      description: 'xAI Grok 4 - Raciocínio rápido e eficiente',
+      contextWindow: 2000000,
+      pricing: { input: 2.0, output: 10 },
+      capabilities: ['text', 'reasoning', 'code']
+    },
+    {
       id: 'google/gemini-2.5-pro',
       name: 'Gemini 2.5 Pro',
       provider: 'google',
@@ -191,6 +200,15 @@ function getDefaultModels() {
       capabilities: ['text', 'vision', 'audio', 'code']
     },
     {
+      id: 'zai/glm-4.6',
+      name: 'GLM-4.6',
+      provider: 'zai',
+      description: 'Zhipu AI GLM-4.6 - Especialista em código e agentes',
+      contextWindow: 200000,
+      pricing: { input: 1.0, output: 4.0 },
+      capabilities: ['text', 'code', 'function-calling']
+    },
+    {
       id: 'google/gemini-2.5-flash',
       name: 'Gemini 2.5 Flash',
       provider: 'google',
@@ -198,15 +216,6 @@ function getDefaultModels() {
       contextWindow: 1000000,
       pricing: { input: 0.075, output: 0.3 },
       capabilities: ['text', 'vision', 'multimodal']
-    },
-    {
-      id: 'google/gemini-2.0-flash-exp',
-      name: 'Gemini 2.0 Flash Experimental',
-      provider: 'google',
-      description: 'Versão experimental com foco em velocidade e multimídia',
-      contextWindow: 1000000,
-      pricing: { input: 0.075, output: 0.3 },
-      capabilities: ['text', 'vision', 'audio', 'multimodal', 'experimental']
     }
   ];
 }

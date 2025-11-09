@@ -31,29 +31,22 @@ describe('End-to-End Workflow Tests', () => {
   describe('Complete Chat Conversation Workflow', () => {
     it('should handle a complete chat conversation with task creation', async () => {
       // Mock successful API responses
-      mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            commands: [
-              {
-                action: 'create_task',
-                args: {
-                  title: 'Complete project documentation',
-                  type: 'Tarefa',
-                  summary: 'Write comprehensive documentation for the project'
-                }
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          commands: [
+            {
+              action: 'create_task',
+              args: {
+                title: 'Complete project documentation',
+                type: 'Tarefa',
+                summary: 'Write comprehensive documentation for the project'
               }
-            ],
-            reply: 'Criei uma tarefa para você: Complete project documentation'
-          })
-        } as Response)
-        .mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({
-            text: 'A tarefa foi criada com sucesso. Você pode adicionar subtarefas se necessário.'
-          })
-        } as Response)
+            }
+          ],
+          reply: 'Criei uma tarefa para você: Complete project documentation'
+        })
+      } as Response)
 
       // Simulate user starting a chat conversation
       const initialMessage = 'Preciso criar uma tarefa para documentar o projeto'
@@ -75,28 +68,9 @@ describe('End-to-End Workflow Tests', () => {
       expect(assistantData.commands[0].action).toBe('create_task')
       expect(assistantData.reply).toContain('tarefa')
 
-      // Step 2: Follow up with item-specific chat
-      const followUpResponse = await fetch('/api/chat/for-item', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: 'Complete project documentation',
-          type: 'Tarefa',
-          message: 'Como posso organizar melhor esta documentação?',
-          summary: 'Write comprehensive documentation for the project'
-        })
-      })
-
-      const followUpData = await followUpResponse.json()
-
-      expect(followUpResponse.ok).toBe(true)
-      expect(followUpData.text).toBeTruthy()
-      expect(typeof followUpData.text).toBe('string')
-
-      // Verify the complete workflow
-      expect(mockFetch).toHaveBeenCalledTimes(2)
+      // Verify the workflow relied solely on the assistant endpoint
+      expect(mockFetch).toHaveBeenCalledTimes(1)
       expect(mockFetch).toHaveBeenNthCalledWith(1, '/api/assistant', expect.any(Object))
-      expect(mockFetch).toHaveBeenNthCalledWith(2, '/api/chat/for-item', expect.any(Object))
     })
 
     it('should handle error recovery in chat workflow', async () => {
