@@ -1,6 +1,8 @@
 # Zenith Tasks - Gerenciador de Tarefas Inteligente 🚀
 
-Um aplicativo moderno de gerenciamento de tarefas com IA integrada, desenvolvido com Next.js, Supabase e Gemini AI.
+Um aplicativo moderno de gerenciamento de tarefas com IA integrada, desenvolvido com Next.js, Neon PostgreSQL e suporte para múltiplos provedores de IA (Google Gemini, OpenAI, Anthropic, XAI).
+
+**Status**: ✅ Produção-ready | 🚀 Deployed em https://zenith-tasks.vercel.app | 📊 27 API routes | 🔄 Última atualização: 2025-11-09
 
 ## ✨ Funcionalidades
 
@@ -24,17 +26,22 @@ Um aplicativo moderno de gerenciamento de tarefas com IA integrada, desenvolvido
 - **Framer Motion 12** - Animations
 
 ### Backend & AI
-- **Next.js API Routes** - Backend endpoints
-- **Vercel AI SDK 5.0** - AI abstraction layer with UI Elements
+- **Next.js API Routes** - Backend endpoints (27 routes consolidadas)
+- **Vercel AI SDK 5.0.87** - AI abstraction layer with UI Elements
 - **Vercel AI Elements** - Composable AI UI components (48+ components)
-- **Google Gemini** - Primary AI model (gemini-2.5-flash)
+- **Multi-Provider Support**:
+  - 🔵 Google Gemini
+  - 🟠 OpenAI (GPT-4, GPT-3.5-turbo)
+  - 🔴 Anthropic Claude
+  - ✨ XAI Grok
 - **Shiki** - Syntax highlighting with github-dark theme
-- **Supabase 2.57.4** - PostgreSQL + Realtime + Auth
-- **Clerk 6.33.1** - Authentication (optional bypass for dev)
+- **Neon PostgreSQL 1.0.2** - Serverless PostgreSQL com connection pooling
+- **Drizzle ORM 0.44.7** - Type-safe database queries
+- **Clerk 6.34.1** - Authentication (optional bypass para dev)
 
 ### Infrastructure
-- **Vercel** - Hosting & deployment
-- **Supabase Cloud** - Database & realtime subscriptions
+- **Vercel** - Hosting & deployment (serverless functions)
+- **Neon Cloud** - Managed PostgreSQL database
 
 
 ## 🚀 Quick Start
@@ -76,28 +83,37 @@ npm run lint      # Linting com ESLint
 npm run typecheck # Verificação de tipos TypeScript
 ```
 
-## 📚 Documentação
+## 📚 Documentação Completa
 
-### Guides & Documentation
-
+### Arquivos Principais
 | Documento | Descrição |
 |-----------|-----------|
-| [CLAUDE.md](./CLAUDE.md) | Architecture overview & best practices |
-| [AGENTS.md](./AGENTS.md) | Repository guidelines & context for developers |
-| [AI Elements](./docs/ai-elements.md) | **NEW** - Comprehensive AI Elements integration guide |
-| [ai_docs/](./ai_docs/) | Technical documentation directory |
-| [ai_specs/](./ai_specs/) | Feature specifications & API documentation |
+| [CLAUDE.md](./CLAUDE.md) | 🏗️ Architecture overview & development guidelines |
+| [README.md](./README.md) | 📖 Project overview & quick start (este arquivo) |
+| [AGENTS.md](./AGENTS.md) | 🤖 Agent context & repository guidelines |
 
-### AI Documentation
+### Documentação de Cleanup Recente (2025-11-09)
+| Documento | Descrição |
+|-----------|-----------|
+| [CLEANUP_REPORT_20251109.md](./docs/CLEANUP_REPORT_20251109.md) | 🧹 Comprehensive cleanup report com métricas |
+| [MODEL_SWITCHING.md](./docs/MODEL_SWITCHING.md) | 🔄 Multi-provider model switching guide |
+| [VERCEL_AI_SDK_DOCS.md](./docs/VERCEL_AI_SDK_DOCS.md) | 📚 Complete AI SDK reference |
 
-- **[TOOLS_DISPONIVEIS.md](./ai_docs/TOOLS_DISPONIVEIS.md)** - Complete list of 17 AI assistant tools with parameters
+### Diretórios de Documentação AI
+| Diretório | Propósito |
+|-----------|-----------|
+| [ai_changelog/](./ai_changelog/) | 📝 Histórico de versões e release notes |
+| [ai_docs/](./ai_docs/) | 📖 Guias técnicos e documentação |
+| [ai_issues/](./ai_issues/) | 🐛 Bugs conhecidos e issues |
+| [ai_research/](./ai_research/) | 🔬 Notas de pesquisa e experimentos |
+| [ai_specs/](./ai_specs/) | 📋 Especificações e documentação de API |
+| [docs/](./docs/) | 📚 Documentação de arquitetura e features |
 
-- **[CLERK_CONFIGURADO.md](./ai_docs/CLERK_CONFIGURADO.md)** - Authentication setup documentation
-
-### Documentation Directories
-- **[ai_changelog/](./ai_changelog/)** - Version history and release notes
-- **[ai_docs/](./ai_docs/)** - Technical guides and integration documentation
-- **[ai_issues/](./ai_issues/)** - Bug reports and known issues
+### Documentação Técnica Detalhada
+- **[AI Elements Integration](./docs/ai-elements.md)** - 48+ componentes para UI com IA
+- **[AGENT_TOOLS.md](./docs/AGENT_TOOLS.md)** - Lista completa de 17+ ferramentas do assistente
+- **[AI_SDK_V5_COMPLETE_GUIDE.md](./docs/AI_SDK_V5_COMPLETE_GUIDE.md)** - Guia completo do AI SDK
+- **[STREAMING_EVENTS_GUIDE.md](./docs/STREAMING_EVENTS_GUIDE.md)** - Arquitetura de streaming de eventos
 - **[ai_research/](./ai_research/)** - Research notes and experiments
 - **[ai_specs/](./ai_specs/)** - Feature and API specifications
 

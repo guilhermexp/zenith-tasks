@@ -1,57 +1,60 @@
-# AI Documentation
+# AI Documentation 📚
 
-Technical documentation, guides, and architectural analysis for the Zenith Tasks project.
+Technical documentation, guides, and analysis for the Zenith Tasks AI integration.
 
 ## Purpose
-This directory contains comprehensive documentation on project architecture, setup guides, technical decisions, and development guides.
 
-## Files Organization
+This directory contains comprehensive technical documentation:
+- Architecture guides and design documents
+- Setup and configuration guides
+- Integration tutorials and examples
+- Technical analysis and decision records
+- Development guides and best practices
+- API documentation and specifications
 
-### Core Documentation
-- **TOOLS_DISPONIVEIS.md** - Complete list and specification of all 17 AI assistant tools
-- **MARKETPLACE_IMPLEMENTATION.md** - MCP Marketplace integration design and implementation
-- **CLERK_CONFIGURADO.md** - Clerk authentication setup and configuration guide
+## Current Structure
 
-### Analysis & Reports
-- **code-analysis-report.md** - Code quality analysis and cleanup recommendations
-- **AI_SDK_Architecture.md** - Detailed AI SDK integration architecture (if created)
+### Architecture & Design
+- **AI_SDK_V5_UPGRADE_SUMMARY.md** - AI SDK v5 upgrade documentation
+- **AI_SDK_V5_COMPLETE_GUIDE.md** - Complete guide to AI SDK integration
+- **STREAMING_EVENTS_GUIDE.md** - Event streaming architecture
+- **ai-elements.md** - AI Elements integration guide (48+ components)
 
-## Current Documentation Status
-✅ **TOOLS_DISPONIVEIS.md**
-- Documents all 17 assistant tools
-- Includes tool parameters and usage examples
-- Status: Verified and accurate
+### Setup & Configuration
+- **CLERK_CONFIGURADO.md** - Clerk authentication setup (if exists)
+- Configuration guides for different AI providers
 
-✅ **MARKETPLACE_IMPLEMENTATION.md**
-- MCP Marketplace UI and registry
-- Server definitions and authentication flows
-- Status: Implementation complete
+### Feature Documentation
+- **MODEL_SWITCHING.md** - Multi-provider model switching feature
+- **VERCEL_AI_SDK_DOCS.md** - Vercel AI SDK integration reference
+- **AGENT_TOOLS.md** - Available AI assistant tools (17+)
 
-✅ **CLERK_CONFIGURADO.md**
-- Clerk authentication setup
-- Middleware configuration
-- Status: Verified and functional
+### Technical Analysis
+- **PRD-seguranca-hardening.md** - Security hardening requirements
 
-✅ **code-analysis-report.md**
-- Code quality analysis results
-- Recommendations for refactoring
-- Status: Reference documentation
+## Guidelines
 
-## Structure by Topic
-- **AI & Assistant**: TOOLS_DISPONIVEIS.md, AI integration guides
-- **Authentication**: CLERK_CONFIGURADO.md, security best practices
-- **Integration**: MARKETPLACE_IMPLEMENTATION.md, MCP setup
-- **Code Quality**: code-analysis-report.md, best practices
+When adding documentation:
+1. Use clear headings and sections
+2. Include code examples where applicable
+3. Add table of contents for long documents
+4. Include links to related documentation
+5. Keep technical depth appropriate for target audience
+6. Include troubleshooting sections
+7. Document both happy path and edge cases
+
+## File Organization
+
+- **Setup guides**: Configuration, installation, first-time setup
+- **Integration guides**: How to integrate different features/services
+- **Technical specs**: Detailed technical information
+- **Decision records**: Why certain architectural decisions were made
+- **Troubleshooting**: Common issues and solutions
 
 ## Last Updated
-November 3, 2025
 
-## Guidelines for New Documents
-1. Use clear, descriptive filenames
-2. Include status indicators (✅, ⚠️, ❌)
-3. Cross-reference related documents
-4. Include practical examples where helpful
-5. Update the index file when adding new documents
+2025-11-09
 
 ---
-*Directory index last updated: 2025-11-03*
+
+**Maintained by**: Claude Code AI Assistant

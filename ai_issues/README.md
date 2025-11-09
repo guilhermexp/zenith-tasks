@@ -1,48 +1,64 @@
-# AI Issues & Bug Tracking
+# AI Issues & Bug Reports 🐛
 
-Bug reports, known issues, blockers, and issue tracking for the Zenith Tasks project.
+Tracking of known issues, bugs, and technical blockers for the Zenith Tasks project.
 
 ## Purpose
-This directory maintains records of identified bugs, limitations, known issues, and their resolution status.
 
-## Files Organization
-- **ACTIVE_ISSUES.md** - Currently open bugs and blockers (if created)
-- **RESOLVED_ISSUES.md** - Archived issues with solutions (if created)
-- **Issue_*.md** - Individual issue files for tracking (one per major issue)
+This directory documents:
+- Active bugs and issues
+- Known limitations and workarounds
+- Blockers and dependencies
+- Performance issues and bottlenecks
+- Security concerns and vulnerabilities
 
-## Current Status
-No active issues documented yet.
+## Status Categories
 
-## Issue Tracking System
-Each issue file should include:
-- Issue ID and title
-- Severity level (Critical, High, Medium, Low)
-- Description and reproduction steps
-- Expected vs actual behavior
-- Environment (browser, OS, Node version)
-- Related commits or PRs
+- **🔴 Critical** - Production-blocking issues
+- **🟠 High** - Significant impact on functionality
+- **🟡 Medium** - Notable issues with workarounds
+- **🟢 Low** - Minor issues, cosmetic problems
+- **✅ Resolved** - Documented for historical reference
 
-## Severity Levels
-- **Critical**: System broken, data loss risk, security vulnerability
-- **High**: Major feature not working, significant performance issue
-- **Medium**: Feature partially broken, inconvenience to users
-- **Low**: Minor UI issue, edge case handling
+## Issue Tracking
 
-## Status Indicators
-- 🔴 Open/Active
-- 🟡 In Progress
-- 🟢 Resolved
-- ⚫ Archived
+Files are organized by:
+1. **Priority level** (Critical → Low)
+2. **Date discovered** (most recent first)
+3. **Component affected**
+
+### Current Issues
+
+#### Test Infrastructure
+- **Status**: 🟡 Medium
+- **Issue**: Missing test dependencies (@types/jest, @testing-library/react)
+- **Impact**: TypeScript errors in test files
+- **Workaround**: Can be installed when test infrastructure is needed
+- **See**: CLAUDE.md line 72
+
+#### Build Warnings
+- **Status**: 🟢 Low
+- **Issue**: Multiple lockfiles detected (parent directory)
+- **Impact**: Build warnings about workspace root inference
+- **Solution**: Remove parent lockfile or configure turbopack.root
+
+## Issue Resolution Process
+
+When resolving issues:
+1. Document the root cause
+2. Implement the fix
+3. Add tests to prevent regression
+4. Update this tracking document
+5. Move resolved issue to archive
+6. Reference the fix in commit message
+
+## Resolved Issues Archive
+
+- [ARCHIVE/](./ARCHIVE/) - Historical issues and resolutions
 
 ## Last Updated
-November 3, 2025
 
-## Guidelines
-1. Create separate files for each major issue
-2. Include reproduction steps
-3. Link to related commits and discussions
-4. Move resolved issues to archive
-5. Update main index when status changes
+2025-11-09
 
 ---
-*Directory index last updated: 2025-11-03*
+
+**Maintained by**: Claude Code AI Assistant

@@ -90,16 +90,23 @@ const modelSettings = {
 };
 ```
 
-**API Architecture**: Server-side only with 32 endpoints:
+**API Architecture**: Server-side only with 27 endpoints (consolidated from 32):
+- `/api/assistant` - Unified assistant endpoint with 17+ tool execution capabilities
+- `/api/models` - AI model listing and provider switching (multi-provider support)
 - `/api/inbox/analyze` - Text analysis and intelligent categorization
 - `/api/subtasks/generate` - AI-powered subtask generation
-- `/api/chat/for-item` - Contextual chat with persistent history
-- `/api/assistant` - Main assistant with 17+ tool execution capabilities
-- `/api/assistant/act` - Tool execution endpoint
-- `/api/speech/transcribe` - Speech-to-text transcription
 - `/api/items/*` - CRUD operations with authentication
-- `/api/models` - AI model listing and provider switching
 - `/api/credits/*` - AI usage tracking and management
+- `/api/speech/transcribe` - Speech-to-text transcription
+- `/api/debug/*` - Debug utilities and health checks
+- `/api/analytics` - Usage analytics
+
+**Recent Consolidation (2025-11-09)**:
+- ✅ Consolidated legacy endpoints (`/api/assistant/chat`, `/api/assistant/act`, `/api/chat/for-item`)
+- ✅ Distributed chat-service.ts functionality to service layer
+- ✅ Removed 663 lines of legacy code
+- ✅ Enhanced multi-provider architecture
+- See: [docs/CLEANUP_REPORT_20251109.md](./docs/CLEANUP_REPORT_20251109.md)
 
 
 ### Component Organization
@@ -198,11 +205,29 @@ const modelSettings = {
 7. Test AI features with real API keys before deployment
 8. Use server-side architecture for all database operations
 
-### Current Limitations
+### Current Limitations & Technical Debt
+
+**Known Issues** (see [ai_issues/README.md](./ai_issues/README.md)):
+1. ⚠️ **Test Infrastructure** (Medium Priority)
+   - Missing: `@testing-library/react`, `@types/jest`
+   - Impact: TypeScript errors in test files
+   - Fix: `npm install --save-dev @types/jest @testing-library/react @testing-library/user-event`
+
+2. ⚠️ **Build Warnings** (Low Priority)
+   - Multiple lockfiles detected (parent directory)
+   - Solution: Remove parent lockfile or configure `turbopack.root` in next.config.js
+
+**Production Limitations**:
 - **Authentication**: Clerk temporarily disabled for deployment stability
 - **Rate Limiting**: Not yet implemented (infrastructure ready)
-- **Testing**: No automated tests (manual testing only)
+- **Testing**: Test framework not fully configured (manual testing only)
 - **Monitoring**: Basic error handling, no advanced monitoring setup
+
+**Recommended Actions**:
+- Install missing test dependencies
+- Configure test framework (Jest/Vitest)
+- Remove parent directory lockfile
+- Implement rate limiting for AI API calls
 
 ### AI Development Notes
 - **Provider Selection**: Use appropriate models for different tasks
@@ -217,5 +242,38 @@ const modelSettings = {
 - **Performance**: Use connection pooling and efficient queries
 - **Backup Strategy**: Neon provides automatic backups
 - **Testing**: Use local development database before production changes
+
+## Documentation Structure
+
+The project maintains comprehensive documentation organized across multiple directories:
+
+- **[CLAUDE.md](./CLAUDE.md)** - Development guidance and architecture overview (this file)
+- **[README.md](./README.md)** - Project overview and quick start
+- **[AGENTS.md](./AGENTS.md)** - Agent-specific instructions and context
+- **[ai_changelog/](./ai_changelog/)** - Version history and release notes
+- **[ai_docs/](./ai_docs/)** - Technical documentation and guides
+- **[ai_issues/](./ai_issues/)** - Known issues and bug tracking
+- **[ai_research/](./ai_research/)** - Research notes and experiments
+- **[ai_specs/](./ai_specs/)** - Technical specifications and API docs
+- **[docs/](./docs/)** - Architecture, design, and feature documentation
+
+## Recent Changes (2025-11-09)
+
+### AI Integration Refactoring ✨
+- **Consolidated AI architecture**: Removed legacy endpoints, modernized service layer
+- **Multi-provider support**: Now supports Google, OpenAI, Anthropic, and XAI
+- **Code cleanup**: Removed 663 lines of legacy code
+- **Documentation**: Added comprehensive guides for model switching
+- **Status**: ✅ Production-ready (27/27 routes passing)
+
+See complete details in: [docs/CLEANUP_REPORT_20251109.md](./docs/CLEANUP_REPORT_20251109.md)
+
+## Last Updated
+
+**Date**: 2025-11-09
+**By**: Claude Code AI Assistant
+**Changes**: Added cleanup notes, updated API architecture, documented technical debt, added documentation structure overview
+
+---
 
 This application represents a sophisticated AI-powered task management system with modern architecture, comprehensive AI integration, and production-ready deployment infrastructure.
