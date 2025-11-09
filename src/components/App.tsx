@@ -6,13 +6,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useToast } from "@/components/Toast";
 import { useItems } from "@/hooks/useItems";
-import type { Tools } from "@/services/ai/tools";
-import type {
-  ChatMessage,
-  MindFlowItem,
-  MindFlowItemType,
-  NavItem,
-} from "@/types";
+import type { MindFlowItem, MindFlowItemType, NavItem } from "@/types";
 
 // Components
 import CalendarPage from "./CalendarPage";
@@ -219,53 +213,6 @@ const App: React.FC = () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data?.error || "Falha ao analisar texto");
     return Array.isArray(data?.items) ? data.items : [];
-  };
-
-  const chatWithAI = async (itemId: string, message: string): Promise<any> => {
-    const item = items.find((i) => i.id === itemId);
-    if (!item) return null;
-
-    try {
-      const financeInfo =
-        item.type === "Financeiro"
-          ? `Valor: ${item.amount || 0}, Tipo: ${item.transactionType}`
-          : "";
-      const res = await fetch("/api/chat/for-item", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: item.title,
-          type: item.type,
-          summary: item.summary,
-          financeInfo,
-          history: item.chatHistory,
-          message,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Falha no chat");
-      const answer = String(data?.text || "");
-
-      const newMessage: ChatMessage = {
-        role: "model",
-        parts: [{ text: answer }],
-      };
-
-      const userMessage: ChatMessage = {
-        role: "user",
-        parts: [{ text: message }],
-      };
-
-      // Update item with chat history
-      await updateItemInDb(itemId, {
-        chatHistory: [...(item.chatHistory || []), userMessage, newMessage],
-      });
-
-      return newMessage;
-    } catch (error) {
-      console.error("Erro no chat com AI:", error);
-      throw error;
-    }
   };
 
   // Item Management Functions
@@ -651,7 +598,6 @@ const App: React.FC = () => {
               onUpdateItem={updateItem}
               onDeleteItem={deleteItem}
               onGenerateSubtasks={generateSubtasks}
-              onChatWithAI={chatWithAI}
               width={detailWidth}
               onResize={(w) => {
                 const min = 420; // px
@@ -676,7 +622,6 @@ const App: React.FC = () => {
               onUpdateItem={updateItem}
               onDeleteItem={deleteItem}
               onGenerateSubtasks={generateSubtasks}
-              onChatWithAI={chatWithAI}
               isMobile
             />
           </div>

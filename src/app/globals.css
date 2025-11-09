@@ -32,6 +32,11 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Aumenta o tamanho base de todas as fontes */
+  font-size: 17px; /* era 16px (padrão do navegador) */
+}
+
 html,
 body {
   height: 100%;
