@@ -1,8 +1,6 @@
-import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
+import OpenAI from 'openai'
 
-import { getAISDKModel } from '@/server/aiProvider'
-import { ProviderFallbackManager } from '@/server/ai/provider-fallback'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 import { parseRequestBody } from '@/utils/safe-json'
 import { logger } from '@/utils/logger'
@@ -51,63 +49,66 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'audioBase64 required' }, { status: 400 })
     }
 
-    const fallbackManager = ProviderFallbackManager.getInstance()
+    // Verificar se a chave da OpenAI está configurada
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: 'OPENAI_API_KEY não configurada' },
+        { status: 500 }
+      )
+    }
 
-    // Configurar provedores que suportam transcrição (OpenAI/Google)
-    // Nota: XAI/Grok não suporta transcrição de áudio
-    const backupProvider = process.env.AUDIO_TRANSCRIPTION_PROVIDER || 'openai'
+    // Criar cliente OpenAI
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
 
-    // Tentar transcrição com fallback entre OpenAI (Whisper) e Google
-    const result = await fallbackManager.executeWithFallback(
-      async (provider) => {
-        process.env.AI_SDK_PROVIDER = provider
-        const model = await getAISDKModel()
-        const format = (() => {
-          if (mimeType.includes('webm')) return 'webm'
-          if (mimeType.includes('wav')) return 'wav'
-          if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3'
-          if (mimeType.includes('mp4') || mimeType.includes('mp4a')) return 'mp4'
-          if (mimeType.includes('ogg')) return 'ogg'
-          return 'webm'
-        })()
+    // Converter base64 para Buffer
+    const audioBuffer = Buffer.from(audioBase64, 'base64')
 
-        const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000))
-        const gen = generateText({
-          model,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: 'Transcreva este áudio em português brasileiro. Retorne apenas a transcrição do que foi dito, sem comentários adicionais.'
-                },
-                {
-                  type: 'file',
-                  mediaType: 'audio/webm',
-                  data: audioBase64
-                }
-              ]
-            }
-          ]
-        })
-        const transcriptionResult = await Promise.race([gen, timeout])
-        const text = transcriptionResult.text?.trim()
-        if (!text) throw new Error('Empty transcription')
+    // Determinar a extensão do arquivo baseado no mimeType
+    const extension = (() => {
+      if (mimeType.includes('webm')) return 'webm'
+      if (mimeType.includes('wav')) return 'wav'
+      if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3'
+      if (mimeType.includes('mp4') || mimeType.includes('mp4a')) return 'mp4'
+      if (mimeType.includes('ogg')) return 'ogg'
+      return 'webm'
+    })()
 
-        return {
-          text,
-          transcript: text, // Keep backward compatibility
-          confidence: 0.85, // Mock confidence score
-          isFinal: !realTime, // Real-time chunks are not final
-          sessionId,
-          timestamp: Date.now()
-        }
-      },
-      { operation: 'speech-transcription', preferredProvider: backupProvider }
+    // Criar um File object para o Whisper
+    const audioFile = new File([audioBuffer], `audio.${extension}`, {
+      type: mimeType,
+    })
+
+    // Transcrever com Whisper da OpenAI
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), 30000)
     )
 
-    return NextResponse.json(result.result)
+    const transcriptionPromise = openai.audio.transcriptions.create({
+      file: audioFile,
+      model: 'whisper-1',
+      language: 'pt', // Português
+      response_format: 'json',
+    })
+
+    const transcriptionResult = await Promise.race([transcriptionPromise, timeout])
+
+    const text = transcriptionResult.text?.trim()
+    if (!text) {
+      throw new Error('Empty transcription')
+    }
+
+    const result = {
+      text,
+      transcript: text, // Keep backward compatibility
+      confidence: 0.95, // Whisper tem alta confiabilidade
+      isFinal: !realTime, // Real-time chunks are not final
+      sessionId,
+      timestamp: Date.now(),
+    }
+
+    return NextResponse.json(result)
   } catch (e: any) {
     const rawMessage = typeof e?.message === 'string' ? e.message : ''
     const normalizedMessage = rawMessage.toLowerCase()
