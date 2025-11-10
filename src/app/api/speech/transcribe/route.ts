@@ -2,21 +2,22 @@ import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 
 import { getAISDKModel } from '@/server/aiProvider'
+import { ProviderFallbackManager } from '@/server/ai/provider-fallback'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 import { parseRequestBody } from '@/utils/safe-json'
 import { logger } from '@/utils/logger'
 
 export async function POST(req: Request) {
+  let audioBase64 = ''
+  let mimeType = 'audio/webm'
+  let sessionId: string | undefined
+  let realTime = false
+
   try {
     const key = extractClientKey(req)
     if (!rateLimit({ key, limit: 30, windowMs: 60_000 })) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
-
-    let audioBase64 = ''
-    let mimeType = 'audio/webm'
-    let sessionId: string | undefined
-    let realTime = false
 
     // Check if request is FormData
     const contentType = req.headers.get('content-type') || ''
@@ -50,62 +51,69 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'audioBase64 required' }, { status: 400 })
     }
 
-    const provider = (process.env.AI_SDK_PROVIDER || 'google').toLowerCase()
-    if (provider !== 'google') {
-      return NextResponse.json({ error: 'Audio transcription supported only with Google provider' }, { status: 501 })
-    }
+    const fallbackManager = ProviderFallbackManager.getInstance()
 
-    const model = await getAISDKModel()
-    const format = (() => {
-      if (mimeType.includes('webm')) return 'webm'
-      if (mimeType.includes('wav')) return 'wav'
-      if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3'
-      if (mimeType.includes('mp4') || mimeType.includes('mp4a')) return 'mp4'
-      if (mimeType.includes('ogg')) return 'ogg'
-      return 'webm'
-    })()
+    // Configurar provedores que suportam transcrição (OpenAI/Google)
+    // Nota: XAI/Grok não suporta transcrição de áudio
+    const backupProvider = process.env.AUDIO_TRANSCRIPTION_PROVIDER || 'openai'
 
-    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000))
-    const gen = generateText({
-      model,
-      messages: [
-        {
-          role: 'user',
-          content: [
+    // Tentar transcrição com fallback entre OpenAI (Whisper) e Google
+    const result = await fallbackManager.executeWithFallback(
+      async (provider) => {
+        process.env.AI_SDK_PROVIDER = provider
+        const model = await getAISDKModel()
+        const format = (() => {
+          if (mimeType.includes('webm')) return 'webm'
+          if (mimeType.includes('wav')) return 'wav'
+          if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3'
+          if (mimeType.includes('mp4') || mimeType.includes('mp4a')) return 'mp4'
+          if (mimeType.includes('ogg')) return 'ogg'
+          return 'webm'
+        })()
+
+        const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 30000))
+        const gen = generateText({
+          model,
+          messages: [
             {
-              type: 'text',
-              text: 'Transcreva este áudio em português brasileiro. Retorne apenas a transcrição do que foi dito, sem comentários adicionais.'
-            },
-            {
-              type: 'file',
-              mediaType: 'audio/webm',
-              data: audioBase64
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Transcreva este áudio em português brasileiro. Retorne apenas a transcrição do que foi dito, sem comentários adicionais.'
+                },
+                {
+                  type: 'file',
+                  mediaType: 'audio/webm',
+                  data: audioBase64
+                }
+              ]
             }
           ]
-        }
-      ]
-    })
-    const result = await Promise.race([gen, timeout])
-    const text = result.text?.trim()
-    if (!text) return NextResponse.json({ error: 'Empty transcription' }, { status: 500 })
-    
-    // Return enhanced response for real-time transcription
-    const response = {
-      text,
-      transcript: text, // Keep backward compatibility
-      confidence: 0.85, // Mock confidence score
-      isFinal: !realTime, // Real-time chunks are not final
-      sessionId,
-      timestamp: Date.now()
-    }
+        })
+        const transcriptionResult = await Promise.race([gen, timeout])
+        const text = transcriptionResult.text?.trim()
+        if (!text) throw new Error('Empty transcription')
 
-    return NextResponse.json(response)
+        return {
+          text,
+          transcript: text, // Keep backward compatibility
+          confidence: 0.85, // Mock confidence score
+          isFinal: !realTime, // Real-time chunks are not final
+          sessionId,
+          timestamp: Date.now()
+        }
+      },
+      { operation: 'speech-transcription', preferredProvider: backupProvider }
+    )
+
+    return NextResponse.json(result.result)
   } catch (e: any) {
     const rawMessage = typeof e?.message === 'string' ? e.message : ''
     const normalizedMessage = rawMessage.toLowerCase()
 
-    if (normalizedMessage.includes('model is overloaded')) {
-      logger.warn('Gemini transcription service overloaded', {
+    if (normalizedMessage.includes('model is overloaded') || normalizedMessage.includes('overloaded')) {
+      logger.warn('Transcription service overloaded', {
         component: 'speech-transcribe-route',
         message: rawMessage,
       })
@@ -122,8 +130,8 @@ export async function POST(req: Request) {
       )
     }
 
-    if (normalizedMessage.includes('timeout')) {
-      logger.warn('Gemini transcription timed out', {
+    if (normalizedMessage.includes('timeout') || normalizedMessage.includes('timed out')) {
+      logger.warn('Transcription timed out', {
         component: 'speech-transcribe-route',
         message: rawMessage,
       })
@@ -138,7 +146,23 @@ export async function POST(req: Request) {
       )
     }
 
-    logger.error('Gemini transcription failed', e, {
+    if (normalizedMessage.includes('not supported') || normalizedMessage.includes('unsupported')) {
+      logger.warn('Transcription not supported for current provider', {
+        component: 'speech-transcribe-route',
+        message: rawMessage,
+      })
+
+      return NextResponse.json(
+        {
+          error: 'Transcrição de áudio não é suportada pelo provedor atual. Use Google ou OpenAI.',
+        },
+        {
+          status: 501,
+        },
+      )
+    }
+
+    logger.error('Transcription failed', e, {
       component: 'speech-transcribe-route',
       message: rawMessage || undefined,
     })

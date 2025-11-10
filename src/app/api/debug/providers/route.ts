@@ -25,10 +25,6 @@ export async function GET() {
       openai: {
         configured: !!process.env.OPENAI_API_KEY,
         key: process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 8)}...` : null
-      },
-      anthropic: {
-        configured: !!process.env.ANTHROPIC_API_KEY,
-        key: process.env.ANTHROPIC_API_KEY ? `${process.env.ANTHROPIC_API_KEY.substring(0, 8)}...` : null
       }
     }
 
@@ -58,8 +54,8 @@ export async function GET() {
 function getRecommendations(providers: any): string[] {
   const recommendations: string[] = []
 
-  if (!providers.google.configured && !providers.openrouter.configured && !providers.openai.configured && !providers.anthropic.configured) {
-    recommendations.push('Configure pelo menos um provedor de IA (Google, OpenRouter, OpenAI ou Anthropic)')
+  if (!providers.google.configured && !providers.openrouter.configured && !providers.openai.configured) {
+    recommendations.push('Configure pelo menos um provedor de IA (Google, OpenRouter ou OpenAI)')
   }
 
   if (providers.gateway.configured && !providers.gateway.enabled) {

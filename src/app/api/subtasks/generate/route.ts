@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server'
 
-import { getAISDKModel } from '@/server/aiProvider'
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 import { subtasksWithAI } from '@/services/ai'
+import { ProviderFallbackManager } from '@/server/ai/provider-fallback'
 
 export async function POST(req: Request) {
+  let title: string, summary: string | undefined, force: boolean
+
   try {
     const key = extractClientKey(req)
     if (!rateLimit({ key, limit: 60, windowMs: 60_000 })) {
@@ -12,25 +14,31 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({})) as any
-    const title = String(body?.title || '').trim()
-    const summary = typeof body?.summary === 'string' ? body.summary : undefined
+    title = String(body?.title || '').trim()
+    summary = typeof body?.summary === 'string' ? body.summary : undefined
     const type = typeof body?.type === 'string' ? body.type : undefined
-    const force = Boolean(body?.force)
+    force = Boolean(body?.force)
 
     if (!title) {
       return NextResponse.json({ error: 'title required' }, { status: 400 })
     }
 
-    // AI SDK como padrão; fallback se indisponível
-    try {
-      await getAISDKModel() // valida provider/chave por meio do provedor
-    } catch {
-      return NextResponse.json({ subtasks: [] })
-    }
-    const list = await subtasksWithAI({ title, summary, type }, { force })
+    const fallbackManager = ProviderFallbackManager.getInstance()
 
-    return NextResponse.json({ subtasks: list })
+    // Tenta gerar subtarefas com fallback automático entre provedores
+    const result = await fallbackManager.executeWithFallback(
+      async (provider) => {
+        process.env.AI_SDK_PROVIDER = provider
+        const aiModule = await import('@/services/ai')
+        const list = await aiModule.subtasksWithAI({ title, summary, type }, { force })
+        return { subtasks: list }
+      },
+      { operation: 'generate-subtasks' }
+    )
+
+    return NextResponse.json(result.result)
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'unknown error' }, { status: 500 })
+    // Fallback final: retorna subtarefas vazias se todos falharem
+    return NextResponse.json({ subtasks: [] })
   }
 }

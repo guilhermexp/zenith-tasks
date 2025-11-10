@@ -64,9 +64,9 @@ export class ProviderFallbackManager {
 
     const providerConfigs: ProviderConfig[] = [
       {
-        name: 'openrouter',
+        name: 'xai',
         priority: 1,
-        enabled: !!process.env.OPENROUTER_API_KEY && allowOpenRouter,
+        enabled: !!process.env.XAI_API_KEY,
         healthScore: 100,
         errorCount: 0,
         successCount: 0,
@@ -80,9 +80,9 @@ export class ProviderFallbackManager {
         successCount: 0,
       },
       {
-        name: 'zai',
+        name: 'openrouter',
         priority: 3,
-        enabled: false,
+        enabled: !!process.env.OPENROUTER_API_KEY && allowOpenRouter,
         healthScore: 100,
         errorCount: 0,
         successCount: 0,
@@ -91,14 +91,6 @@ export class ProviderFallbackManager {
         name: 'openai',
         priority: 4,
         enabled: !!process.env.OPENAI_API_KEY,
-        healthScore: 100,
-        errorCount: 0,
-        successCount: 0,
-      },
-      {
-        name: 'anthropic',
-        priority: 4,
-        enabled: !!process.env.ANTHROPIC_API_KEY,
         healthScore: 100,
         errorCount: 0,
         successCount: 0,

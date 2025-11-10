@@ -199,16 +199,6 @@ export class AIProvider {
         // Use AI Gateway (USE_AI_GATEWAY=true) or another provider instead
         throw new Error('OpenRouter is disabled due to AI SDK v5 compatibility issues. Use AI Gateway or another provider.');
 
-      case 'anthropic': {
-        const apiKey = config?.apiKey || process.env.ANTHROPIC_API_KEY;
-        if (!apiKey) throw new Error('ANTHROPIC_API_KEY missing');
-
-        const { createAnthropic } = await import('@ai-sdk/anthropic');
-        const anthropic = createAnthropic({ apiKey });
-        const modelName = config?.model || 'claude-3-5-sonnet-20241022';
-        return anthropic(modelName) as LanguageModel;
-      }
-
       case 'openai': {
         const apiKey = config?.apiKey || process.env.OPENAI_API_KEY;
         if (!apiKey) throw new Error('OPENAI_API_KEY missing');
