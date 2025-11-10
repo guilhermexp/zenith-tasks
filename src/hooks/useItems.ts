@@ -97,12 +97,13 @@ export function useItems() {
   }, [isLoaded, loadItems, user])
 
   const addItem = useCallback(async (item: Omit<MindFlowItem, 'id' | 'createdAt'>): Promise<MindFlowItem | null> => {
-    if (!user) {
-      logger.debug('Cannot add item - no user', { hook: 'useItems' })
-      return null
-    }
+    // Temporarily allow adding items without user (test-user fallback in API)
+    // if (!user) {
+    //   logger.debug('Cannot add item - no user', { hook: 'useItems' })
+    //   return null
+    // }
 
-    logger.info('Adding item to database', { title: item.title, hook: 'useItems' })
+    logger.info('Adding item to database', { title: item.title, userId: user?.id || 'test-user', hook: 'useItems' })
 
     try {
       const response = await fetch('/api/items', {
@@ -129,7 +130,8 @@ export function useItems() {
   }, [user])
 
   const updateItem = useCallback(async (itemId: string, updates: Partial<MindFlowItem>) => {
-    if (!user) return
+    // Temporarily allow updating items without user (test-user fallback in API)
+    // if (!user) return
 
     try {
       const response = await fetch(`/api/items/${itemId}`, {
@@ -156,7 +158,8 @@ export function useItems() {
   }, [user])
 
   const deleteItem = useCallback(async (itemId: string) => {
-    if (!user) return
+    // Temporarily allow deleting items without user (test-user fallback in API)
+    // if (!user) return
 
     try {
       const response = await fetch(`/api/items/${itemId}`, {
@@ -177,7 +180,8 @@ export function useItems() {
   }, [user])
 
   const toggleItem = useCallback(async (itemId: string) => {
-    if (!user) return
+    // Temporarily allow toggling items without user (test-user fallback in API)
+    // if (!user) return
 
     try {
       const response = await fetch(`/api/items/${itemId}/toggle`, {
@@ -200,7 +204,8 @@ export function useItems() {
   }, [user])
 
   const clearCompleted = useCallback(async () => {
-    if (!user) return
+    // Temporarily allow clearing items without user (test-user fallback in API)
+    // if (!user) return
 
     try {
       const response = await fetch('/api/items/clear-completed', {
@@ -215,13 +220,14 @@ export function useItems() {
 
       setItems(prev => prev.filter(item => !item.completed))
     } catch (err) {
-      logger.error('Error clearing completed', err, { userId: user.id, hook: 'useItems' })
+      logger.error('Error clearing completed', err, { userId: user?.id || 'test-user', hook: 'useItems' })
       setError('Erro ao limpar completados')
     }
   }, [user])
 
   const setDueDate = useCallback(async (itemId: string, date: Date | null) => {
-    if (!user) return
+    // Temporarily allow setting due date without user (test-user fallback in API)
+    // if (!user) return
 
     try {
       const payload = date
