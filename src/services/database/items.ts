@@ -8,6 +8,7 @@ import type {
 import { db } from '@/lib/db';
 import type { MindFlowItem as MindFlowItemDTO } from '@/types';
 import { logger } from '@/utils/logger';
+import { invalidateAnalyticsCacheOnTaskChange } from '@/lib/cache/analyticsCache';
 
 type RawItem = DbMindFlowItem & {
   subtasks?: DbSubtask[];
@@ -94,10 +95,15 @@ export class ItemsService {
         };
       });
 
-      return this.mapToMindFlowItem({
+      const mapped = this.mapToMindFlowItem({
         ...result.created,
         subtasks: result.subtasks,
       });
+
+      // Invalidate analytics cache on task creation
+      invalidateAnalyticsCacheOnTaskChange(userId);
+
+      return mapped;
     } catch (error) {
       throw this.logAndWrapError('createItem', error, { userId, title: item.title });
     }
@@ -108,6 +114,13 @@ export class ItemsService {
    */
   static async updateItem(itemId: string, updates: Partial<MindFlowItemDTO>): Promise<void> {
     try {
+      // Get userId before update for cache invalidation
+      const [item] = await db
+        .select({ userId: mindFlowItems.userId })
+        .from(mindFlowItems)
+        .where(eq(mindFlowItems.id, itemId))
+        .limit(1);
+
       await db.transaction(async tx => {
         const updateData: Partial<DbMindFlowItem> = {};
 
@@ -166,6 +179,11 @@ export class ItemsService {
           }
         }
       });
+
+      // Invalidate analytics cache on task update
+      if (item?.userId) {
+        invalidateAnalyticsCacheOnTaskChange(item.userId);
+      }
     } catch (error) {
       throw this.logAndWrapError('updateItem', error, { itemId });
     }
@@ -176,11 +194,27 @@ export class ItemsService {
    */
   static async deleteItem(itemId: string, userId?: string): Promise<void> {
     try {
+      // Get userId if not provided
+      let effectiveUserId = userId;
+      if (!effectiveUserId) {
+        const [item] = await db
+          .select({ userId: mindFlowItems.userId })
+          .from(mindFlowItems)
+          .where(eq(mindFlowItems.id, itemId))
+          .limit(1);
+        effectiveUserId = item?.userId;
+      }
+
       const conditions = userId
         ? and(eq(mindFlowItems.id, itemId), eq(mindFlowItems.userId, userId))
         : eq(mindFlowItems.id, itemId);
 
       await db.delete(mindFlowItems).where(conditions);
+
+      // Invalidate analytics cache on task deletion
+      if (effectiveUserId) {
+        invalidateAnalyticsCacheOnTaskChange(effectiveUserId);
+      }
     } catch (error) {
       throw this.logAndWrapError('deleteItem', error, { itemId });
     }
@@ -191,10 +225,13 @@ export class ItemsService {
    */
   static async toggleItem(itemId: string): Promise<void> {
     try {
+      let userId: string | undefined;
+
       await db.transaction(async tx => {
         const [item] = await tx
           .select({
             completed: mindFlowItems.completed,
+            userId: mindFlowItems.userId,
           })
           .from(mindFlowItems)
           .where(eq(mindFlowItems.id, itemId))
@@ -204,6 +241,8 @@ export class ItemsService {
           throw new Error('Item not found');
         }
 
+        userId = item.userId;
+
         await tx
           .update(mindFlowItems)
           .set({
@@ -212,6 +251,11 @@ export class ItemsService {
           })
           .where(eq(mindFlowItems.id, itemId));
       });
+
+      // Invalidate analytics cache on task toggle (completion status change affects analytics)
+      if (userId) {
+        invalidateAnalyticsCacheOnTaskChange(userId);
+      }
     } catch (error) {
       throw this.logAndWrapError('toggleItem', error, { itemId });
     }
@@ -225,6 +269,9 @@ export class ItemsService {
       await db
         .delete(mindFlowItems)
         .where(and(eq(mindFlowItems.userId, userId), eq(mindFlowItems.completed, true)));
+
+      // Invalidate analytics cache after clearing completed tasks
+      invalidateAnalyticsCacheOnTaskChange(userId);
     } catch (error) {
       throw this.logAndWrapError('clearCompleted', error, { userId });
     }

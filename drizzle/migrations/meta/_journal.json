@@ -8,6 +8,27 @@
       "when": 1762201528023,
       "tag": "0000_broken_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762201530000,
+      "tag": "0001_add_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762201532000,
+      "tag": "0002_add_ai_prioritization_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1731341000000,
+      "tag": "0003_fix_transcript_field",
+      "breakpoints": true
     }
   ]
 }

@@ -5,12 +5,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import SiriOrb from '@/components/ui/SiriOrb';
 
 import type { MindFlowItem, Subtask, MindFlowItemType } from '../types';
-import { 
-  XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon, 
-  SparklesIcon, ChevronLeftIcon, TrashIcon, CheckCircleIcon, TagIcon, 
+import type { DetectedConflict, ConflictResolutionSuggestion } from '../types/ai-prioritization';
+import {
+  XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon,
+  SparklesIcon, ChevronLeftIcon, TrashIcon, CheckCircleIcon, TagIcon,
   LightbulbIcon, PageIcon, BellIcon, LinkIcon, DollarSignIcon, UsersIcon,
-  ClipboardIcon, EditIcon
+  ClipboardIcon, EditIcon, ClockIcon
 } from './Icons';
+import { ConflictAlertBanner } from './ai/ConflictAlertBanner';
 
 interface DetailPanelProps {
   item: MindFlowItem;
@@ -202,6 +204,8 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const [titleDraft, setTitleDraft] = useState(item.title);
   const [isEditingSummary, setIsEditingSummary] = useState(false);
   const [summaryDraft, setSummaryDraft] = useState(item.summary || '');
+  const [conflicts, setConflicts] = useState<DetectedConflict[]>([]);
+  const [isCheckingConflicts, setIsCheckingConflicts] = useState(false);
 
   useEffect(() => {
     setTitleDraft(item.title);
@@ -210,6 +214,46 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   useEffect(() => {
     setSummaryDraft(item.summary || '');
   }, [item.summary]);
+
+  // Check for conflicts when item changes or has dueDate/meetingDetails
+  useEffect(() => {
+    const checkConflicts = async () => {
+      // Only check if item has due date or is a meeting
+      if (!item.dueDate && item.type !== 'Reunião') {
+        setConflicts([]);
+        return;
+      }
+
+      setIsCheckingConflicts(true);
+      try {
+        const response = await fetch('/api/conflicts/check', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            newItem: {
+              title: item.title,
+              type: item.type,
+              dueDateISO: item.dueDate,
+              meetingDetails: item.meetingDetails,
+            },
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setConflicts(result.data?.conflicts || []);
+        }
+      } catch (error) {
+        console.error('Failed to check conflicts:', error);
+      } finally {
+        setIsCheckingConflicts(false);
+      }
+    };
+
+    checkConflicts();
+  }, [item.id, item.dueDate, item.meetingDetails]);
 
   // Resize logic
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -278,6 +322,21 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
   const TypeIcon = typeIcons[item.type] || PageIcon;
 
+  const handleDismissConflict = (conflictId: string) => {
+    setConflicts((prev) => prev.filter((c) => c.id !== conflictId));
+  };
+
+  const handleResolveConflict = (
+    conflictId: string,
+    suggestion: ConflictResolutionSuggestion
+  ) => {
+    // Implement conflict resolution based on suggestion action
+    console.log('Resolving conflict:', conflictId, suggestion);
+    // After resolving, remove the conflict
+    setConflicts((prev) => prev.filter((c) => c.id !== conflictId));
+    // You could also update the item based on the suggestion here
+  };
+
   return (
     <aside
       ref={asideRef as any}
@@ -325,7 +384,19 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           </button>
         </div>
       </header>
-      
+
+      {/* Conflict Alert Banner */}
+      {conflicts.length > 0 && (
+        <div className="relative">
+          <ConflictAlertBanner
+            conflicts={conflicts}
+            onDismiss={handleDismissConflict}
+            onResolve={handleResolveConflict}
+            position="top"
+          />
+        </div>
+      )}
+
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain custom-scrollbar">
         <div className="p-5">
           <div className="flex items-start gap-4 mb-6">
@@ -423,7 +494,115 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 )}
               </>
             )}
+
+            {item.type === 'Reunião' && (
+              <>
+                {item.meetingDetails?.duration && (
+                  <PropertyRow icon={ClockIcon} label="Duração">
+                    <span>{Math.floor(item.meetingDetails.duration / 60)} minutos</span>
+                  </PropertyRow>
+                )}
+                {item.meetingDetails?.recordedAt && (
+                  <PropertyRow icon={CalendarIcon} label="Gravada em">
+                    <span>{new Date(item.meetingDetails.recordedAt).toLocaleString('pt-BR', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
+                  </PropertyRow>
+                )}
+              </>
+            )}
           </div>
+
+          {/* Meeting-specific content */}
+          {item.type === 'Reunião' && (
+            <div className="space-y-4 pb-6 mb-6 border-b border-neutral-800/50">
+              {/* Summary */}
+              {item.summary && (
+                <div>
+                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+                    Resumo
+                  </h4>
+                  <p className="text-sm text-neutral-300 leading-relaxed">
+                    {item.summary}
+                  </p>
+                </div>
+              )}
+
+              {/* Transcript */}
+              {item.transcript && typeof item.transcript === 'object' && 'text' in item.transcript && (
+                <div>
+                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+                    Transcrição
+                  </h4>
+                  <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-lg p-3 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <p className="text-xs text-neutral-300 whitespace-pre-wrap leading-relaxed">
+                      {item.transcript.text}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Items */}
+              {item.meetingDetails?.actionItems && item.meetingDetails.actionItems.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+                    Action Items
+                  </h4>
+                  <ul className="space-y-2">
+                    {item.meetingDetails.actionItems.map((actionItem, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-neutral-300">
+                        <span className="text-neutral-500">•</span>
+                        <span>{actionItem}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Topics and Participants */}
+              <div className="grid grid-cols-2 gap-4">
+                {item.meetingDetails?.topics && item.meetingDetails.topics.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+                      Tópicos
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      {item.meetingDetails.topics.map((topic, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-0.5 bg-neutral-800/60 text-neutral-300 text-xs rounded"
+                        >
+                          {topic}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {item.meetingDetails?.participants && item.meetingDetails.participants.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+                      Participantes
+                    </h4>
+                    <div className="flex flex-wrap gap-1">
+                      {item.meetingDetails.participants.map((participant, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-0.5 bg-neutral-800/60 text-neutral-300 text-xs rounded"
+                        >
+                          {participant}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           {(item.summary !== undefined) && (

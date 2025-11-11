@@ -9,11 +9,13 @@ import { useItems } from "@/hooks/useItems";
 import type { MindFlowItem, MindFlowItemType, NavItem } from "@/types";
 
 // Components
+import InsightsDashboard from "./analytics/InsightsDashboard";
 import CalendarPage from "./CalendarPage";
 import DebugTools from "./DebugTools";
 import DetailPanel from "./DetailPanel";
 import FinancePage from "./FinancePage";
 import {
+  BarChartIcon,
   BellIcon,
   CalendarIcon,
   CheckCircleIcon,
@@ -26,6 +28,7 @@ import {
   UsersIcon,
 } from "./Icons";
 import ItemsPreviewModal from "./ItemsPreviewModal";
+import MeetingPage from "./MeetingPage";
 import Sidebar from "./Sidebar";
 import TalkModeModal from "./TalkModeModal";
 import TaskList from "./TaskList";
@@ -169,6 +172,7 @@ const App: React.FC = () => {
     { id: "atualizacoes", label: "Atualizações", icon: TrendingUpIcon },
     { id: "calendario", label: "Calendário", icon: CalendarIcon },
     { id: "financas", label: "Finanças", icon: DollarSignIcon },
+    { id: "analytics", label: "Analytics", icon: BarChartIcon },
 
     { id: "views-header", label: "VIEWS", isHeader: true },
     {
@@ -465,12 +469,30 @@ const App: React.FC = () => {
     }
   };
 
+  // Meeting Functions
+  const addMeeting = async (meetingData: Partial<MindFlowItem>) => {
+    const newMeeting = await addItemToDb({
+      title: meetingData.title || `Reunião ${new Date().toLocaleDateString("pt-BR")}`,
+      type: "Reunião",
+      completed: false,
+      summary: meetingData.summary,
+      transcript: meetingData.transcript,
+      meetingDetails: meetingData.meetingDetails,
+    });
+    if (newMeeting) {
+      showToast("Reunião salva com sucesso!", "success");
+      setActiveItem(newMeeting);
+    }
+    return newMeeting;
+  };
+
   // Get current page title
   const getCurrentPageTitle = () => {
     const specialPages = {
       calendario: "Calendário",
       atualizacoes: "Atualizações",
       financas: "Finanças",
+      analytics: "Analytics",
       "caixa-entrada": "Caixa de Entrada",
     };
 
@@ -503,6 +525,15 @@ const App: React.FC = () => {
             onAddFinancialItem={addFinancialItem}
           />
         );
+      case "reunioes":
+        return (
+          <MeetingPage
+            items={items}
+            onAddMeeting={addMeeting}
+          />
+        );
+      case "analytics":
+        return <InsightsDashboard />;
       case "config":
         return (
           <div className="flex-1 glass-card p-4 sm:p-6">

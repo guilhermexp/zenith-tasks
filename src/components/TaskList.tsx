@@ -3,12 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import type { MindFlowItem, MindFlowItemType } from '../types';
+import type { PrioritizationResponse } from '../types/ai-prioritization';
 import {
   MoreHorizontalIcon, CalendarIcon, CheckIcon, MicIcon, CheckCircleIcon,
   LightbulbIcon, PageIcon, BellIcon, MenuIcon, ChevronLeftIcon,
   ChevronRightIcon, PlusIcon, DollarSignIcon, SpinnerIcon, TrashIcon, SearchIcon,
   ListIcon, MessageCircleIcon, UsersIcon
 } from './Icons';
+import { AIPrioritizationButton } from './ai/AIPrioritizationButton';
+import { PrioritizationResults } from './ai/PrioritizationResults';
 
 interface MainContentProps {
   items: MindFlowItem[];
@@ -24,6 +27,7 @@ interface MainContentProps {
   onClearCompleted: () => void;
   onOpenTalkMode: () => void;
   searchQuery: string;
+  onReorderItems?: (taskOrder: string[]) => void;
 }
 
 const typeStyles: Record<MindFlowItemType, { icon: React.FC<{className?: string}>; color: string; bg: string }> = {
@@ -342,12 +346,14 @@ const SmartInput: React.FC<{ onAddItem: (text: string) => Promise<any>, isLoadin
   );
 };
 
-const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onToggleItem, onSelectItem, onDeleteItem, activeItem, isLoading, onToggleSidebar, onSetDueDate, onClearCompleted, onOpenTalkMode, searchQuery }) => {
+const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onToggleItem, onSelectItem, onDeleteItem, activeItem, isLoading, onToggleSidebar, onSetDueDate, onClearCompleted, onOpenTalkMode, searchQuery, onReorderItems }) => {
   const [datePickerState, setDatePickerState] = useState<{
     itemId: string | null;
     anchorEl: HTMLButtonElement | null;
   }>({ itemId: null, anchorEl: null });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [prioritizationResult, setPrioritizationResult] = useState<PrioritizationResponse | null>(null);
+  const [showPrioritizationModal, setShowPrioritizationModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -376,6 +382,23 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
     handleCloseDatePicker();
   };
 
+  const handlePrioritizationComplete = (result: PrioritizationResponse) => {
+    setPrioritizationResult(result);
+    setShowPrioritizationModal(true);
+  };
+
+  const handleAcceptPrioritization = (taskOrder: string[]) => {
+    if (onReorderItems) {
+      onReorderItems(taskOrder);
+    }
+    setShowPrioritizationModal(false);
+    setPrioritizationResult(null);
+  };
+
+  const handleClosePrioritizationModal = () => {
+    setShowPrioritizationModal(false);
+  };
+
   return (
     <main className="flex-1 h-full overflow-y-auto overscroll-contain glass-card soft-scroll transition-all duration-300">
       <div className="p-4 sm:p-6">
@@ -386,7 +409,14 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
             </button>
             <h1 className="text-2xl lg:text-3xl font-semibold text-neutral-100 tracking-tight">{title}</h1>
           </div>
-          <div className="relative hidden md:flex" ref={menuRef}>
+          <div className="flex items-center gap-2">
+            {/* AI Prioritization Button */}
+            <AIPrioritizationButton
+              tasks={items}
+              onPrioritizationComplete={handlePrioritizationComplete}
+              className="hidden md:block"
+            />
+            <div className="relative hidden md:flex" ref={menuRef}>
             <button
               onClick={() => setIsMenuOpen(prev => !prev)}
               className="p-2 rounded-lg bg-neutral-800/60 hover:bg-neutral-700/60 text-neutral-400 transition-colors"
@@ -409,6 +439,7 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
                 </div>
               </div>
             )}
+          </div>
           </div>
         </header>
 
@@ -451,6 +482,16 @@ const MainContent: React.FC<MainContentProps> = ({ items, title, onAddItem, onTo
             anchorEl={datePickerState.anchorEl}
             onClose={handleCloseDatePicker}
             onSelect={handleDateSelect}
+        />
+      )}
+      {/* Prioritization Results Modal */}
+      {showPrioritizationModal && prioritizationResult && (
+        <PrioritizationResults
+          isOpen={showPrioritizationModal}
+          onClose={handleClosePrioritizationModal}
+          result={prioritizationResult}
+          tasks={items}
+          onAccept={handleAcceptPrioritization}
         />
       )}
     </main>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import Providers from './providers';
+import { LayoutWrapper } from '@/components/LayoutWrapper';
 
 import './globals.css';
 
@@ -62,7 +63,7 @@ export default function RootLayout({
           <meta name="apple-mobile-web-app-title" content="Zenith Tasks" />
         </head>
         <body className="font-sans h-full antialiased">
-          {children}
+          <LayoutWrapper>{children}</LayoutWrapper>
         </body>
       </html>
     </Providers>

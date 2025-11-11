@@ -27,6 +27,7 @@ export interface MindFlowItem {
   title: string;
   completed: boolean;
   createdAt: string;
+  updatedAt?: string; // Added for tracking updates
   summary?: string;
   type: MindFlowItemType;
   dueDate?: string;
@@ -43,13 +44,22 @@ export interface MindFlowItem {
   isPaid?: boolean;
   // Campo de anotações
   notes?: string;
+  // Meeting fields
+  transcript?: {
+    text: string;
+    timestamp: string;
+  };
   meetingDetails?: {
     date?: string;
     time?: string;
+    duration?: number; // Duration in seconds
+    recordedAt?: string;
     participants?: string[];
     location?: string;
     agenda?: string[];
     links?: string[];
+    actionItems?: string[];
+    topics?: string[];
   };
 }
 
@@ -68,3 +78,6 @@ export interface ActivityLogEntry {
   message: string;
   icon: ComponentType<{ className?: string }>;
 }
+
+// AI Task Prioritization Types
+export * from './ai-prioritization';

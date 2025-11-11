@@ -65,6 +65,29 @@ export async function POST(req: Request) {
     // Converter base64 para Buffer
     const audioBuffer = Buffer.from(audioBase64, 'base64')
 
+    logger.info('Audio buffer prepared for transcription', {
+      component: 'speech-transcribe-route',
+      bufferSize: audioBuffer.length,
+      mimeType,
+      realTime,
+    })
+
+    // Validar tamanho do buffer
+    if (audioBuffer.length < 1000) {
+      return NextResponse.json(
+        { error: 'Áudio muito curto. Grave por pelo menos 2 segundos.' },
+        { status: 400 }
+      )
+    }
+
+    if (audioBuffer.length > 25 * 1024 * 1024) {
+      // 25MB limit for Whisper
+      return NextResponse.json(
+        { error: 'Áudio muito grande. Limite de 25MB.' },
+        { status: 400 }
+      )
+    }
+
     // Determinar a extensão do arquivo baseado no mimeType
     const extension = (() => {
       if (mimeType.includes('webm')) return 'webm'
@@ -80,9 +103,15 @@ export async function POST(req: Request) {
       type: mimeType,
     })
 
-    // Transcrever com Whisper da OpenAI
+    logger.info('Starting Whisper transcription', {
+      component: 'speech-transcribe-route',
+      fileName: `audio.${extension}`,
+      fileSize: audioFile.size,
+    })
+
+    // Transcrever com Whisper da OpenAI (timeout aumentado para 90 segundos)
     const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout')), 30000)
+      setTimeout(() => reject(new Error('Timeout')), 90000)
     )
 
     const transcriptionPromise = openai.audio.transcriptions.create({
@@ -94,8 +123,17 @@ export async function POST(req: Request) {
 
     const transcriptionResult = await Promise.race([transcriptionPromise, timeout])
 
+    logger.info('Transcription completed', {
+      component: 'speech-transcribe-route',
+      textLength: transcriptionResult.text?.length || 0,
+    })
+
     const text = transcriptionResult.text?.trim()
     if (!text) {
+      logger.warn('Empty transcription result', {
+        component: 'speech-transcribe-route',
+        audioSize: audioBuffer.length,
+      })
       throw new Error('Empty transcription')
     }
 
@@ -107,6 +145,12 @@ export async function POST(req: Request) {
       sessionId,
       timestamp: Date.now(),
     }
+
+    logger.info('Transcription result prepared', {
+      component: 'speech-transcribe-route',
+      textPreview: text.substring(0, 50),
+      textLength: text.length,
+    })
 
     return NextResponse.json(result)
   } catch (e: any) {
