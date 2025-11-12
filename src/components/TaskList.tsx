@@ -8,7 +8,7 @@ import {
   MoreHorizontalIcon, CalendarIcon, CheckIcon, MicIcon, CheckCircleIcon,
   LightbulbIcon, PageIcon, BellIcon, MenuIcon, ChevronLeftIcon,
   ChevronRightIcon, PlusIcon, DollarSignIcon, SpinnerIcon, TrashIcon, SearchIcon,
-  ListIcon, MessageCircleIcon, UsersIcon
+  ListIcon, MessageCircleIcon, UsersIcon, SendIcon
 } from './Icons';
 import { AIPrioritizationButton } from './ai/AIPrioritizationButton';
 import { PrioritizationResults } from './ai/PrioritizationResults';
@@ -318,12 +318,15 @@ const SmartInput: React.FC<{ onAddItem: (text: string) => Promise<any>, isLoadin
     setInputValue('');
   };
 
+  const hasText = inputValue.trim().length > 0;
+  const showSubmitButton = hasText && !isLoading;
+
   return (
     <form onSubmit={handleSubmit} className="relative mb-4">
        <button
           type="button"
           onClick={onOpenTalkMode}
-          className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 text-neutral-600 hover:text-neutral-400 transition-colors rounded-full"
+          className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 text-neutral-600 hover:text-neutral-400 transition-colors rounded-full z-10"
           aria-label="Capturar por voz"
         >
           <MicIcon className="w-4 h-4" />
@@ -334,14 +337,34 @@ const SmartInput: React.FC<{ onAddItem: (text: string) => Promise<any>, isLoadin
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Nova tarefa"
         disabled={isLoading}
-        className="w-full bg-neutral-900/20 border border-neutral-800/50 rounded-lg pl-10 pr-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-700 focus:bg-neutral-900/30 transition-all disabled:opacity-50"
+        className={`w-full bg-neutral-900/20 border border-neutral-800/50 rounded-lg pl-10 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-700 focus:bg-neutral-900/30 transition-all disabled:opacity-50 ${
+          showSubmitButton ? 'pr-12 md:pr-20' : 'pr-4'
+        }`}
       />
-      {inputValue.trim() && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-          <kbd className="text-[10px] text-neutral-600 bg-neutral-800/30 px-1.5 py-0.5 rounded">⌘N</kbd>
-        </div>
+      {showSubmitButton && (
+        <>
+          {/* Botão de submit visível no mobile e desktop */}
+          <button
+            type="submit"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-neutral-300 hover:text-neutral-100 bg-neutral-800/60 hover:bg-neutral-700/60 transition-colors rounded-lg md:hidden z-10"
+            aria-label="Enviar"
+          >
+            <SendIcon className="w-4 h-4" />
+          </button>
+          {/* Atalho de teclado visível apenas no desktop */}
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-2">
+            <button
+              type="submit"
+              className="p-1.5 text-neutral-300 hover:text-neutral-100 bg-neutral-800/60 hover:bg-neutral-700/60 transition-colors rounded-lg z-10"
+              aria-label="Enviar"
+            >
+              <SendIcon className="w-4 h-4" />
+            </button>
+            <kbd className="text-[10px] text-neutral-600 bg-neutral-800/30 px-1.5 py-0.5 rounded">⌘N</kbd>
+          </div>
+        </>
       )}
-      {isLoading && <SpinnerIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 animate-spin" />}
+      {isLoading && <SpinnerIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 animate-spin z-10" />}
     </form>
   );
 };
