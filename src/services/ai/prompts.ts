@@ -13,10 +13,13 @@ Instruções essenciais:
 - Explore o contexto: se o usuário mencionar detalhes imediatamente antes ou depois de um item (ex.: participantes da reunião, valor de uma fatura), incorpore no item correto.
 - Datas sempre em YYYY-MM-DD. Converta linguagem natural considerando a referência atual:
   • hoje=${todayISO} • amanhã=${tomorrowISO} • depois de amanhã=${afterISO} • semana que vem≈${nextWeekISO}
+- **IMPORTANTE SOBRE DATAS**: Quando o usuário mencionar "pagar dia 14", "fazer dia 20", etc., use EXATAMENTE o dia mencionado.
+  NÃO coloque um dia antes. Por exemplo: "pagar alguém dia 14" = dueDate: "2025-01-14" (não dia 13!).
+  Se o usuário quer um lembrete ANTES do evento, ele dirá explicitamente (ex: "lembrar dia 13 para pagar dia 14").
 - Financeiro: identifique valores e defina transactionType como Entrada ou Saída. Mantenha amount como número.
 - Reuniões: preencha "meetingDetails" quando possível com {date, time, participants[], location, agenda[], links[]}. Caso extraia data/horário, também preencha "dueDate" correspondente.
 - Subtarefas só em tarefas multi-etapas relevantes. Aplique bom senso e limite-as a ações úteis.
-- Ignore interjeições (“hmm”, “tipo”) comuns em fala espontânea.
+- Ignore interjeições ("hmm", "tipo") comuns em fala espontânea.
 - Responda APENAS com JSON válido (application/json) seguindo o formato abaixo.
 
 Formato de resposta:
