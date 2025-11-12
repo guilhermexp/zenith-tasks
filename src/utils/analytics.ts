@@ -182,7 +182,7 @@ class Analytics {
   // Log to console in development
   private log(type: string, data: any): void {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[Analytics] ${type}:`, data);
+      console.warn(`[Analytics] ${type}:`, data);
     }
   }
 

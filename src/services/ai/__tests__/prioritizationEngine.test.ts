@@ -388,7 +388,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Overdue task', 'Tarefa', { daysFromNow: -2 });
       const score = 0.9;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons).toContain('Esta tarefa está atrasada e requer atenção imediata');
     });
@@ -397,7 +397,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Today task', 'Tarefa', { daysFromNow: 0.5 });
       const score = 0.85;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons).toContain('Prazo vence hoje - alta urgência');
     });
@@ -406,7 +406,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Soon task', 'Tarefa', { daysFromNow: 2 });
       const score = 0.75;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons.some((r) => r.includes('dias'))).toBe(true);
     });
@@ -415,7 +415,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Complex task', 'Tarefa', { complexity: 'high' });
       const score = 0.7;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons).toContain('Tarefa complexa que pode necessitar de planejamento adicional');
     });
@@ -424,7 +424,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Medium task', 'Tarefa', { complexity: 'medium' });
       const score = 0.6;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons).toContain('Tarefa de complexidade moderada');
     });
@@ -433,7 +433,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Team meeting', 'Reunião');
       const score = 0.8;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons).toContain('Reunião agendada - horário fixo');
     });
@@ -442,7 +442,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Payment', 'Financeiro');
       const score = 0.7;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons).toContain('Item financeiro - pode ter implicações de prazo');
     });
@@ -451,7 +451,7 @@ describe('PrioritizationEngine', () => {
       const task = createMockTask('1', 'Simple note', 'Nota');
       const score = 0.4;
 
-      const reasons = (engine as any).generateJustification(task, score);
+      const reasons = (engine as any).generateJustification(task, score) as string[];
 
       expect(reasons).toContain('Prioridade baseada em análise geral do contexto');
     });
@@ -597,23 +597,20 @@ function createMockTask(
     dueDate.setDate(dueDate.getDate() + options.daysFromNow);
   }
 
+  const createSubtasks = (count: number) =>
+    Array.from({ length: count }).map((_, index) => ({
+      id: `${index + 1}`,
+      title: `Subtask ${index + 1}`,
+      completed: false,
+      createdAt: baseDate.toISOString(),
+    }));
+
   // Generate subtasks based on complexity
   const subtasks =
     options?.complexity === 'high'
-      ? [
-          { id: '1', text: 'Subtask 1', completed: false },
-          { id: '2', text: 'Subtask 2', completed: false },
-          { id: '3', text: 'Subtask 3', completed: false },
-          { id: '4', text: 'Subtask 4', completed: false },
-          { id: '5', text: 'Subtask 5', completed: false },
-          { id: '6', text: 'Subtask 6', completed: false },
-        ]
+      ? createSubtasks(6)
       : options?.complexity === 'medium'
-        ? [
-            { id: '1', text: 'Subtask 1', completed: false },
-            { id: '2', text: 'Subtask 2', completed: false },
-            { id: '3', text: 'Subtask 3', completed: false },
-          ]
+        ? createSubtasks(3)
         : [];
 
   return {

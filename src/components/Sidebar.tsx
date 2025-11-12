@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { NavItem } from '../types';
 import {
   PlusIcon, XIcon, SearchIcon,
-  SettingsIcon, LogOutIcon, MicIcon,
+  SettingsIcon, LogOutIcon,
   CalendarIcon
 } from './Icons';
 
@@ -39,7 +39,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['reunioes']);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -53,9 +55,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
   const getIconTint = (_id: string, _active: boolean) => {
     // Keep a soft, consistent icon tint like the reference
-    return 'text-neutral-300';
+    return 'text-neutral-600';
   };
 
   const renderNavItems = (items: NavItem[]) => {
@@ -63,7 +71,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       if (item.isHeader) {
         // Section label styled like the reference (Favorites / Recent Chats)
         return (
-          <li key={item.id} className="pt-4 pb-1 px-2">
+          <li key={item.id} className="pt-4 pb-1 px-3">
             <div className="text-[11px] font-medium text-neutral-400 uppercase tracking-wide">
               {item.label}
             </div>
@@ -94,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <React.Fragment key={item.id}>
           <li
             className={`flex items-center px-3 py-2 rounded-lg cursor-pointer relative transition-colors ${
-              isActive ? 'bg-neutral-800/60 text-neutral-100' : 'hover:bg-white/5 text-neutral-300'
+              isActive ? 'bg-neutral-800/60 text-neutral-100' : 'text-neutral-300 hover:bg-white/5'
             }`}
             onClick={handleItemClick}
           >
@@ -112,13 +120,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           {hasChildren && isExpanded && (
             <ul className="space-y-0.5 mt-1">
               {(item.children || []).map((child) => {
+                const isChildActive = !searchQuery && activeItem === child.id;
                 return (
                   <li
                     key={child.id}
-                    className={`ml-6 pr-2 py-1.5 text-sm rounded-md cursor-pointer transition-colors overflow-hidden ${
-                      activeItem === child.id
-                        ? 'bg-neutral-800/60'
-                        : 'hover:bg-white/5'
+                    className={`flex items-center px-3 py-2 rounded-lg cursor-pointer relative transition-colors ml-6 ${
+                      isChildActive ? 'bg-neutral-800/60 text-neutral-100' : 'text-neutral-300 hover:bg-white/5'
                     }`}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -128,10 +135,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                     }
                   }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <CalendarIcon className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
-                      <span className="text-neutral-300 text-sm truncate" title={child.label}>{child.label}</span>
-                    </div>
+                    <CalendarIcon className={`w-5 h-5 mr-3 flex-shrink-0 ${getIconTint(child.id, isChildActive)}`} />
+                    <span className="flex-1 text-sm truncate" title={child.label}>{child.label}</span>
                   </li>
                 );
               })}
@@ -169,22 +174,44 @@ const Sidebar: React.FC<SidebarProps> = ({
                     >
                         <PlusIcon className="w-4 h-4 text-neutral-400" />
                     </button>
+                    <button
+                      onClick={() => setIsSearchOpen(!isSearchOpen)}
+                      className="p-1.5 rounded-md hover:bg-neutral-800/60 transition-colors"
+                      title="Buscar"
+                    >
+                        <SearchIcon className="w-4 h-4 text-neutral-400" />
+                    </button>
                     <button onClick={onClose} className="p-1 rounded-md hover:bg-neutral-800 md:hidden">
                         <XIcon className="w-4 h-4 text-neutral-500" />
                     </button>
                 </div>
             </div>
             {/* Search field */}
-            <div className="relative">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
-                <input
-                    type="text"
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => onSearch(e.target.value)}
-                    className="w-full bg-neutral-900/60 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-600/40 transition-colors"
-                />
-            </div>
+            {isSearchOpen && (
+              <div className="relative">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+                  <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search"
+                      value={searchQuery}
+                      onChange={(e) => onSearch(e.target.value)}
+                      onBlur={(e) => {
+                        // Fechar apenas se não houver texto e não estiver focando em outro elemento relacionado
+                        if (!e.target.value) {
+                          setTimeout(() => setIsSearchOpen(false), 200);
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setIsSearchOpen(false);
+                          onSearch('');
+                        }
+                      }}
+                      className="w-full bg-neutral-900/60 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-600/40 transition-colors"
+                  />
+              </div>
+            )}
         </div>
 
       <div className="flex-1 pr-2">
@@ -202,12 +229,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClose();
                 }
               }}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-neutral-200 hover:bg-neutral-700"
+              className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm rounded-md text-neutral-200 hover:bg-neutral-700"
             >
-                <MicIcon className="w-4 h-4 text-neutral-400" />
-                <span>Talk mode</span>
+                <div 
+                  className="relative rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 flex-shrink-0" 
+                  style={{ width: '24px', height: '24px', transform: 'scale(1.04332)' }}
+                />
+                <span className="whitespace-nowrap">Talk mode</span>
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen((prev) => !prev)}

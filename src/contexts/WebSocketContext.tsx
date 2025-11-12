@@ -42,16 +42,16 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     reconnectInterval: 3000,
     maxReconnectAttempts: 5,
     onOpen: () => {
-      console.log('[WebSocket] Connection established');
+      console.warn('[WebSocket] Connection established');
     },
     onClose: () => {
-      console.log('[WebSocket] Connection closed');
+      console.warn('[WebSocket] Connection closed');
     },
     onError: (error) => {
       console.error('[WebSocket] Error:', error);
     },
     onMessage: (message) => {
-      console.log('[WebSocket] Message received:', message);
+      console.warn('[WebSocket] Message received:', message);
       onMessage?.(message);
     },
   });

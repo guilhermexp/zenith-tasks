@@ -197,26 +197,26 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
         className="bg-neutral-900 border border-neutral-700/50 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-up-fast"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-800/50">
-          <div>
-            <h2 className="text-sm font-semibold text-neutral-100">
+        <div className="p-4 sm:p-6 border-b border-neutral-800/50">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl lg:text-3xl font-semibold text-neutral-100 tracking-tight">
               Tarefas Priorizadas
             </h2>
-            <p className="text-xs text-neutral-400 mt-0.5">
-              Confiança: {Math.round((result.confidenceScore || 0) * 100)}%
-            </p>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-neutral-800/60 text-neutral-400 hover:text-neutral-200 transition-colors"
+              aria-label="Fechar"
+            >
+              <XIcon className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-neutral-800/60 text-neutral-400 hover:text-neutral-200 transition-colors"
-            aria-label="Fechar"
-          >
-            <XIcon className="w-5 h-5" />
-          </button>
+          <p className="text-sm text-neutral-400">
+            Confiança: {Math.round((result.confidenceScore || 0) * 100)}%
+          </p>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           {/* Justification */}
           <div className="bg-neutral-800/40 border border-neutral-700/50 rounded-lg p-3">
             <div className="flex items-start gap-2">
@@ -308,7 +308,7 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-neutral-800/50 bg-neutral-900/50">
+        <div className="flex items-center justify-end gap-2 p-4 sm:p-6 border-t border-neutral-800/50">
           <button
             onClick={onClose}
             className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-300 hover:bg-neutral-800/60 transition-colors"

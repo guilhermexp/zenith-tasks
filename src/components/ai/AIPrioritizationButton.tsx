@@ -108,17 +108,15 @@ export const AIPrioritizationButton: React.FC<AIPrioritizationButtonProps> = ({
         onClick={handlePrioritize}
         disabled={disabled || isLoading || tasks.filter((t) => !t.completed).length === 0}
         className={`
-          flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
-          transition-all duration-200 ease-in-out
+          flex items-center gap-1.5 px-3 py-1.5 text-sm
+          transition-colors
           ${
             isLoading
-              ? 'bg-neutral-800 text-neutral-400 cursor-wait'
+              ? 'text-neutral-500 cursor-wait'
               : disabled || tasks.filter((t) => !t.completed).length === 0
-                ? 'bg-neutral-800/50 text-neutral-600 cursor-not-allowed'
-                : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-white active:scale-[0.98]'
+                ? 'text-neutral-600 cursor-not-allowed'
+                : 'text-neutral-400 hover:text-neutral-200'
           }
-          border border-neutral-700/50
-          disabled:border-neutral-800
         `}
         aria-label="Priorizar tarefas com IA"
       >

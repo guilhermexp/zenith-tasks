@@ -1,20 +1,18 @@
-/**
- * @jest-environment jsdom
- */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 import { MessageRouter } from '../MessageRouter';
 import type { EnrichedChatMessage } from '@/types/chat';
 
 // Mock AI Elements components
-jest.mock('../response', () => ({
+vi.mock('../response', () => ({
   Response: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="response">{children}</div>
   ),
 }));
 
-jest.mock('../code-block', () => ({
+vi.mock('../code-block', () => ({
   CodeBlock: ({ code, language }: { code: string; language: string }) => (
     <div data-testid="code-block" data-language={language}>
       {code}
@@ -22,7 +20,7 @@ jest.mock('../code-block', () => ({
   ),
 }));
 
-jest.mock('../sources', () => ({
+vi.mock('../sources', () => ({
   Sources: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="sources">{children}</div>
   ),

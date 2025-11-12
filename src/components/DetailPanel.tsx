@@ -2,10 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 
-import SiriOrb from '@/components/ui/SiriOrb';
-
-import type { MindFlowItem, Subtask, MindFlowItemType } from '../types';
-import type { DetectedConflict, ConflictResolutionSuggestion } from '../types/ai-prioritization';
 import {
   XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon,
   SparklesIcon, ChevronLeftIcon, TrashIcon, CheckCircleIcon, TagIcon,
@@ -13,6 +9,10 @@ import {
   ClipboardIcon, EditIcon, ClockIcon
 } from './Icons';
 import { ConflictAlertBanner } from './ai/ConflictAlertBanner';
+import SiriOrb from '@/components/ui/SiriOrb';
+
+import type { MindFlowItem, Subtask, MindFlowItemType } from '../types';
+import type { DetectedConflict, ConflictResolutionSuggestion } from '../types/ai-prioritization';
 
 interface DetailPanelProps {
   item: MindFlowItem;
@@ -253,7 +253,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     };
 
     checkConflicts();
-  }, [item.id, item.dueDate, item.meetingDetails]);
+  }, [item.id, item.title, item.type, item.dueDate, item.meetingDetails]);
 
   // Resize logic
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -331,7 +331,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     suggestion: ConflictResolutionSuggestion
   ) => {
     // Implement conflict resolution based on suggestion action
-    console.log('Resolving conflict:', conflictId, suggestion);
+    console.warn('Resolving conflict:', conflictId, suggestion);
     // After resolving, remove the conflict
     setConflicts((prev) => prev.filter((c) => c.id !== conflictId));
     // You could also update the item based on the suggestion here

@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
 
     // For now, just log in development
     if (process.env.NODE_ENV === 'development') {
-      console.log('[Analytics API] Received events:', events.length);
+      console.warn('[Analytics API] Received events:', events.length);
       events.forEach((event: any) => {
-        console.log('[Analytics]', event);
+        console.warn('[Analytics]', event);
       });
     }
 

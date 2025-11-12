@@ -222,9 +222,6 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
               className="mt-4 flex w-full flex-col gap-4"
             >
               <div className="flex w-full flex-col items-start justify-between">
-                <motion.h2 className="mb-2 text-4xl font-bold tracking-wider text-zinc-300">
-                  Bookings
-                </motion.h2>
                 <p className="font-medium text-zinc-300/50">
                   See upcoming and past events booked through your event type
                   links.
@@ -270,25 +267,6 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
                               <p className="mb-1 text-sm text-zinc-600">
                                 {meeting.participants.join(', ')}
                               </p>
-                              <div className="flex items-center text-blue-500">
-                                <svg
-                                  className="mr-1 h-4 w-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                                  />
-                                </svg>
-                                <span className="text-sm">
-                                  {meeting.location}
-                                </span>
-                              </div>
                             </motion.div>
                           ))}
                       </motion.div>

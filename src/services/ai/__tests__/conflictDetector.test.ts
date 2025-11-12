@@ -13,7 +13,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConflictDetector } from '../conflictDetector';
 import type { MindFlowItem } from '@/types';
-import type { DetectedConflict, ConflictDetectionRequest } from '@/types/ai-prioritization';
+import type { DetectedConflict } from '@/types/ai-prioritization';
+import type { ConflictDetectionRequest } from '../conflictDetector';
 
 // Mock dependencies
 vi.mock('../../database/conflictRepository', () => ({

@@ -2,7 +2,7 @@
 
 export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
-    console.log('Service Worker not supported');
+    console.warn('Service Worker not supported');
     return null;
   }
 
@@ -11,7 +11,7 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
       scope: '/',
     });
 
-    console.log('Service Worker registered successfully:', registration);
+    console.warn('Service Worker registered successfully:', registration);
 
     // Check for updates every hour
     setInterval(() => {
@@ -26,7 +26,7 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
           // New service worker available, notify user
-          console.log('New version available!');
+          console.warn('New version available!');
           if (
             confirm(
               'Uma nova versão do Zenith Tasks está disponível. Deseja recarregar a página?'
@@ -53,7 +53,7 @@ export const unregisterServiceWorker = async (): Promise<boolean> => {
   try {
     const registration = await navigator.serviceWorker.ready;
     const success = await registration.unregister();
-    console.log('Service Worker unregistered:', success);
+    console.warn('Service Worker unregistered:', success);
     return success;
   } catch (error) {
     console.error('Service Worker unregistration failed:', error);
@@ -151,13 +151,13 @@ export const setupInstallPrompt = (): void => {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e as BeforeInstallPromptEvent;
-    console.log('PWA install prompt available');
+    console.warn('PWA install prompt available');
   });
 };
 
 export const promptInstall = async (): Promise<boolean> => {
   if (!deferredPrompt) {
-    console.log('No install prompt available');
+    console.warn('No install prompt available');
     return false;
   }
 

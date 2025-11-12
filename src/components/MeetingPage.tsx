@@ -4,25 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { MindFlowItem } from '@/types';
 
 // Icons
-const MicIcon: React.FC<{ className?: string }> = ({ className }) => (
-  <svg
-    className={className}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-    <line x1="12" x2="12" y1="19" y2="22" />
-  </svg>
-);
-
 const StopCircleIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg
     className={className}
@@ -152,7 +133,7 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
   const handleStartRecording = async () => {
     try {
       setError(null);
-      console.log('[MeetingPage] Requesting microphone access...');
+      console.warn('[MeetingPage] Requesting microphone access...');
 
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -162,7 +143,7 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
         }
       });
 
-      console.log('[MeetingPage] Microphone access granted');
+      console.warn('[MeetingPage] Microphone access granted');
 
       // Try to get best audio format
       const options = { mimeType: 'audio/webm;codecs=opus' };
@@ -170,9 +151,9 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
 
       try {
         mediaRecorder = new MediaRecorder(stream, options);
-        console.log('[MeetingPage] Using audio/webm;codecs=opus');
+        console.warn('[MeetingPage] Using audio/webm;codecs=opus');
       } catch (e) {
-        console.log('[MeetingPage] Falling back to default audio format');
+        console.warn('[MeetingPage] Falling back to default audio format');
         mediaRecorder = new MediaRecorder(stream);
       }
 
@@ -181,14 +162,14 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
-          console.log('[MeetingPage] Audio chunk received:', event.data.size, 'bytes');
+          console.warn('[MeetingPage] Audio chunk received:', event.data.size, 'bytes');
           audioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
-        console.log('[MeetingPage] Recording stopped. Total size:', audioBlob.size, 'bytes, Type:', audioBlob.type);
+        console.warn('[MeetingPage] Recording stopped. Total size:', audioBlob.size, 'bytes, Type:', audioBlob.type);
         setAudioBlob(audioBlob);
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -200,7 +181,7 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
 
       // Start recording with timeslice for continuous data
       mediaRecorder.start(1000); // Collect data every 1 second
-      console.log('[MeetingPage] Recording started');
+      console.warn('[MeetingPage] Recording started');
       setIsRecording(true);
       setRecordingTime(0);
     } catch (err: any) {
@@ -231,7 +212,7 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
       return;
     }
 
-    console.log('[MeetingPage] Starting transcription...', {
+    console.warn('[MeetingPage] Starting transcription...', {
       size: audioBlob.size,
       type: audioBlob.type,
     });
@@ -248,7 +229,7 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
         reader.onload = () => {
           const result = reader.result as string;
           const base64 = result.split(',')[1];
-          console.log('[MeetingPage] Audio converted to base64, length:', base64.length);
+          console.warn('[MeetingPage] Audio converted to base64, length:', base64.length);
           resolve(base64);
         };
         reader.onerror = (error) => {
@@ -257,7 +238,7 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
         };
       });
 
-      console.log('[MeetingPage] Calling transcription API...');
+      console.warn('[MeetingPage] Calling transcription API...');
 
       // Call transcription API
       const response = await fetch('/api/speech/transcribe', {
@@ -280,7 +261,7 @@ export const MeetingPage: React.FC<MeetingPageProps> = ({ items, onAddMeeting })
       const data = await response.json();
       const transcribedText = data.text || data.transcript || '';
 
-      console.log('[MeetingPage] Transcription received:', transcribedText.substring(0, 100));
+      console.warn('[MeetingPage] Transcription received:', transcribedText.substring(0, 100));
       setTranscription(transcribedText);
 
       if (!transcribedText) {
@@ -413,28 +394,21 @@ Responda em formato JSON com as chaves: summary, actionItems (array), participan
     if (audioBlob && !transcription && !isTranscribing) {
       handleTranscribe();
     }
-  }, [audioBlob]);
+  }, [audioBlob, handleTranscribe, isTranscribing, transcription]);
 
   // Get past meetings
   const meetings = items.filter((item) => item.type === 'Reunião');
 
   return (
-    <div className="flex-1 flex flex-col bg-neutral-950 overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-neutral-800/50 bg-neutral-900/30 backdrop-blur-sm">
-        <div className="px-4 py-3">
-          <h1 className="text-sm font-semibold text-neutral-100">Reuniões</h1>
-          <p className="text-xs text-neutral-400 mt-0.5">
-            Grave e transcreva reuniões com IA
-          </p>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+    <>
+    <main className="flex-1 h-full overflow-y-auto overscroll-contain glass-card soft-scroll transition-all duration-300">
+      <div className="p-4 sm:p-6 pb-24">
+        <header className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl lg:text-3xl font-semibold text-neutral-100 tracking-tight">Reuniões</h1>
+        </header>
         {/* Recording Interface */}
-        <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-lg p-4">
-          <div className="flex flex-col items-center gap-4">
+        <div className="mb-6">
+          <div className="flex flex-col items-center gap-4 py-4">
             {/* Recording Status */}
             {isRecording && (
               <div className="flex items-center gap-2">
@@ -450,36 +424,6 @@ Responda em formato JSON com as chaves: summary, actionItems (array), participan
               <div className="text-sm text-neutral-400">
                 Gravação finalizada: {formatTime(recordingTime)}
               </div>
-            )}
-
-            {/* Recording Button */}
-            {!audioBlob && (
-              <button
-                onClick={isRecording ? handleStopRecording : handleStartRecording}
-                disabled={isTranscribing}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium
-                  transition-all duration-200
-                  ${
-                    isRecording
-                      ? 'bg-red-600 hover:bg-red-500 text-white'
-                      : 'bg-neutral-800 hover:bg-neutral-700 text-neutral-300 hover:text-white border border-neutral-700/50'
-                  }
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                `}
-              >
-                {isRecording ? (
-                  <>
-                    <StopCircleIcon className="w-4 h-4" />
-                    <span>Parar Gravação</span>
-                  </>
-                ) : (
-                  <>
-                    <MicIcon className="w-4 h-4" />
-                    <span>Iniciar Gravação</span>
-                  </>
-                )}
-              </button>
             )}
 
             {/* Error Message */}
@@ -506,7 +450,7 @@ Responda em formato JSON com as chaves: summary, actionItems (array), participan
 
         {/* Transcription & Analysis */}
         {(isTranscribing || transcription) && (
-          <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-lg p-4 space-y-3">
+          <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-lg p-4 space-y-3 mb-6">
             {/* Title Input */}
             <div>
               <label className="text-xs text-neutral-400 mb-1 block">
@@ -710,42 +654,92 @@ Responda em formato JSON com as chaves: summary, actionItems (array), participan
 
         {/* Past Meetings */}
         {meetings.length > 0 && (
-          <div>
-            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
               Reuniões Anteriores
             </h3>
             <div className="space-y-2">
-              {meetings.slice(0, 5).map((meeting) => (
-                <div
-                  key={meeting.id}
-                  className="bg-neutral-900/40 border border-neutral-800/50 rounded-lg p-3 hover:bg-neutral-900/60 transition-colors cursor-pointer"
-                >
-                  <h4 className="text-sm text-neutral-100 mb-1">
-                    {meeting.title}
-                  </h4>
-                  {meeting.summary && (
-                    <p className="text-xs text-neutral-400 line-clamp-2">
-                      {meeting.summary}
-                    </p>
-                  )}
-                  {meeting.meetingDetails?.recordedAt && (
-                    <p className="text-xs text-neutral-500 mt-1">
-                      {new Date(meeting.meetingDetails.recordedAt).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  )}
-                </div>
-              ))}
+              {meetings.slice(0, 5).map((meeting) => {
+                // Check if title is just "Reunião [date]" pattern
+                const isDefaultTitle = /^Reunião\s+\d{1,2}\/\d{1,2}\/\d{4}$/.test(meeting.title);
+                const formattedDate = meeting.meetingDetails?.recordedAt
+                  ? new Date(meeting.meetingDetails.recordedAt).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : null;
+
+                return (
+                  <div
+                    key={meeting.id}
+                    className="bg-neutral-900/40 border border-neutral-800/50 rounded-lg p-3 hover:bg-neutral-900/60 transition-colors cursor-pointer"
+                  >
+                    {!isDefaultTitle && (
+                      <h4 className="text-sm text-neutral-100 mb-1">
+                        {meeting.title}
+                      </h4>
+                    )}
+                    {formattedDate && (
+                      <p className={`text-xs text-neutral-500 ${isDefaultTitle ? '' : 'mt-1'}`}>
+                        {formattedDate}
+                      </p>
+                    )}
+                    {meeting.summary && (
+                      <p className="text-xs text-neutral-400 line-clamp-2 mt-1">
+                        {meeting.summary}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
+
       </div>
-    </div>
+    </main>
+
+    {/* Fixed Bottom Button */}
+    {!audioBlob && (
+      <div className="fixed bottom-4 left-0 right-0 z-50 md:bottom-6 flex items-center justify-center pointer-events-none">
+        <div className="pointer-events-auto bg-neutral-900/95 backdrop-blur-sm border border-white/10 rounded-xl shadow-lg overflow-hidden">
+          <div className="flex items-center justify-center whitespace-nowrap select-none">
+            <button
+              onClick={isRecording ? handleStopRecording : handleStartRecording}
+              disabled={isTranscribing}
+              className={`
+                flex items-center gap-2 px-3 py-2 text-sm transition-colors w-full
+                ${
+                  isRecording
+                    ? 'bg-red-600 hover:bg-red-500 text-white'
+                    : 'text-neutral-200 hover:bg-white/5'
+                }
+                disabled:opacity-50 disabled:cursor-not-allowed
+              `}
+            >
+                {isRecording ? (
+                  <>
+                    <StopCircleIcon className="w-4 h-4" />
+                    <span>Parar Gravação</span>
+                  </>
+                ) : (
+                  <>
+                    <div 
+                      className="relative rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 flex-shrink-0" 
+                      style={{ width: '16px', height: '16px', transform: 'scale(1.04332)' }}
+                    />
+                    <span>Iniciar Gravação</span>
+                  </>
+                )}
+              </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
