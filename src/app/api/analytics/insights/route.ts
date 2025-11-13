@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod';
 import { analyticsEngine } from '@/services/analytics/analyticsEngine';
 import { ItemsService } from '@/services/database/items';
@@ -16,8 +17,17 @@ export async function GET(request: NextRequest) {
   const performanceTimer = performanceMonitor.startTimer();
 
   try {
-    // Get user ID (currently using test-user)
-    const userId = 'test-user'; // TODO: Get from auth session
+    const FALLBACK_USER_ID = process.env.NODE_ENV === 'production' ? null : 'test-user'
+    let userId: string | null = null
+    try {
+      const { userId: authUserId } = await auth()
+      userId = authUserId ?? FALLBACK_USER_ID
+    } catch {
+      userId = FALLBACK_USER_ID
+    }
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -241,7 +251,17 @@ export async function GET(request: NextRequest) {
  */
 export async function DELETE() {
   try {
-    const userId = 'test-user'; // TODO: Get from auth session
+    const FALLBACK_USER_ID = process.env.NODE_ENV === 'production' ? null : 'test-user'
+    let userId: string | null = null
+    try {
+      const { userId: authUserId } = await auth()
+      userId = authUserId ?? FALLBACK_USER_ID
+    } catch {
+      userId = FALLBACK_USER_ID
+    }
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const keysCleared = analyticsCache.invalidate(userId);
 

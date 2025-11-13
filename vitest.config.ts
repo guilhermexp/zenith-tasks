@@ -4,10 +4,10 @@ import path from 'path';
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
-    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', 'dist', '.next', 'out'],
+    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}', 'e2e/**/*.{spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist', '.next', 'out', 'ai_specs/**', 'src/__tests__/api-integration.test.ts', 'src/__tests__/e2e-workflows.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

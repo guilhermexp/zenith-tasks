@@ -2,10 +2,10 @@
  * End-to-end workflow tests
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 
 // Mock browser APIs for testing
-global.fetch = jest.fn()
+global.fetch = vi.fn() as any
 global.navigator = {
   userAgent: 'Test Browser'
 } as any
@@ -17,7 +17,7 @@ global.window = {
 } as any
 
 describe('End-to-End Workflow Tests', () => {
-  const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>
+  const mockFetch = global.fetch as any
 
   beforeAll(() => {
     // Setup common mocks
@@ -25,7 +25,7 @@ describe('End-to-End Workflow Tests', () => {
   })
 
   afterAll(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Complete Chat Conversation Workflow', () => {

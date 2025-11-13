@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod';
 import { conflictDetector } from '@/services/ai/conflictDetector';
 import { ItemsService } from '@/services/database/items';
@@ -41,8 +42,17 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Get user ID
-    const userId = 'test-user'; // TODO: Get from auth session
+    const FALLBACK_USER_ID = process.env.NODE_ENV === 'production' ? null : 'test-user'
+    let userId: string | null = null
+    try {
+      const { userId: authUserId } = await auth()
+      userId = authUserId ?? FALLBACK_USER_ID
+    } catch {
+      userId = FALLBACK_USER_ID
+    }
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // Parse and validate request body
     const body = await request.json();
@@ -191,7 +201,17 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   try {
-    const userId = 'test-user'; // TODO: Get from auth session
+    const FALLBACK_USER_ID = process.env.NODE_ENV === 'production' ? null : 'test-user'
+    let userId: string | null = null
+    try {
+      const { userId: authUserId } = await auth()
+      userId = authUserId ?? FALLBACK_USER_ID
+    } catch {
+      userId = FALLBACK_USER_ID
+    }
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     logger.info('Fetching unresolved conflicts', {
       provider: 'ConflictsAPI',

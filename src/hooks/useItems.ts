@@ -83,7 +83,7 @@ export function useItems() {
     } finally {
       setIsLoading(false)
     }
-  }, [user])
+  }, [])
 
   // Load items when user is authenticated
   useEffect(() => {
@@ -94,7 +94,7 @@ export function useItems() {
     }
 
     loadItems()
-  }, [isLoaded, loadItems, user])
+  }, [isLoaded, loadItems])
 
   const addItem = useCallback(async (item: Omit<MindFlowItem, 'id' | 'createdAt'>): Promise<MindFlowItem | null> => {
     // Temporarily allow adding items without user (test-user fallback in API)
@@ -127,7 +127,7 @@ export function useItems() {
       setError('Erro ao criar item')
       return null
     }
-  }, [user])
+  }, [])
 
   const updateItem = useCallback(async (itemId: string, updates: Partial<MindFlowItem>) => {
     // Temporarily allow updating items without user (test-user fallback in API)
@@ -155,7 +155,7 @@ export function useItems() {
       logger.error('Error updating item', err, { itemId, hook: 'useItems' })
       setError('Erro ao atualizar item')
     }
-  }, [user])
+  }, [])
 
   const deleteItem = useCallback(async (itemId: string) => {
     // Temporarily allow deleting items without user (test-user fallback in API)
@@ -177,7 +177,7 @@ export function useItems() {
       logger.error('Error deleting item', err, { itemId, hook: 'useItems' })
       setError('Erro ao deletar item')
     }
-  }, [user])
+  }, [])
 
   const toggleItem = useCallback(async (itemId: string) => {
     // Temporarily allow toggling items without user (test-user fallback in API)
@@ -201,7 +201,7 @@ export function useItems() {
       logger.error('Error toggling item', err, { itemId, hook: 'useItems' })
       setError('Erro ao alternar item')
     }
-  }, [user])
+  }, [])
 
   const clearCompleted = useCallback(async () => {
     // Temporarily allow clearing items without user (test-user fallback in API)
@@ -223,7 +223,7 @@ export function useItems() {
       logger.error('Error clearing completed', err, { userId: user?.id || 'test-user', hook: 'useItems' })
       setError('Erro ao limpar completados')
     }
-  }, [user])
+  }, [])
 
   const setDueDate = useCallback(async (itemId: string, date: Date | null) => {
     // Temporarily allow setting due date without user (test-user fallback in API)
@@ -267,7 +267,7 @@ export function useItems() {
       logger.error('Error setting due date', err, { itemId, hook: 'useItems' })
       setError('Erro ao definir data')
     }
-  }, [user])
+  }, [])
 
   return {
     items,

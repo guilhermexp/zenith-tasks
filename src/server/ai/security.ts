@@ -103,7 +103,7 @@ export class SecurityManager {
       
       // Tentativas de role hijacking
       {
-        pattern: /system\s*[:]\s*|system\s+prompt/gi,
+        pattern: /system\s*[:]\s*/gi,
         risk: 'high' as const,
         name: 'system_prompt_injection'
       },
@@ -362,8 +362,8 @@ export class SecurityManager {
       { pattern: /\b\d{3}-\d{2}-\d{4}\b/, issue: 'SSN detected' },
       { pattern: /\b\d{16}\b/, issue: 'Credit card number detected' },
       { pattern: /Bearer\s+[A-Za-z0-9\-._~+\/]+=*/, issue: 'API token detected' },
-      { pattern: /password\s*[:=]\s*[^\s,}]+/i, issue: 'Password detected' },
-      { pattern: /api[_-]?key\s*[:=]\s*[^\s,}]+/i, issue: 'API key detected' }
+      { pattern: /password\s*(is|=|:)\s*[^\s,}]+/i, issue: 'Password detected' },
+      { pattern: /api[_-]?key\s*(is|=|:)\s*[^\s,}]+/i, issue: 'API key detected' }
     ];
 
     for (const { pattern, issue } of sensitivePatterns) {

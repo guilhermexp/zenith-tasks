@@ -2,7 +2,7 @@
  * Integration tests for API endpoints
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 
 // Mock environment variables for testing
 process.env.NODE_ENV = 'test'

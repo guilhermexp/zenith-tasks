@@ -3,6 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 import { extractClientKey, rateLimit } from '@/server/rateLimit'
 import { logger } from '@/utils/logger'
@@ -106,6 +107,18 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const FALLBACK_ALLOW = process.env.NODE_ENV !== 'production'
+    let isAdmin = FALLBACK_ALLOW
+    try {
+      const { userId } = await auth()
+      const admins = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+      isAdmin = admins.length > 0 ? (userId ? admins.includes(userId) : false) : FALLBACK_ALLOW
+    } catch {
+      isAdmin = FALLBACK_ALLOW
+    }
+    if (!isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
     // This endpoint could be used by admins to view error reports
     const url = new URL(request.url)
     const limit = parseInt(url.searchParams.get('limit') || '20')

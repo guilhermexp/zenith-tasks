@@ -39,21 +39,20 @@ export const CodeBlock = ({
 }: CodeBlockProps) => {
   const [html, setHtml] = useState<string>("");
   const [darkHtml, setDarkHtml] = useState<string>("");
-  const mounted = useRef(false);
+  const mounted = useRef(false)
 
   useEffect(() => {
+    mounted.current = true
     highlightCode(code, language, showLineNumbers).then(([light, dark]) => {
-      if (!mounted.current) {
-        setHtml(light);
-        setDarkHtml(dark);
-        mounted.current = true;
+      if (mounted.current) {
+        setHtml(light)
+        setDarkHtml(dark)
       }
-    });
-
+    })
     return () => {
-      mounted.current = false;
-    };
-  }, [code, language, showLineNumbers]);
+      mounted.current = false
+    }
+  }, [code, language, showLineNumbers])
 
   return (
     <CodeBlockContext.Provider value={{ code }}>
@@ -62,6 +61,7 @@ export const CodeBlock = ({
           "group relative w-full overflow-hidden rounded-md border bg-background text-foreground",
           className
         )}
+        data-testid="code-block"
         {...props}
       >
         <div className="relative">
@@ -127,6 +127,7 @@ export const CodeBlockCopyButton = ({
       onClick={copyToClipboard}
       size="icon"
       variant="ghost"
+      aria-label={isCopied ? "Copiado" : "Copiar código"}
       {...props}
     >
       {children ?? <Icon size={14} />}

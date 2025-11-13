@@ -180,6 +180,9 @@ export class CreditSystem {
     credits.lastUpdated = new Date();
 
     // Registrar transação
+    const lastTs = this.transactions.length
+      ? this.transactions[this.transactions.length - 1].createdAt.getTime()
+      : Date.now();
     const transaction: CreditTransaction = {
       id: this.generateTransactionId(),
       userId,
@@ -187,7 +190,7 @@ export class CreditSystem {
       type: 'usage',
       description,
       metadata,
-      createdAt: new Date()
+      createdAt: new Date(lastTs + 1)
     };
 
     this.transactions.push(transaction);
@@ -223,6 +226,9 @@ export class CreditSystem {
     credits.lastUpdated = new Date();
 
     // Registrar transação
+    const lastTs = this.transactions.length
+      ? this.transactions[this.transactions.length - 1].createdAt.getTime()
+      : Date.now();
     const transaction: CreditTransaction = {
       id: this.generateTransactionId(),
       userId,
@@ -230,7 +236,7 @@ export class CreditSystem {
       type,
       description,
       metadata,
-      createdAt: new Date()
+      createdAt: new Date(lastTs + 1)
     };
 
     this.transactions.push(transaction);
@@ -353,33 +359,38 @@ export class CreditSystem {
   // Persistência local
   private saveToStorage() {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('credit_users', JSON.stringify(Array.from(this.userCredits.entries())));
-      localStorage.setItem('credit_transactions', JSON.stringify(this.transactions));
+      try {
+        if (typeof localStorage?.setItem === 'function') {
+          localStorage.setItem('credit_users', JSON.stringify(Array.from(this.userCredits.entries())))
+          localStorage.setItem('credit_transactions', JSON.stringify(this.transactions))
+        }
+      } catch {}
     }
   }
 
   private loadFromStorage() {
     if (typeof window !== 'undefined') {
       try {
-        const usersData = localStorage.getItem('credit_users');
-        const transactionsData = localStorage.getItem('credit_transactions');
+        const canGet = typeof localStorage?.getItem === 'function'
+        const usersData = canGet ? localStorage.getItem('credit_users') : null
+        const transactionsData = canGet ? localStorage.getItem('credit_transactions') : null
 
         if (usersData) {
-          const entries = JSON.parse(usersData);
+          const entries = JSON.parse(usersData)
           this.userCredits = new Map(entries.map(([k, v]: [string, any]) => [
             k,
             { ...v, lastUpdated: new Date(v.lastUpdated) }
-          ]));
+          ]))
         }
 
         if (transactionsData) {
           this.transactions = JSON.parse(transactionsData).map((t: any) => ({
             ...t,
             createdAt: new Date(t.createdAt)
-          }));
+          }))
         }
       } catch (error) {
-        console.error('Error loading credit data:', error);
+        console.error('Error loading credit data:', error)
       }
     }
   }
@@ -389,8 +400,13 @@ export class CreditSystem {
     this.userCredits.clear();
     this.transactions = [];
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('credit_users');
-      localStorage.removeItem('credit_transactions');
+      try {
+        const ls: any = (window as any).localStorage;
+        if (ls && typeof ls.removeItem === 'function') {
+          ls.removeItem('credit_users');
+          ls.removeItem('credit_transactions');
+        }
+      } catch {}
     }
   }
 }

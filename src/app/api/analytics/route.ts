@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/utils/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,10 +20,10 @@ export async function POST(req: NextRequest) {
 
     // For now, just log in development
     if (process.env.NODE_ENV === 'development') {
-      console.warn('[Analytics API] Received events:', events.length);
+      logger.warn('[Analytics API] Received events', { count: events.length })
       events.forEach((event: any) => {
-        console.warn('[Analytics]', event);
-      });
+        logger.warn('[Analytics] Event', { event })
+      })
     }
 
     // TODO: Implement actual storage/forwarding
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
       processed: events.length,
     });
   } catch (error) {
-    console.error('[Analytics API] Error:', error);
+    logger.error('[Analytics API] Error', error as any)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
       // data: analyticsData,
     });
   } catch (error) {
-    console.error('[Analytics API] Error:', error);
+    logger.error('[Analytics API] Error', error as any)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

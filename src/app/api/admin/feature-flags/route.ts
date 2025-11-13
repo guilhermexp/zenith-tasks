@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { featureFlagManager, type FeatureFlag } from '@/config/features';
 import { logger } from '@/utils/logger';
 
@@ -59,14 +60,13 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Add admin authentication check
-    // const isAdmin = await checkAdminPermissions(request);
-    // if (!isAdmin) {
-    //   return NextResponse.json(
-    //     { error: 'Unauthorized', message: 'Admin access required' },
-    //     { status: 403 }
-    //   );
-    // }
+    const isAdmin = await requireAdmin()
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Admin access required' },
+        { status: 403 }
+      )
+    }
 
     const body = await request.json();
 
@@ -141,7 +141,13 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    // TODO: Add admin authentication check
+    const isAdmin = await requireAdmin()
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Admin access required' },
+        { status: 403 }
+      )
+    }
 
     const body = await request.json();
 
@@ -209,7 +215,13 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // TODO: Add admin authentication check
+    const isAdmin = await requireAdmin()
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Admin access required' },
+        { status: 403 }
+      )
+    }
 
     const { searchParams } = new URL(request.url);
     const featureKey = searchParams.get('featureKey');
@@ -258,5 +270,15 @@ export async function DELETE(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+async function requireAdmin(): Promise<boolean> {
+  try {
+    const { userId } = await auth()
+    if (!userId) return false
+    const admins = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim()).filter(Boolean)
+    return admins.length > 0 ? admins.includes(userId) : process.env.NODE_ENV !== 'production'
+  } catch {
+    return process.env.NODE_ENV !== 'production'
   }
 }

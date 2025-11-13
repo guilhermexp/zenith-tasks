@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 import { z } from 'zod';
 import { prioritizationEngine } from '@/services/ai/prioritizationEngine';
 import { ItemsService } from '@/services/database/items';
@@ -12,7 +13,7 @@ import {
  * Rate limiting store (in-memory for simplicity)
  * In production, use Redis or similar distributed cache
  */
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
 
 /**
  * Check rate limit
@@ -22,33 +23,33 @@ function checkRateLimit(userId: string): {
   remaining: number;
   resetAt: number;
 } {
-  const now = Date.now();
-  const limit = 10; // 10 requests
-  const windowMs = 60 * 60 * 1000; // per hour
+  const now = Date.now()
+  const limit = 10
+  const windowMs = 60 * 60 * 1000
 
-  const userLimit = rateLimitStore.get(userId);
+  const userLimit = rateLimitStore.get(userId)
 
   if (!userLimit || now > userLimit.resetAt) {
     // New window
-    const resetAt = now + windowMs;
-    rateLimitStore.set(userId, { count: 1, resetAt });
-    return { allowed: true, remaining: limit - 1, resetAt };
+    const resetAt = now + windowMs
+    rateLimitStore.set(userId, { count: 1, resetAt })
+    return { allowed: true, remaining: limit - 1, resetAt }
   }
 
   if (userLimit.count >= limit) {
     // Rate limit exceeded
-    return { allowed: false, remaining: 0, resetAt: userLimit.resetAt };
+    return { allowed: false, remaining: 0, resetAt: userLimit.resetAt }
   }
 
   // Increment count
-  userLimit.count += 1;
-  rateLimitStore.set(userId, userLimit);
+  userLimit.count += 1
+  rateLimitStore.set(userId, userLimit)
 
   return {
     allowed: true,
     remaining: limit - userLimit.count,
     resetAt: userLimit.resetAt,
-  };
+  }
 }
 
 /**
@@ -56,18 +57,25 @@ function checkRateLimit(userId: string): {
  * Prioritize tasks using AI-powered analysis
  */
 export async function POST(request: NextRequest) {
-  const startTime = Date.now();
+  const startTime = Date.now()
+  const FALLBACK_USER_ID = process.env.NODE_ENV === 'production' ? null : 'test-user'
 
   try {
-    // Get user ID (currently using test-user, will be replaced with actual auth)
-    const userId = 'test-user'; // TODO: Get from auth session
+    let userId: string | null = null
+    try {
+      const { userId: authUserId } = await auth()
+      userId = authUserId ?? FALLBACK_USER_ID
+    } catch {
+      userId = FALLBACK_USER_ID
+    }
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     // Check rate limit
-    const rateLimit = checkRateLimit(userId);
+    const rateLimit = checkRateLimit(userId)
     if (!rateLimit.allowed) {
-      const retryAfter = Math.ceil(
-        (rateLimit.resetAt - Date.now()) / 1000
-      );
+      const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000)
 
       logger.warn('Rate limit exceeded', {
         provider: 'PrioritizeAPI',
@@ -89,11 +97,11 @@ export async function POST(request: NextRequest) {
             'Retry-After': retryAfter.toString(),
           },
         }
-      );
+      )
     }
 
     // Parse and validate request body
-    const body = await request.json();
+    const body = await request.json()
 
     logger.info('Prioritization request received', {
       provider: 'PrioritizeAPI',
@@ -102,9 +110,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Validate request using Zod schema
-    let validatedRequest: PrioritizationRequest;
+    let validatedRequest: PrioritizationRequest
     try {
-      validatedRequest = PrioritizationRequestSchema.parse(body);
+      validatedRequest = PrioritizationRequestSchema.parse(body)
     } catch (validationError: any) {
       logger.warn('Invalid request body', {
         provider: 'PrioritizeAPI',
@@ -123,17 +131,17 @@ export async function POST(request: NextRequest) {
     }
 
     // If tasks not provided in body, fetch from database
-    let tasks = validatedRequest.tasks;
+    let tasks = validatedRequest.tasks
     if (!tasks || tasks.length === 0) {
       logger.info('Fetching tasks from database', {
         provider: 'PrioritizeAPI',
         userId,
       });
 
-      const userTasks = await ItemsService.loadItems(userId);
+      const userTasks = await ItemsService.loadItems(userId)
 
       // Filter only incomplete tasks
-      tasks = userTasks.filter((task) => !task.completed);
+      tasks = userTasks.filter((task) => !task.completed)
 
       if (tasks.length === 0) {
         return NextResponse.json(
@@ -160,9 +168,9 @@ export async function POST(request: NextRequest) {
       taskCount: tasks.length,
     });
 
-    const result = await prioritizationEngine.prioritize(prioritizationRequest);
+    const result = await prioritizationEngine.prioritize(prioritizationRequest)
 
-    const duration = Date.now() - startTime;
+    const duration = Date.now() - startTime
 
     logger.info('Prioritization completed', {
       provider: 'PrioritizeAPI',
@@ -200,7 +208,7 @@ export async function POST(request: NextRequest) {
       }
     );
   } catch (error: any) {
-    const duration = Date.now() - startTime;
+    const duration = Date.now() - startTime
 
     logger.error('Prioritization failed', error, {
       provider: 'PrioritizeAPI',
@@ -208,15 +216,15 @@ export async function POST(request: NextRequest) {
     });
 
     // Determine appropriate status code
-    let statusCode = 500;
-    let errorMessage = 'An unexpected error occurred during prioritization';
+    let statusCode = 500
+    let errorMessage = 'An unexpected error occurred during prioritization'
 
     if (error.message?.includes('AI generation failed')) {
-      statusCode = 503;
-      errorMessage = 'AI service temporarily unavailable';
+      statusCode = 503
+      errorMessage = 'AI service temporarily unavailable'
     } else if (error.message?.includes('timeout')) {
-      statusCode = 504;
-      errorMessage = 'Request timeout';
+      statusCode = 504
+      errorMessage = 'Request timeout'
     }
 
     return NextResponse.json(

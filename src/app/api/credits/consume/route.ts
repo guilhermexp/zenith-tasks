@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
 
 import { CreditSystem } from '@/services/credits/credit-system';
 import { logger } from '@/utils/logger';
@@ -6,14 +7,25 @@ import { logger } from '@/utils/logger';
 export async function POST(req: Request) {
   const logContext = { route: 'credits-consume' } as const;
   try {
-    const { userId, modelId, inputTokens, outputTokens, description, metadata } = await req.json();
-
-    if (!userId || !modelId) {
+    const body = await req.json()
+    const ConsumeSchema = z.object({
+      userId: z.string().min(1),
+      modelId: z.string().min(1),
+      inputTokens: z.number().int().nonnegative().optional(),
+      outputTokens: z.number().int().nonnegative().optional(),
+      description: z.string().optional(),
+      metadata: z.record(z.any()).optional(),
+    })
+    const parsed = ConsumeSchema.safeParse(body)
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'userId and modelId are required' },
+        { error: 'Validation error', details: parsed.error.flatten() },
         { status: 400 }
-      );
+      )
     }
+    const { userId, modelId, inputTokens, outputTokens, description, metadata } = parsed.data
+
+    // already validated by Zod
 
     const creditSystem = CreditSystem.getInstance();
 
@@ -22,7 +34,7 @@ export async function POST(req: Request) {
       modelId,
       inputTokens || 0,
       outputTokens || 0
-    );
+    )
 
     // Consumir créditos
     const result = await creditSystem.consumeCredits(
@@ -35,7 +47,7 @@ export async function POST(req: Request) {
         outputTokens,
         ...metadata
       }
-    );
+    )
 
     if (!result.success) {
       return NextResponse.json(

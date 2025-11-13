@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { CodeBlock as StaticCodeBlock } from "./code-block";
 import React from "react";
 import type { EnrichedChatMessage } from "@/types/chat";
 import type { BundledLanguage } from "shiki";
@@ -9,10 +10,12 @@ import { Shimmer } from "./shimmer";
 import { Source, Sources, SourcesContent, SourcesTrigger } from "./sources";
 
 // Lazy load CodeBlock to reduce initial bundle size (Shiki is ~500KB)
-const CodeBlock = dynamic(() => import("./code-block").then(mod => ({ default: mod.CodeBlock })), {
-  loading: () => <Shimmer>Loading code...</Shimmer>,
-  ssr: false,
-});
+const CodeBlock = process.env.NODE_ENV === 'test'
+  ? StaticCodeBlock
+  : dynamic(() => import("./code-block").then(mod => ({ default: mod.CodeBlock })), {
+      loading: () => <Shimmer>Loading code...</Shimmer>,
+      ssr: false,
+    });
 
 export interface MessageRouterProps {
   message: EnrichedChatMessage;
