@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 
 import { setupInstallPrompt, promptInstall, canInstall } from '@/utils/pwa';

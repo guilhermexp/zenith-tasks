@@ -16,6 +16,76 @@ interface ItemResponse {
 
 const isNetworkError = (error: unknown): boolean => error instanceof TypeError
 
+const RESPONSE_BODY_SNIPPET_LIMIT = 180
+
+class ApiResponseParseError extends Error {
+  details: Record<string, unknown>
+
+  constructor(message: string, details: Record<string, unknown>) {
+    super(message)
+    this.name = 'ApiResponseParseError'
+    this.details = details
+  }
+}
+
+const isApiResponseParseError = (error: unknown): error is ApiResponseParseError => error instanceof ApiResponseParseError
+
+const truncateSnippet = (value: string): string => {
+  if (!value) {
+    return ''
+  }
+  return value.length > RESPONSE_BODY_SNIPPET_LIMIT ? `${value.slice(0, RESPONSE_BODY_SNIPPET_LIMIT)}...` : value
+}
+
+const withParseErrorDetails = (base: Record<string, unknown>, error: unknown): Record<string, unknown> => {
+  if (isApiResponseParseError(error)) {
+    return {
+      ...base,
+      ...error.details
+    }
+  }
+  return base
+}
+
+const parseJsonResponse = async <T>(response: Response, context: string): Promise<T | null> => {
+  const contentType = response.headers.get('content-type') ?? 'unknown'
+  const rawBody = await response.text()
+  const trimmedBody = rawBody.trim()
+  const expectsJson = contentType.includes('application/json')
+
+  if (!trimmedBody) {
+    if (!expectsJson && response.status !== 204) {
+      throw new ApiResponseParseError('Resposta invalida do servidor', {
+        context,
+        status: response.status,
+        contentType
+      })
+    }
+    return null
+  }
+
+  if (!expectsJson) {
+    throw new ApiResponseParseError('Resposta invalida do servidor', {
+      context,
+      status: response.status,
+      contentType,
+      snippet: truncateSnippet(trimmedBody)
+    })
+  }
+
+  try {
+    return JSON.parse(trimmedBody) as T
+  } catch (error) {
+    throw new ApiResponseParseError('Resposta invalida do servidor', {
+      context,
+      status: response.status,
+      contentType,
+      snippet: truncateSnippet(trimmedBody),
+      originalError: error instanceof Error ? error.message : String(error)
+    })
+  }
+}
+
 export function useItems() {
   const { user, isLoaded } = useUser()
 
@@ -44,11 +114,11 @@ export function useItems() {
         credentials: 'include'
       })
 
-      const data = (await response.json()) as ItemsResponse
+      const data = await parseJsonResponse<ItemsResponse>(response, 'loadItems')
       if (!response.ok) {
-        throw new Error(data.error ?? 'Falha ao carregar itens')
+        throw new Error(data?.error ?? 'Falha ao carregar itens')
       }
-      const loadedItems = data.items ?? []
+      const loadedItems = data?.items ?? []
 
       logger.info('Loaded items from database', { count: loadedItems.length, hook: 'useItems' })
       setItems(loadedItems)
@@ -57,7 +127,7 @@ export function useItems() {
       if (networkError) {
         logger.warn('Database unavailable (network)', { hook: 'useItems' })
       } else {
-        logger.error('Error loading items from database', err, { hook: 'useItems' })
+        logger.error('Error loading items from database', err, withParseErrorDetails({ hook: 'useItems' }, err))
       }
       setError('Erro ao carregar itens')
 
@@ -115,15 +185,17 @@ export function useItems() {
         body: JSON.stringify(item)
       })
 
-      const data = (await response.json()) as ItemResponse
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Falha ao criar item')
+      const data = await parseJsonResponse<ItemResponse>(response, 'addItem')
+
+      if (!response.ok || !data?.item) {
+        throw new Error(data?.error ?? 'Falha ao criar item')
       }
+
       logger.info('Item saved to database', { itemId: data.item.id, hook: 'useItems' })
       setItems(prev => [data.item, ...prev])
       return data.item
     } catch (err) {
-      logger.error('Error saving to database', err, { hook: 'useItems' })
+      logger.error('Error saving to database', err, withParseErrorDetails({ hook: 'useItems' }, err))
       setError('Erro ao criar item')
       return null
     }
@@ -144,7 +216,7 @@ export function useItems() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
+        const data = await parseJsonResponse<{ error?: string }>(response, 'updateItem')
         throw new Error(data?.error ?? 'Falha ao atualizar item')
       }
 
@@ -152,7 +224,7 @@ export function useItems() {
         item.id === itemId ? { ...item, ...updates } : item
       ))
     } catch (err) {
-      logger.error('Error updating item', err, { itemId, hook: 'useItems' })
+      logger.error('Error updating item', err, withParseErrorDetails({ itemId, hook: 'useItems' }, err))
       setError('Erro ao atualizar item')
     }
   }, [])
@@ -168,13 +240,13 @@ export function useItems() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
+        const data = await parseJsonResponse<{ error?: string }>(response, 'deleteItem')
         throw new Error(data?.error ?? 'Falha ao deletar item')
       }
 
       setItems(prev => prev.filter(item => item.id !== itemId))
     } catch (err) {
-      logger.error('Error deleting item', err, { itemId, hook: 'useItems' })
+      logger.error('Error deleting item', err, withParseErrorDetails({ itemId, hook: 'useItems' }, err))
       setError('Erro ao deletar item')
     }
   }, [])
@@ -190,7 +262,7 @@ export function useItems() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
+        const data = await parseJsonResponse<{ error?: string }>(response, 'toggleItem')
         throw new Error(data?.error ?? 'Falha ao alternar item')
       }
 
@@ -198,7 +270,7 @@ export function useItems() {
         item.id === itemId ? { ...item, completed: !item.completed } : item
       ))
     } catch (err) {
-      logger.error('Error toggling item', err, { itemId, hook: 'useItems' })
+      logger.error('Error toggling item', err, withParseErrorDetails({ itemId, hook: 'useItems' }, err))
       setError('Erro ao alternar item')
     }
   }, [])
@@ -214,13 +286,13 @@ export function useItems() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
+        const data = await parseJsonResponse<{ error?: string }>(response, 'clearCompleted')
         throw new Error(data?.error ?? 'Falha ao limpar itens concluídos')
       }
 
       setItems(prev => prev.filter(item => !item.completed))
     } catch (err) {
-      logger.error('Error clearing completed', err, { userId: user?.id || 'test-user', hook: 'useItems' })
+      logger.error('Error clearing completed', err, withParseErrorDetails({ userId: user?.id || 'test-user', hook: 'useItems' }, err))
       setError('Erro ao limpar completados')
     }
   }, [])
@@ -250,7 +322,7 @@ export function useItems() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
+        const data = await parseJsonResponse<{ error?: string }>(response, 'setDueDate')
         throw new Error(data?.error ?? 'Falha ao definir data')
       }
 
@@ -264,7 +336,7 @@ export function useItems() {
           : item
       ))
     } catch (err) {
-      logger.error('Error setting due date', err, { itemId, hook: 'useItems' })
+      logger.error('Error setting due date', err, withParseErrorDetails({ itemId, hook: 'useItems' }, err))
       setError('Erro ao definir data')
     }
   }, [])

@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'motion/react';
-import type { HTMLMotionProps } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { HTMLMotionProps } from 'framer-motion';
 import React, { useMemo, useState } from 'react';
 
 export type DayType = {

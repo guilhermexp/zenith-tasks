@@ -1,14 +1,32 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-
-import { ItemsService } from '@/services/database/items'
 import { z } from 'zod'
+
+import { DatabaseNotConfiguredError } from '@/lib/db'
+import { ItemsService } from '@/services/database/items'
+import { logger } from '@/utils/logger'
 
 const FALLBACK_USER_ID = process.env.NODE_ENV === 'production' ? null : 'test-user'
 
 async function resolveUserId() {
-  const { userId } = await auth()
-  if (userId) return userId
+  try {
+    const authResult = await auth()
+    const userId = authResult?.userId
+    if (userId) return userId
+  } catch (error) {
+    logger.warn('Failed to resolve user via Clerk auth()', {
+      route: '/api/items',
+      error: error instanceof Error ? error.message : String(error),
+    })
+  }
+
+  if (FALLBACK_USER_ID) {
+    logger.warn('Using fallback user for items API route', {
+      route: '/api/items',
+      fallbackUserId: FALLBACK_USER_ID,
+    })
+  }
+
   return FALLBACK_USER_ID
 }
 
@@ -22,12 +40,17 @@ export async function GET() {
     const items = await ItemsService.loadItems(userId)
     return NextResponse.json({ items })
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to load items',
-      },
-      { status: 500 },
-    )
+    const status = error instanceof DatabaseNotConfiguredError ? 503 : 500
+    const payload: { error: string; code?: string } =
+      error instanceof Error
+        ? { error: error.message }
+        : { error: 'Failed to load items' }
+
+    if (error instanceof DatabaseNotConfiguredError) {
+      payload.code = 'database_not_configured'
+    }
+
+    return NextResponse.json(payload, { status })
   }
 }
 
@@ -98,11 +121,16 @@ export async function POST(request: Request) {
     const item = await ItemsService.createItem(userId, parsed.data as any)
     return NextResponse.json({ item }, { status: 201 })
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to create item',
-      },
-      { status: 500 },
-    )
+    const status = error instanceof DatabaseNotConfiguredError ? 503 : 500
+    const payload: { error: string; code?: string } =
+      error instanceof Error
+        ? { error: error.message }
+        : { error: 'Failed to create item' }
+
+    if (error instanceof DatabaseNotConfiguredError) {
+      payload.code = 'database_not_configured'
+    }
+
+    return NextResponse.json(payload, { status })
   }
 }

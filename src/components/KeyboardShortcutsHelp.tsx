@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 
 import { Modal } from './ui/ModalSystem';
