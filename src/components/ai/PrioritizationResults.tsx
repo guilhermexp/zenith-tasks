@@ -172,10 +172,10 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
   };
 
   const getPriorityColor = (score: number): string => {
-    if (score >= 8) return 'bg-neutral-700/40 text-neutral-200 border-neutral-600/50';
-    if (score >= 6) return 'bg-neutral-700/30 text-neutral-300 border-neutral-600/40';
-    if (score >= 4) return 'bg-neutral-800/40 text-neutral-400 border-neutral-700/40';
-    return 'bg-neutral-800/30 text-neutral-500 border-neutral-700/30';
+    if (score >= 8) return 'bg-zinc-700/40 text-zinc-200 border-zinc-600/50';
+    if (score >= 6) return 'bg-zinc-700/30 text-zinc-300 border-zinc-600/40';
+    if (score >= 4) return 'bg-zinc-800/40 text-zinc-400 border-zinc-700/40';
+    return 'bg-zinc-800/30 text-zinc-500 border-zinc-700/30';
   };
 
   const getPriorityLabel = (score: number): string => {
@@ -194,23 +194,23 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in-fast">
       <div
         ref={modalRef}
-        className="bg-neutral-900 border border-neutral-700/50 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-up-fast"
+        className="bg-zinc-900 border border-zinc-700/50 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-up-fast"
       >
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-neutral-800/50">
+        <div className="p-4 sm:p-6 border-b border-zinc-800/50">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl lg:text-3xl font-semibold text-neutral-100 tracking-tight">
+            <h2 className="text-2xl lg:text-3xl font-semibold text-zinc-100 tracking-tight">
               Tarefas Priorizadas
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-neutral-800/60 text-neutral-400 hover:text-neutral-200 transition-colors"
+              className="p-2 rounded-lg hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 transition-colors"
               aria-label="Fechar"
             >
               <XIcon className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm text-zinc-400">
             Confiança: {Math.round((result.confidenceScore || 0) * 100)}%
           </p>
         </div>
@@ -218,14 +218,14 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
           {/* Justification */}
-          <div className="bg-neutral-800/40 border border-neutral-700/50 rounded-lg p-3">
+          <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg p-3">
             <div className="flex items-start gap-2">
-              <InfoIcon className="w-4 h-4 text-neutral-400 flex-shrink-0 mt-0.5" />
+              <InfoIcon className="w-4 h-4 text-zinc-400 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="text-xs font-semibold text-neutral-200 mb-0.5">
+                <h3 className="text-xs font-semibold text-zinc-200 mb-0.5">
                   Estratégia de Priorização
                 </h3>
-                <p className="text-xs text-neutral-300">
+                <p className="text-xs text-zinc-300">
                   {result.justification || 'Tarefas priorizadas com base em urgência, complexidade e tempo disponível.'}
                 </p>
               </div>
@@ -234,7 +234,7 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
 
           {/* Task List */}
           <div className="space-y-2">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider font-semibold">
+            <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
               Ordem sugerida (arraste para reordenar)
             </p>
             {orderedTasks.map((task, index) => (
@@ -245,24 +245,24 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragEnd={handleDragEnd}
                 className={`
-                  bg-neutral-800/40 border border-neutral-700/50 rounded-lg p-3
-                  cursor-move hover:bg-neutral-800/60 transition-all
+                  bg-zinc-800/40 border border-zinc-700/50 rounded-lg p-3
+                  cursor-move hover:bg-zinc-800/60 transition-all
                   ${draggedIndex === index ? 'opacity-50 scale-95' : ''}
                 `}
               >
                 <div className="flex items-start gap-2">
                   {/* Drag Handle */}
-                  <GripVerticalIcon className="w-4 h-4 text-neutral-600 flex-shrink-0 mt-0.5" />
+                  <GripVerticalIcon className="w-4 h-4 text-zinc-600 flex-shrink-0 mt-0.5" />
 
                   {/* Rank Badge */}
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-neutral-700/50 text-neutral-300 font-semibold text-xs flex-shrink-0">
+                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-zinc-700/50 text-zinc-300 font-semibold text-xs flex-shrink-0">
                     {index + 1}
                   </div>
 
                   {/* Task Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="text-sm text-neutral-100">
+                      <h4 className="text-sm text-zinc-100">
                         {getTaskTitle(task.taskId)}
                       </h4>
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -273,7 +273,7 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
                         >
                           {getPriorityLabel(task.priorityScore)}
                         </span>
-                        <span className="text-xs text-neutral-500">
+                        <span className="text-xs text-zinc-500">
                           {task.priorityScore.toFixed(1)}
                         </span>
                       </div>
@@ -283,7 +283,7 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
                     {task.reasoning && task.reasoning.length > 0 && (
                       <button
                         onClick={() => toggleExpanded(task.taskId)}
-                        className="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+                        className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
                       >
                         {expandedTask === task.taskId ? '▼ Ocultar' : '▶ Ver justificativa'}
                       </button>
@@ -291,10 +291,10 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
 
                     {/* Expanded Reasoning */}
                     {expandedTask === task.taskId && task.reasoning && (
-                      <ul className="mt-2 space-y-0.5 text-xs text-neutral-400">
+                      <ul className="mt-2 space-y-0.5 text-xs text-zinc-400">
                         {task.reasoning.map((reason, i) => (
                           <li key={i} className="flex items-start gap-1.5">
-                            <span className="text-neutral-500">•</span>
+                            <span className="text-zinc-500">•</span>
                             <span>{reason}</span>
                           </li>
                         ))}
@@ -308,16 +308,16 @@ export const PrioritizationResults: React.FC<PrioritizationResultsProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 sm:p-6 border-t border-neutral-800/50">
+        <div className="flex items-center justify-end gap-2 p-4 sm:p-6 border-t border-zinc-800/50">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-300 hover:bg-neutral-800/60 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-300 hover:bg-zinc-800/60 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={handleAccept}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-neutral-700 border border-neutral-600 text-neutral-100 hover:bg-neutral-600 hover:text-white transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-700 border border-zinc-600 text-zinc-100 hover:bg-zinc-600 hover:text-white transition-all"
           >
             <div className="flex items-center gap-1.5">
               <CheckIcon className="w-3.5 h-3.5" />

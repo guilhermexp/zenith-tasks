@@ -50,14 +50,14 @@ export const PWAInstallPrompt: React.FC = () => {
           exit={{ opacity: 0, y: 50 }}
           className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-[9999]"
         >
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg shadow-2xl p-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg shadow-2xl p-4">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 text-3xl">📱</div>
               <div className="flex-1">
                 <h3 className="text-white font-semibold mb-1">
                   Instalar Zenith Tasks
                 </h3>
-                <p className="text-sm text-neutral-400 mb-3">
+                <p className="text-sm text-zinc-400 mb-3">
                   Adicione o app à sua tela inicial para acesso rápido e experiência completa.
                 </p>
                 <div className="flex gap-2">
@@ -69,7 +69,7 @@ export const PWAInstallPrompt: React.FC = () => {
                   </button>
                   <button
                     onClick={handleDismiss}
-                    className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-medium py-2 px-4 rounded transition-colors"
+                    className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-medium py-2 px-4 rounded transition-colors"
                   >
                     Agora não
                   </button>
@@ -77,7 +77,7 @@ export const PWAInstallPrompt: React.FC = () => {
               </div>
               <button
                 onClick={handleDismiss}
-                className="flex-shrink-0 text-neutral-500 hover:text-white transition-colors"
+                className="flex-shrink-0 text-zinc-500 hover:text-white transition-colors"
                 aria-label="Fechar"
               >
                 <svg

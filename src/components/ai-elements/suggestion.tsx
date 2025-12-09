@@ -46,8 +46,8 @@ export const Suggestion = ({
       className={cn(
         "cursor-pointer rounded-full px-4",
         // Dark theme override for outline variant
-        "bg-neutral-900 border-neutral-700 text-neutral-300",
-        "hover:bg-neutral-800 hover:border-neutral-600 hover:text-neutral-100",
+        "bg-zinc-900 border-zinc-700 text-zinc-300",
+        "hover:bg-zinc-800 hover:border-zinc-600 hover:text-zinc-100",
         "transition-all duration-200",
         className
       )}

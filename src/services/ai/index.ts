@@ -22,7 +22,7 @@ export async function analyzeWithAI(text: string): Promise<MindFlowItem[]> {
     }).partial()
     const itemSchema = z.object({
       title: z.string(),
-      type: z.enum(['Tarefa','Ideia','Nota','Lembrete','Financeiro','Reunião']),
+      type: z.enum(['Tarefa','Ideia','Nota','Lembrete','Financeiro']),
       summary: z.string().optional(),
       dueDate: z.string().nullable().optional(),
       subtasks: z.array(z.object({ title: z.string() })).optional(),

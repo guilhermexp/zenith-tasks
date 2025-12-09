@@ -162,9 +162,9 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-zinc-900 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+        <div className="flex items-center justify-between p-6 border-b border-zinc-800">
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-6 h-6 text-orange-400" />
             <h2 className="text-xl font-semibold text-white">
@@ -173,9 +173,9 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-neutral-400" />
+            <X className="w-5 h-5 text-zinc-400" />
           </button>
         </div>
 
@@ -187,10 +187,10 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
               <h3 className="text-lg font-medium text-white mb-2">
                 Relatório enviado com sucesso!
               </h3>
-              <p className="text-neutral-400 mb-4">
+              <p className="text-zinc-400 mb-4">
                 Obrigado por nos ajudar a melhorar o sistema. Analisaremos seu relatório em breve.
               </p>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-zinc-500">
                 Esta janela será fechada automaticamente...
               </p>
             </div>
@@ -198,7 +198,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Report Type */}
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-3">
+                <label className="block text-sm font-medium text-zinc-300 mb-3">
                   Tipo de Problema
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -215,14 +215,14 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                       className={`p-3 rounded-lg border text-left transition-colors ${
                         reportType === type.value
                           ? 'border-blue-500 bg-blue-500/10'
-                          : 'border-neutral-700 hover:border-neutral-600'
+                          : 'border-zinc-700 hover:border-zinc-600'
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         {getTypeIcon(type.value as ErrorReport['type'])}
                         <span className="font-medium text-white">{type.label}</span>
                       </div>
-                      <p className="text-xs text-neutral-400">{type.desc}</p>
+                      <p className="text-xs text-zinc-400">{type.desc}</p>
                     </button>
                   ))}
                 </div>
@@ -230,7 +230,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Título do Problema *
                 </label>
                 <input
@@ -238,14 +238,14 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Descreva brevemente o problema"
-                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   required
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Descrição Detalhada *
                 </label>
                 <textarea
@@ -253,7 +253,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descreva o problema em detalhes..."
                   rows={4}
-                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
                   required
                 />
               </div>
@@ -261,7 +261,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
               {/* Steps to Reproduce (for bugs) */}
               {reportType === 'bug' && (
                 <div>
-                  <label className="block text-sm font-medium text-neutral-300 mb-2">
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
                     Passos para Reproduzir
                   </label>
                   <textarea
@@ -269,7 +269,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                     onChange={(e) => setSteps(e.target.value)}
                     placeholder="1. Faça isso...&#10;2. Depois isso...&#10;3. O erro acontece..."
                     rows={3}
-                    className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
                   />
                 </div>
               )}
@@ -278,7 +278,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
               {reportType === 'bug' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
                       Comportamento Esperado
                     </label>
                     <textarea
@@ -286,11 +286,11 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                       onChange={(e) => setExpectedBehavior(e.target.value)}
                       placeholder="O que deveria acontecer?"
                       rows={3}
-                      className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
                       Comportamento Atual
                     </label>
                     <textarea
@@ -298,7 +298,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                       onChange={(e) => setActualBehavior(e.target.value)}
                       placeholder="O que realmente acontece?"
                       rows={3}
-                      className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
                     />
                   </div>
                 </div>
@@ -306,7 +306,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
 
               {/* Priority */}
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-3">
+                <label className="block text-sm font-medium text-zinc-300 mb-3">
                   Prioridade
                 </label>
                 <div className="grid grid-cols-4 gap-2">
@@ -323,7 +323,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                       className={`px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${
                         priority === p.value
                           ? getPriorityColor(p.value as ErrorReport['priority'])
-                          : 'border-neutral-700 text-neutral-400 hover:border-neutral-600'
+                          : 'border-zinc-700 text-zinc-400 hover:border-zinc-600'
                       }`}
                     >
                       {p.label}
@@ -334,7 +334,7 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
 
               {/* Email (optional) */}
               <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Email (opcional)
                 </label>
                 <input
@@ -342,28 +342,28 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 />
-                <p className="text-xs text-neutral-500 mt-1">
+                <p className="text-xs text-zinc-500 mt-1">
                   Para receber atualizações sobre o problema
                 </p>
               </div>
 
               {/* System Info (if available) */}
               {initialError && (
-                <div className="p-4 bg-neutral-800/50 rounded-lg">
-                  <h4 className="text-sm font-medium text-neutral-300 mb-2">
+                <div className="p-4 bg-zinc-800/50 rounded-lg">
+                  <h4 className="text-sm font-medium text-zinc-300 mb-2">
                     Informações Técnicas
                   </h4>
-                  <div className="space-y-1 text-xs text-neutral-400">
+                  <div className="space-y-1 text-xs text-zinc-400">
                     {initialError.component && (
-                      <p><span className="text-neutral-300">Componente:</span> {initialError.component}</p>
+                      <p><span className="text-zinc-300">Componente:</span> {initialError.component}</p>
                     )}
                     {initialError.message && (
-                      <p><span className="text-neutral-300">Erro:</span> {initialError.message}</p>
+                      <p><span className="text-zinc-300">Erro:</span> {initialError.message}</p>
                     )}
-                    <p><span className="text-neutral-300">URL:</span> {window.location.href}</p>
-                    <p><span className="text-neutral-300">Navegador:</span> {navigator.userAgent.split(' ').slice(-2).join(' ')}</p>
+                    <p><span className="text-zinc-300">URL:</span> {window.location.href}</p>
+                    <p><span className="text-zinc-300">Navegador:</span> {navigator.userAgent.split(' ').slice(-2).join(' ')}</p>
                   </div>
                 </div>
               )}
@@ -380,14 +380,14 @@ export default function ErrorReporting({ isOpen, onClose, initialError }: ErrorR
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-neutral-400 hover:text-white transition-colors"
+                  className="px-4 py-2 text-zinc-400 hover:text-white transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || !title.trim() || !description.trim()}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-700 disabled:text-neutral-500 text-white rounded-lg transition-colors flex items-center gap-2"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg transition-colors flex items-center gap-2"
                 >
                   {isSubmitting ? (
                     <>

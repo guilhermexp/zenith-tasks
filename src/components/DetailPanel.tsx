@@ -5,11 +5,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   XIcon, CalendarIcon, CheckIcon, SpinnerIcon, MoreHorizontalIcon,
   SparklesIcon, ChevronLeftIcon, TrashIcon, CheckCircleIcon, TagIcon,
-  LightbulbIcon, PageIcon, BellIcon, LinkIcon, DollarSignIcon, UsersIcon,
-  ClipboardIcon, EditIcon, ClockIcon
+  LightbulbIcon, PageIcon, BellIcon, LinkIcon, DollarSignIcon,
+  ClipboardIcon, UsersIcon, ClockIcon
 } from './Icons';
 import { ConflictAlertBanner } from './ai/ConflictAlertBanner';
 import SiriOrb from '@/components/ui/SiriOrb';
+import TipTapEditor from './TipTapEditor';
+import { ensureHtml } from '@/utils/richText';
 
 import type { MindFlowItem, Subtask, MindFlowItemType } from '../types';
 import type { DetectedConflict, ConflictResolutionSuggestion } from '../types/ai-prioritization';
@@ -31,31 +33,31 @@ const typeIcons: Record<MindFlowItemType, React.FC<{className?: string}>> = {
   Nota: PageIcon,
   Lembrete: BellIcon,
   Financeiro: DollarSignIcon,
-  'Reunião': UsersIcon,
+  Reunião: UsersIcon,
 };
 
-const SubtaskItem: React.FC<{ 
-  subtask: Subtask; 
+const SubtaskItem: React.FC<{
+  subtask: Subtask;
   onToggle: () => void;
   onDelete: () => void;
 }> = ({ subtask, onToggle, onDelete }) => {
   return (
-    <div className="flex items-center py-2.5 group -ml-2 pl-2 rounded-lg hover:bg-neutral-900/50 transition-colors">
-      <button 
+    <div className="flex items-center py-2 group rounded-md hover:bg-white/5 transition-colors">
+      <button
         onClick={onToggle}
-        className={`w-5 h-5 rounded-full border-2 ${
-          subtask.completed ? 'bg-green-600 border-green-600' : 'border-neutral-700 hover:border-neutral-500'
+        className={`w-4 h-4 rounded-full border-2 ${
+          subtask.completed ? 'bg-green-600 border-green-600' : 'border-zinc-600 hover:border-zinc-400'
         } transition-all flex items-center justify-center mr-3 flex-shrink-0`}
         aria-label={subtask.completed ? 'Marcar subtarefa como incompleta' : 'Marcar subtarefa como completa'}
       >
-        {subtask.completed && <CheckIcon className="w-3 h-3 text-neutral-100" />}
+        {subtask.completed && <CheckIcon className="w-2.5 h-2.5 text-white" />}
       </button>
-      <span className={`flex-1 text-sm ${subtask.completed ? 'line-through text-neutral-600' : 'text-neutral-300'}  transition-colors`}>
+      <span className={`flex-1 text-sm ${subtask.completed ? 'line-through text-zinc-600' : 'text-zinc-300'} transition-colors`}>
         {subtask.title}
       </span>
       <button
         onClick={onDelete}
-        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-900/20 rounded-lg text-neutral-600 hover:text-red-400 transition-all"
+        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-900/20 rounded text-zinc-600 hover:text-red-400 transition-all"
       >
         <TrashIcon className="w-3 h-3" />
       </button>
@@ -75,101 +77,16 @@ const AddSubtaskInput: React.FC<{ onAdd: (title: string) => void }> = ({ onAdd }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center mt-2 group -ml-2 pl-2 py-1">
-      <div className="w-5 h-5 rounded-full border-2 border-dashed border-neutral-700 mr-3 flex-shrink-0" />
+    <form onSubmit={handleSubmit} className="flex items-center py-2">
+      <div className="w-4 h-4 rounded-full border-2 border-dashed border-zinc-700 mr-3 flex-shrink-0" />
       <input
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder="Adicionar um passo..."
-        className="w-full bg-transparent focus:outline-none text-sm text-neutral-300 placeholder:text-neutral-600"
+        className="w-full bg-transparent focus:outline-none text-sm text-zinc-300 placeholder:text-zinc-600"
       />
     </form>
-  );
-};
-
-const NotesEditor: React.FC<{
-  notes: string;
-  onSave: (notes: string) => void;
-}> = ({ notes, onSave }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [localNotes, setLocalNotes] = useState(notes);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    setLocalNotes(notes);
-  }, [notes]);
-
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus();
-      // Adjust height to content
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-    }
-  }, [isEditing]);
-
-  const handleSave = () => {
-    onSave(localNotes);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setLocalNotes(notes);
-    setIsEditing(false);
-  };
-
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setLocalNotes(e.target.value);
-    // Auto-resize textarea
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
-  };
-
-  if (!isEditing) {
-    return (
-      <div 
-        onClick={() => setIsEditing(true)}
-        className="min-h-[120px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-800/50 hover:border-neutral-700/50 cursor-text transition-colors"
-      >
-        {notes ? (
-          <p className="text-sm text-neutral-300 whitespace-pre-wrap">{notes}</p>
-        ) : (
-          <p className="text-sm text-neutral-600 italic">Clique para adicionar anotações...</p>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      <textarea
-        ref={textareaRef}
-        value={localNotes}
-        onChange={handleTextareaChange}
-        placeholder="Digite suas anotações aqui..."
-        className="w-full min-h-[120px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-700/50 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 resize-none"
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            handleCancel();
-          }
-        }}
-      />
-      <div className="flex gap-2 justify-end">
-        <button
-          onClick={handleCancel}
-          className="px-3 py-1.5 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleSave}
-          className="px-3 py-1.5 text-sm bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg transition-colors"
-        >
-          Salvar
-        </button>
-      </div>
-    </div>
   );
 };
 
@@ -179,11 +96,11 @@ const PropertyRow: React.FC<{
   children: React.ReactNode;
 }> = ({ icon: Icon, label, children }) => (
   <div className="flex items-center justify-between text-sm">
-    <div className="flex items-center gap-2 text-neutral-500">
+    <div className="flex items-center gap-2 text-zinc-500">
       <Icon className="w-4 h-4" />
       <span>{label}</span>
     </div>
-    <div className="font-medium text-neutral-200">
+    <div className="font-medium text-zinc-200">
       {children}
     </div>
   </div>
@@ -201,25 +118,24 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
 }) => {
   const asideRef = useRef<HTMLDivElement>(null);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [titleDraft, setTitleDraft] = useState(item.title);
-  const [isEditingSummary, setIsEditingSummary] = useState(false);
-  const [summaryDraft, setSummaryDraft] = useState(item.summary || '');
+  const [titleDraft, setTitleDraft] = useState(ensureHtml(item.title));
+  const [summaryDraft, setSummaryDraft] = useState(ensureHtml(item.summary || ''));
   const [conflicts, setConflicts] = useState<DetectedConflict[]>([]);
   const [isCheckingConflicts, setIsCheckingConflicts] = useState(false);
 
   useEffect(() => {
-    setTitleDraft(item.title);
+    setTitleDraft(ensureHtml(item.title));
   }, [item.title]);
 
   useEffect(() => {
-    setSummaryDraft(item.summary || '');
+    setSummaryDraft(ensureHtml(item.summary || ''));
   }, [item.summary]);
 
-  // Check for conflicts when item changes or has dueDate/meetingDetails
+  // Check for conflicts when item changes or has dueDate
   useEffect(() => {
     const checkConflicts = async () => {
-      // Only check if item has due date or is a meeting
-      if (!item.dueDate && item.type !== 'Reunião') {
+      // Only check if item has due date
+      if (!item.dueDate) {
         setConflicts([]);
         return;
       }
@@ -236,7 +152,6 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               title: item.title,
               type: item.type,
               dueDateISO: item.dueDate,
-              meetingDetails: item.meetingDetails,
             },
           }),
         });
@@ -253,7 +168,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
     };
 
     checkConflicts();
-  }, [item.id, item.title, item.type, item.dueDate, item.meetingDetails]);
+  }, [item.id, item.title, item.type, item.dueDate]);
 
   // Resize logic
   const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -340,10 +255,10 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
   return (
     <aside
       ref={asideRef as any}
-      className={`relative flex flex-col h-full glass-card ${
+      className={`relative flex flex-col h-full bg-black ${
         isMobile
           ? "w-full max-w-full flex-1 rounded-none border border-white/10 shadow-2xl"
-          : "shrink-0 w-[560px] md:w-[640px] lg:w-[720px] xl:w-[820px] max-w-[92vw] ml-2"
+          : "shrink-0 w-[560px] md:w-[640px] lg:w-[720px] xl:w-[820px] max-w-[92vw] border-l border-white/10"
       }`}
       style={!isMobile && width ? { width } : undefined}
     >
@@ -352,35 +267,25 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
         <div
           onMouseDown={startDrag}
           title="Arraste para redimensionar"
-          className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-neutral-700/30 transition-colors"
+          className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-white/10 transition-colors"
         />
       )}
-      <header className="flex items-center justify-between p-4 border-b border-neutral-800/50 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-neutral-800/50">
-            <TypeIcon className="w-5 h-5 text-neutral-300" />
-          </div>
-          <span className="text-sm font-semibold text-neutral-200">{item.type}</span>
+      <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <TypeIcon className="w-4 h-4 text-zinc-500" />
+          <span className="text-sm text-zinc-400">{item.type}</span>
         </div>
-       
+
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setIsEditingTitle((v) => !v)}
-            className="p-2 rounded-lg hover:bg-neutral-800/60 text-neutral-500 hover:text-neutral-200 transition-colors"
-            title={isEditingTitle ? 'Cancelar edição' : 'Editar título'}
-            aria-label={isEditingTitle ? 'Cancelar edição' : 'Editar título'}
-          >
-            <EditIcon className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={() => onDeleteItem(item.id)} 
-            className="p-2 rounded-lg hover:bg-red-900/20 text-neutral-500 hover:text-red-400 transition-colors"
+            onClick={() => onDeleteItem(item.id)}
+            className="p-1.5 rounded-md hover:bg-white/10 text-zinc-500 hover:text-red-400 transition-colors"
             title="Excluir item"
           >
-            <TrashIcon className="w-5 h-5" />
+            <TrashIcon className="w-4 h-4" />
           </button>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-neutral-800/60 text-neutral-500 hover:text-neutral-200 transition-colors">
-            <XIcon className="w-5 h-5" />
+          <button onClick={onClose} className="p-1.5 rounded-md hover:bg-white/10 text-zinc-500 hover:text-zinc-200 transition-colors">
+            <XIcon className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -398,54 +303,56 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
       )}
 
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain custom-scrollbar">
-        <div className="p-5">
-          <div className="flex items-start gap-4 mb-6">
-            <button 
+        <div className="p-4">
+          {/* Title Section */}
+          <div className="flex items-center gap-3 mb-1">
+            <button
               onClick={() => onUpdateItem(item.id, { completed: !item.completed })}
-              className={`w-6 h-6 rounded-full border-2 ${
-                item.completed ? 'bg-green-600 border-green-600' : 'border-neutral-600 hover:border-neutral-400'
-              } transition-colors flex items-center justify-center mt-1 flex-shrink-0`}
+              className={`w-5 h-5 rounded-full border-2 ${
+                item.completed ? 'bg-green-600 border-green-600' : 'border-zinc-600 hover:border-zinc-400'
+              } transition-colors flex items-center justify-center flex-shrink-0`}
               aria-label={item.completed ? 'Marcar como incompleto' : 'Marcar como completo'}
             >
-              {item.completed && <CheckIcon className="w-4 h-4 text-neutral-100" />}
+              {item.completed && <CheckIcon className="w-3 h-3 text-white" />}
             </button>
-            <div className="flex-1">
-              {isEditingTitle ? (
-                <input
-                  value={titleDraft}
-                  onChange={(e) => setTitleDraft(e.target.value)}
-                  onBlur={() => {
-                    const trimmed = titleDraft.trim();
-                    if (trimmed && trimmed !== item.title) {
-                      onUpdateItem(item.id, { title: trimmed });
-                    }
-                    setIsEditingTitle(false);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      const trimmed = titleDraft.trim();
-                      if (trimmed && trimmed !== item.title) {
-                        onUpdateItem(item.id, { title: trimmed });
-                      }
-                      setIsEditingTitle(false);
-                    } else if (e.key === 'Escape') {
-                      setTitleDraft(item.title);
-                      setIsEditingTitle(false);
-                    }
-                  }}
-                  className="w-full bg-transparent border-b border-neutral-700 focus:border-neutral-500 outline-none text-xl font-semibold text-neutral-100 mb-1"
-                  placeholder="Título do item"
-                  autoFocus
-                />
-              ) : (
-                <h3 className="text-xl font-semibold text-neutral-100 mb-1">{item.title}</h3>
-              )}
-              <p className="text-xs text-neutral-500">{formatRelativeTime(item.createdAt)}</p>
+            <div
+              onClick={() => !isEditingTitle && setIsEditingTitle(true)}
+              className="flex-1 cursor-text"
+            >
+              <TipTapEditor
+                content={titleDraft}
+                onChange={(content) => setTitleDraft(content)}
+                onSave={() => {
+                  if (titleDraft !== ensureHtml(item.title)) {
+                    onUpdateItem(item.id, { title: titleDraft });
+                  }
+                  setIsEditingTitle(false);
+                }}
+                onCancel={() => {
+                  setTitleDraft(ensureHtml(item.title));
+                  setIsEditingTitle(false);
+                }}
+                onBlur={() => {
+                  if (titleDraft !== ensureHtml(item.title)) {
+                    onUpdateItem(item.id, { title: titleDraft });
+                  }
+                  setIsEditingTitle(false);
+                }}
+                variant="inline"
+                toolbar="none"
+                editable={isEditingTitle}
+                autoFocus={isEditingTitle}
+                completed={item.completed}
+                placeholder="Título do item"
+                singleLine
+                className="text-base font-medium"
+              />
             </div>
           </div>
-          
+          <p className="text-xs text-zinc-500 ml-8 mb-6">{formatRelativeTime(item.createdAt)}</p>
+
           {/* Properties */}
-          <div className="space-y-4 pb-6 mb-6 border-b border-neutral-800/50">
+          <div className="space-y-3 pb-4 mb-4 border-b border-white/10">
             <PropertyRow icon={ClipboardIcon} label="Status">
               <span className={item.completed ? 'text-green-400' : 'text-yellow-400'}>
                 {item.completed ? 'Concluído' : 'A fazer'}
@@ -457,7 +364,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
             </PropertyRow>
             
             <PropertyRow icon={TagIcon} label="Etiquetas">
-              <span className="text-neutral-400">Nenhuma</span>
+              <span className="text-zinc-500">Nenhuma</span>
             </PropertyRow>
             
             {item.type === 'Financeiro' && (
@@ -471,17 +378,17 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                   <span>{item.transactionType}</span>
                 </PropertyRow>
                 {item.transactionType === 'Saída' && (
-                  <div className="flex items-center justify-between py-2.5 border-b border-neutral-800/50">
+                  <div className="flex items-center justify-between py-2.5 border-b border-white/10">
                     <div className="flex items-center gap-2">
-                      <svg className="w-3.5 h-3.5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                       </svg>
-                      <span className="text-xs text-neutral-400">Recorrente</span>
+                      <span className="text-xs text-zinc-500">Recorrente</span>
                     </div>
                     <button
                       onClick={() => onUpdateItem(item.id, { isRecurring: !item.isRecurring })}
                       className={`relative w-10 h-5 rounded-full transition-colors ${
-                        item.isRecurring ? 'bg-blue-500/30' : 'bg-neutral-700/50'
+                        item.isRecurring ? 'bg-blue-500/30' : 'bg-zinc-700/50'
                       }`}
                     >
                       <div
@@ -495,234 +402,72 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
               </>
             )}
 
-            {item.type === 'Reunião' && (
-              <>
-                {item.meetingDetails?.duration && (
-                  <PropertyRow icon={ClockIcon} label="Duração">
-                    <span>{Math.floor(item.meetingDetails.duration / 60)} minutos</span>
-                  </PropertyRow>
-                )}
-                {item.meetingDetails?.recordedAt && (
-                  <PropertyRow icon={CalendarIcon} label="Gravada em">
-                    <span>{new Date(item.meetingDetails.recordedAt).toLocaleString('pt-BR', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</span>
-                  </PropertyRow>
-                )}
-              </>
-            )}
           </div>
 
-          {/* Meeting-specific content */}
-          {item.type === 'Reunião' && (
-            <div className="space-y-4 pb-6 mb-6 border-b border-neutral-800/50">
-              {/* Summary */}
-              {item.summary && (
-                <div>
-                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-                    Resumo
-                  </h4>
-                  <p className="text-sm text-neutral-300 leading-relaxed">
-                    {item.summary}
-                  </p>
-                </div>
-              )}
-
-              {/* Transcript */}
-              {item.transcript && typeof item.transcript === 'object' && 'text' in item.transcript && (
-                <div>
-                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-                    Transcrição
-                  </h4>
-                  <div className="bg-neutral-900/40 border border-neutral-800/50 rounded-lg p-3 max-h-[300px] overflow-y-auto custom-scrollbar">
-                    <p className="text-xs text-neutral-300 whitespace-pre-wrap leading-relaxed">
-                      {item.transcript.text}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Items */}
-              {item.meetingDetails?.actionItems && item.meetingDetails.actionItems.length > 0 && (
-                <div>
-                  <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-                    Action Items
-                  </h4>
-                  <ul className="space-y-2">
-                    {item.meetingDetails.actionItems.map((actionItem, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-neutral-300">
-                        <span className="text-neutral-500">•</span>
-                        <span>{actionItem}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Topics and Participants */}
-              <div className="grid grid-cols-2 gap-4">
-                {item.meetingDetails?.topics && item.meetingDetails.topics.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-                      Tópicos
-                    </h4>
-                    <div className="flex flex-wrap gap-1">
-                      {item.meetingDetails.topics.map((topic, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-0.5 bg-neutral-800/60 text-neutral-300 text-xs rounded"
-                        >
-                          {topic}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {item.meetingDetails?.participants && item.meetingDetails.participants.length > 0 && (
-                  <div>
-                    <h4 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
-                      Participantes
-                    </h4>
-                    <div className="flex flex-wrap gap-1">
-                      {item.meetingDetails.participants.map((participant, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-0.5 bg-neutral-800/60 text-neutral-300 text-xs rounded"
-                        >
-                          {participant}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Description */}
-          {(item.summary !== undefined) && (
-            <div className="mb-6">
-              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Descrição</h4>
-              {isEditingSummary ? (
-                <div className="space-y-2">
-                  <textarea
-                    value={summaryDraft}
-                    onChange={(e) => setSummaryDraft(e.target.value)}
-                    className="w-full min-h-[100px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-700/50 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-600 resize-none"
-                    placeholder="Editar descrição..."
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') {
-                        setSummaryDraft(item.summary || '');
-                        setIsEditingSummary(false);
-                      }
-                    }}
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      onClick={() => {
-                        setSummaryDraft(item.summary || '');
-                        setIsEditingSummary(false);
-                      }}
-                      className="px-3 py-1.5 text-sm text-neutral-400 hover:text-neutral-200 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={() => {
-                        onUpdateItem(item.id, { summary: summaryDraft });
-                        setIsEditingSummary(false);
-                      }}
-                      className="px-3 py-1.5 text-sm bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg transition-colors"
-                    >
-                      Salvar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="min-h-[60px] p-3 rounded-lg bg-neutral-900/40 border border-neutral-800/50 hover:border-neutral-700/50 cursor-text transition-colors"
-                  onClick={() => setIsEditingSummary(true)}
-                  title="Clique para editar a descrição"
-                >
-                  {item.summary ? (
-                    <p className="text-sm text-neutral-300 whitespace-pre-wrap">{item.summary}</p>
-                  ) : (
-                    <p className="text-sm text-neutral-600 italic">Clique para adicionar uma descrição...</p>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Notes Section */}
-          <div className="mb-6">
-            <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">Anotações</h4>
-            <NotesEditor 
-              notes={item.notes || ''} 
-              onSave={(notes) => onUpdateItem(item.id, { notes })}
+          <div className="mb-4">
+            <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Descrição</h4>
+            <TipTapEditor
+              content={ensureHtml(summaryDraft)}
+              onChange={(content) => setSummaryDraft(content)}
+              onBlur={() => {
+                if (summaryDraft !== ensureHtml(item.summary || '')) {
+                  onUpdateItem(item.id, { summary: summaryDraft });
+                }
+              }}
+              variant="block"
+              toolbar="none"
+              placeholder="Adicione uma descrição..."
+              minHeight="60px"
             />
           </div>
 
           {/* Subtasks */}
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
                 Subtarefas
               </h4>
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-zinc-500">
                 {completedSubtasks}/{totalSubtasks} concluídas
               </span>
             </div>
-            
+
             {totalSubtasks > 0 && (
-              <div className="mb-4">
-                <div className="flex justify-between items-center text-xs text-neutral-400 mb-1">
-                    <span>Progresso</span>
-                    <span>{completedSubtasks}/{totalSubtasks}</span>
-                </div>
-                <div className="w-full bg-neutral-900/60 rounded-full h-2 border border-neutral-800/70">
-                    <div className="bg-neutral-600 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
+              <div className="mb-3">
+                <div className="w-full bg-zinc-900/60 rounded-full h-1.5">
+                  <div className="bg-green-500 h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                 </div>
               </div>
             )}
-            
+
             {item.isGeneratingSubtasks ? (
-              <div className="flex items-center py-4 text-neutral-500">
-                <SpinnerIcon className="w-5 h-5 animate-spin mr-3" />
+              <div className="flex items-center py-3 text-zinc-500 text-sm">
+                <SpinnerIcon className="w-4 h-4 animate-spin mr-2" />
                 <span>Gerando sugestões...</span>
               </div>
             ) : (
               <>
                 {(item.subtasks || []).map(subtask => (
-                    <SubtaskItem 
-                      key={subtask.id} 
-                      subtask={subtask} 
-                      onToggle={() => handleToggleSubtask(subtask.id)}
-                      onDelete={() => handleDeleteSubtask(subtask.id)}
-                    />
+                  <SubtaskItem
+                    key={subtask.id}
+                    subtask={subtask}
+                    onToggle={() => handleToggleSubtask(subtask.id)}
+                    onDelete={() => handleDeleteSubtask(subtask.id)}
+                  />
                 ))}
                 <AddSubtaskInput onAdd={handleAddSubtask} />
-                
+
                 {(!item.subtasks || item.subtasks.length === 0) && !item.isGeneratingSubtasks && (
                   <button
                     onClick={(e) => {
                       onGenerateSubtasks(item.id, { force: e.shiftKey || e.metaKey || e.ctrlKey });
                     }}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 mt-4 rounded-full border border-neutral-800/70 hover:border-accent-soft hover:bg-white/5 text-neutral-200 text-sm transition-colors"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 mt-3 rounded-full border border-white/10 hover:border-zinc-600 hover:bg-white/5 text-zinc-300 text-sm transition-colors"
                     title="Gerar subtarefas (Shift+Clique para detalhar)"
                   >
-                    <div className={`relative ${item.isGeneratingSubtasks ? 'animate-spin' : ''}`}
-                      aria-hidden
-                    >
-                      <SiriOrb size="16px" />
-                    </div>
-                    <span className="font-medium">Gerar subtarefas</span>
+                    <SiriOrb size="16px" />
+                    <span>Gerar subtarefas</span>
                   </button>
                 )}
               </>

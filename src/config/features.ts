@@ -164,19 +164,6 @@ const FEATURE_FLAGS: Record<string, FeatureFlag> = {
   // Performance & Monitoring Features
   // ========================================
 
-  'analytics-caching': {
-    key: 'analytics-caching',
-    name: 'Analytics Caching',
-    description: 'In-memory caching for analytics results',
-    enabled: getEnvFlag('FEATURE_ANALYTICS_CACHING', true),
-    environments: {
-      development: true,
-      staging: true,
-      production: true,
-    },
-    rolloutPercentage: 100,
-  },
-
   'performance-monitoring': {
     key: 'performance-monitoring',
     name: 'Performance Monitoring',

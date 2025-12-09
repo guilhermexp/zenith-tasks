@@ -36,20 +36,20 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-neutral-950 text-white p-4">
-          <div className="max-w-md w-full bg-neutral-900 rounded-lg border border-neutral-800 p-6 shadow-xl">
+        <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white p-4">
+          <div className="max-w-md w-full bg-zinc-900 rounded-lg border border-zinc-800 p-6 shadow-xl">
             <h2 className="text-xl font-bold text-red-400 mb-4">
               Ops! Algo deu errado
             </h2>
-            <p className="text-neutral-300 mb-4">
+            <p className="text-zinc-300 mb-4">
               Ocorreu um erro inesperado na aplicação.
             </p>
             {this.state.error && (
               <details className="mb-4">
-                <summary className="cursor-pointer text-sm text-neutral-400 hover:text-neutral-200">
+                <summary className="cursor-pointer text-sm text-zinc-400 hover:text-zinc-200">
                   Detalhes técnicos
                 </summary>
-                <pre className="mt-2 text-xs bg-neutral-950 p-3 rounded border border-neutral-800 overflow-auto">
+                <pre className="mt-2 text-xs bg-zinc-950 p-3 rounded border border-zinc-800 overflow-auto">
                   {this.state.error.message}
                 </pre>
               </details>
@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 this.setState({ hasError: false, error: undefined });
                 window.location.reload();
               }}
-              className="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-medium py-2 px-4 rounded transition-colors"
+              className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-medium py-2 px-4 rounded transition-colors"
             >
               Recarregar página
             </button>

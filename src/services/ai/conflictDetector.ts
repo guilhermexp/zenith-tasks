@@ -103,23 +103,6 @@ export class ConflictDetector {
       type: item.type,
     };
 
-    // Parse meeting details if available
-    if (item.type === 'Reunião' && item.meetingDetails) {
-      const details = item.meetingDetails as any;
-      if (details.date && details.time) {
-        try {
-          const dateTime = new Date(`${details.date}T${details.time}`);
-          calendarItem.startTime = dateTime;
-          // Assume 1 hour duration if not specified
-          calendarItem.endTime = new Date(
-            dateTime.getTime() + 60 * 60 * 1000
-          );
-        } catch (e) {
-          // Invalid date format
-        }
-      }
-    }
-
     // Add due date
     if (item.dueDateISO || item.dueDate) {
       calendarItem.dueDate = new Date(item.dueDateISO || item.dueDate!);

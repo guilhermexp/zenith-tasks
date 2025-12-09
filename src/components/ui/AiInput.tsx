@@ -18,7 +18,7 @@ export function MorphSurface({
 }: MorphSurfaceProps) {
   return (
     <motion.div
-      className="bg-neutral-950 border border-neutral-800 rounded-full overflow-hidden shadow-lg shadow-black/20"
+      className="bg-zinc-950 border border-zinc-800 rounded-full overflow-hidden shadow-lg shadow-black/20"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
@@ -35,7 +35,7 @@ export function MorphSurface({
 
           <Button
             type="button"
-            className="flex h-fit flex-1 justify-center rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-neutral-400 bg-neutral-900/60 cursor-default min-w-[50px] sm:min-w-[60px]"
+            className="flex h-fit flex-1 justify-center rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-zinc-400 bg-zinc-900/60 cursor-default min-w-[50px] sm:min-w-[60px]"
             variant="ghost"
             disabled
             title={placeholder}

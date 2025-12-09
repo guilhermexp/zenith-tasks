@@ -88,17 +88,17 @@ export const Modal: React.FC<ModalProps> = ({
     <div
       className={`
         ${sizeClasses[size]}
-        w-full bg-neutral-900 rounded-lg border border-neutral-800 shadow-2xl
+        w-full bg-zinc-900 rounded-lg border border-zinc-800 shadow-2xl
       `}
     >
       {/* Header */}
       {(title || showCloseButton) && (
-        <div className="flex items-center justify-between p-6 border-b border-neutral-800">
+        <div className="flex items-center justify-between p-6 border-b border-zinc-800">
           {title && <h2 className="text-xl font-semibold text-white">{title}</h2>}
           {showCloseButton && (
             <button
               onClick={onClose}
-              className="text-neutral-400 hover:text-white transition-colors"
+              className="text-zinc-400 hover:text-white transition-colors"
               aria-label="Fechar modal"
             >
               <svg

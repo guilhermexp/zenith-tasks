@@ -1,16 +1,12 @@
 'use client';
 
-// Clerk desabilitado - bypass de autenticação
-// import { UserButton } from '@clerk/nextjs';
-import { User } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
+import { User, Plus, Search, X, Settings, LogOut, Calendar } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 import type { NavItem } from '../types';
-import {
-  PlusIcon, XIcon, SearchIcon,
-  SettingsIcon, LogOutIcon,
-  CalendarIcon
-} from './Icons';
 
 interface SidebarProps {
   navItems: NavItem[];
@@ -23,7 +19,48 @@ interface SidebarProps {
   onSearch: (query: string) => void;
   onLogout?: () => void;
   isMobile?: boolean;
+  width?: number;
+  onResize?: (width: number) => void;
 }
+
+const NavItemComponent = ({
+  icon: Icon,
+  label,
+  isActive,
+  count,
+  onClick
+}: {
+  icon?: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  isActive: boolean;
+  count?: number;
+  onClick: () => void;
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-md transition-colors group ${
+        isActive
+          ? "bg-white/10 text-white font-medium"
+          : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        {Icon && <Icon size={18} className={isActive ? "text-red-500" : "text-zinc-500 group-hover:text-zinc-400"} />}
+        <span>{label}</span>
+      </div>
+      {count !== undefined && count > 0 && (
+        <span className="text-xs text-zinc-600">{count}</span>
+      )}
+    </button>
+  );
+};
+
+const SectionHeader = ({ label }: { label: string }) => (
+  <div className="px-3 py-2 mt-4 text-xs font-medium text-zinc-600 uppercase tracking-wider">
+    {label}
+  </div>
+);
 
 const Sidebar: React.FC<SidebarProps> = ({
   navItems,
@@ -36,12 +73,37 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSearch,
   onLogout,
   isMobile = false,
+  width,
+  onResize,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<string[]>(['reunioes']);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // Resize logic
+  const startDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!onResize || isMobile) return;
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = width || sidebarRef.current?.getBoundingClientRect().width || 256;
+
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientX - startX;
+      const next = startWidth + delta;
+      onResize(next);
+    };
+
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,205 +123,211 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   }, [isSearchOpen]);
 
-  const getIconTint = (_id: string, _active: boolean) => {
-    // Keep a soft, consistent icon tint like the reference
-    return 'text-neutral-600';
+  const handleItemClick = (item: NavItem) => {
+    const hasChildren = item.children && item.children.length > 0;
+    if (hasChildren) {
+      setExpandedItems(prev =>
+        prev.includes(item.id)
+          ? prev.filter(id => id !== item.id)
+          : [...prev, item.id]
+      );
+    } else {
+      onSelectItem(item.id);
+      if (isMobile) {
+        onClose();
+      }
+    }
   };
 
   const renderNavItems = (items: NavItem[]) => {
     return items.map((item) => {
       if (item.isHeader) {
-        // Section label styled like the reference (Favorites / Recent Chats)
-        return (
-          <li key={item.id} className="pt-4 pb-1 px-3">
-            <div className="text-[11px] font-medium text-neutral-400 uppercase tracking-wide">
-              {item.label}
-            </div>
-          </li>
-        );
+        return <SectionHeader key={item.id} label={item.label} />;
       }
 
       const isActive = !searchQuery && activeItem === item.id;
       const isExpanded = expandedItems.includes(item.id);
       const hasChildren = item.children && item.children.length > 0;
 
-      const handleItemClick = () => {
-        if (hasChildren) {
-          setExpandedItems(prev =>
-            prev.includes(item.id)
-              ? prev.filter(id => id !== item.id)
-              : [...prev, item.id]
-          );
-        } else {
-          onSelectItem(item.id);
-          if (isMobile) {
-            onClose();
-          }
-        }
-      };
-
       return (
         <React.Fragment key={item.id}>
-          <li
-            className={`flex items-center px-3 py-2 rounded-lg cursor-pointer relative transition-colors ${
-              isActive ? 'bg-neutral-800/60 text-neutral-100' : 'text-neutral-300 hover:bg-white/5'
-            }`}
-            onClick={handleItemClick}
-          >
-            {item.icon && <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 ${getIconTint(item.id, isActive)}`} />}
-            <span className="flex-1 text-sm">{item.label}</span>
-            {hasChildren && (
-              <span className="text-xs text-neutral-500 mr-2">
-                {isExpanded ? '▼' : '▶'}
-              </span>
+          <div className="space-y-0.5">
+            <NavItemComponent
+              icon={item.icon}
+              label={item.label}
+              isActive={isActive}
+              count={item.count}
+              onClick={() => handleItemClick(item)}
+            />
+            {hasChildren && isExpanded && (
+              <div className="ml-4 pl-2 border-l border-white/10 my-1">
+                {(item.children || []).map((child) => {
+                  const isChildActive = !searchQuery && activeItem === child.id;
+                  return (
+                    <NavItemComponent
+                      key={child.id}
+                      icon={Calendar}
+                      label={child.label}
+                      isActive={isChildActive}
+                      onClick={() => {
+                        onSelectItem(child.id);
+                        if (isMobile) {
+                          onClose();
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </div>
             )}
-            {item.count !== undefined && item.count > 0 && (
-              <span className="text-xs text-neutral-300 bg-neutral-800/60 px-1.5 py-0.5 rounded-full font-mono border border-white/5">{item.count}</span>
-            )}
-          </li>
-          {hasChildren && isExpanded && (
-            <ul className="space-y-0.5 mt-1">
-              {(item.children || []).map((child) => {
-                const isChildActive = !searchQuery && activeItem === child.id;
-                return (
-                  <li
-                    key={child.id}
-                    className={`flex items-center px-3 py-2 rounded-lg cursor-pointer relative transition-colors ml-6 ${
-                      isChildActive ? 'bg-neutral-800/60 text-neutral-100' : 'text-neutral-300 hover:bg-white/5'
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectItem(child.id);
-                    if (isMobile) {
-                      onClose();
-                    }
-                  }}
-                  >
-                    <CalendarIcon className={`w-5 h-5 mr-3 flex-shrink-0 ${getIconTint(child.id, isChildActive)}`} />
-                    <span className="flex-1 text-sm truncate" title={child.label}>{child.label}</span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+          </div>
         </React.Fragment>
       );
     });
   };
 
   return (
-    <aside className={`
-      fixed inset-y-0 left-0 flex flex-col p-3 z-20
-      transition-transform duration-300 ease-in-out
-      w-64 md:relative md:translate-x-0
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      ${isMobile
-        ? 'bg-neutral-950 shadow-2xl border border-white/10 backdrop-blur-lg'
-        : 'bg-neutral-950/70 md:bg-neutral-950/60 md:border md:border-neutral-800/60 md:backdrop-blur-xl md:rounded-2xl'
-      }
-    `}>
-        <div className="px-1 mb-3">
-            <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-semibold text-neutral-300">Zenith Tasks</h2>
-                <div className="flex items-center gap-2">
-                    <button
-                    onClick={() => {
-                      onSelectItem('caixa-entrada');
-                      if (isMobile) {
-                        onClose();
-                      }
-                    }}
-                      className="p-1.5 rounded-md hover:bg-neutral-800/60 transition-colors"
-                      title="Novo"
-                    >
-                        <PlusIcon className="w-4 h-4 text-neutral-400" />
-                    </button>
-                    <button
-                      onClick={() => setIsSearchOpen(!isSearchOpen)}
-                      className="p-1.5 rounded-md hover:bg-neutral-800/60 transition-colors"
-                      title="Buscar"
-                    >
-                        <SearchIcon className="w-4 h-4 text-neutral-400" />
-                    </button>
-                    <button onClick={onClose} className="p-1 rounded-md hover:bg-neutral-800 md:hidden">
-                        <XIcon className="w-4 h-4 text-neutral-500" />
-                    </button>
-                </div>
-            </div>
-            {/* Search field */}
-            {isSearchOpen && (
-              <div className="relative">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
-                  <input
-                      ref={searchInputRef}
-                      type="text"
-                      placeholder="Search"
-                      value={searchQuery}
-                      onChange={(e) => onSearch(e.target.value)}
-                      onBlur={(e) => {
-                        // Fechar apenas se não houver texto e não estiver focando em outro elemento relacionado
-                        if (!e.target.value) {
-                          setTimeout(() => setIsSearchOpen(false), 200);
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          setIsSearchOpen(false);
-                          onSearch('');
-                        }
-                      }}
-                      className="w-full bg-neutral-900/60 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-600/40 transition-colors"
-                  />
-              </div>
-            )}
-        </div>
+    <div
+      ref={sidebarRef}
+      className={`
+        relative flex flex-col h-full bg-black
+        fixed inset-y-0 left-0 z-20
+        transition-transform duration-300 ease-in-out
+        md:relative md:translate-x-0
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}
+      style={{ width: !isMobile && width ? width : undefined, minWidth: 180, maxWidth: 400 }}
+    >
+      {/* Resize handle */}
+      {!isMobile && onResize && (
+        <div
+          onMouseDown={startDrag}
+          className="absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent hover:bg-white/20 transition-colors z-10"
+          title="Arraste para redimensionar"
+        />
+      )}
+      {/* Border on right */}
+      <div className="absolute right-0 top-0 h-full w-px bg-white/10" />
 
-      <div className="flex-1 pr-2">
-        <nav className="space-y-1">
-          <ul>{renderNavItems(navItems)}</ul>
-        </nav>
+      {/* Header */}
+      <div className="flex items-center justify-between px-2 py-2 border-b border-white/10">
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-7 w-7 rounded-md flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10"
+          aria-label="Alternar sidebar"
+        >
+          <div className="flex gap-0.5">
+            <span className="h-4 w-2 bg-zinc-600 rounded-sm" />
+            <span className="h-4 w-2 bg-zinc-800 rounded-sm" />
+          </div>
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10"
+            title="Buscar"
+          >
+            <Search size={16} />
+          </button>
+          <button
+            onClick={onClose}
+            className="h-7 w-7 rounded-md flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/10 md:hidden"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
-      <div ref={dropdownRef} className="mt-auto relative">
-        <div className="flex items-center justify-between p-2">
-            <button
-              onClick={() => {
-                onOpenTalkMode();
-                if (isMobile) {
-                  onClose();
+      {/* Search field */}
+      {isSearchOpen && (
+        <div className="px-2 py-2 border-b border-white/10">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => onSearch(e.target.value)}
+              onBlur={(e) => {
+                if (!e.target.value) {
+                  setTimeout(() => setIsSearchOpen(false), 200);
                 }
               }}
-              className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm rounded-md text-neutral-200 hover:bg-neutral-700"
-            >
-                <div 
-                  className="relative rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 flex-shrink-0" 
-                  style={{ width: '24px', height: '24px', transform: 'scale(1.04332)' }}
-                />
-                <span className="whitespace-nowrap">Talk mode</span>
-            </button>
-            <div className="flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsDropdownOpen((prev) => !prev)}
-                className="flex items-center justify-center px-1.5 py-1 rounded-full text-neutral-200 hover:bg-neutral-800/60 transition-colors"
-                aria-haspopup="menu"
-                aria-expanded={isDropdownOpen}
-              >
-                {/* UserButton do Clerk removido - bypass ativo */}
-                <div className="w-9 h-9 rounded-full bg-neutral-800 flex items-center justify-center ring-1 ring-white/5">
-                  <User className="w-4 h-4 text-neutral-400" />
-                </div>
-              </button>
-            </div>
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setIsSearchOpen(false);
+                  onSearch('');
+                }
+              }}
+              className="w-full bg-zinc-900 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-colors"
+            />
+          </div>
         </div>
+      )}
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-2 py-4">
+        <div className="space-y-0.5">
+          {renderNavItems(navItems)}
+        </div>
+      </ScrollArea>
+
+      {/* Footer */}
+      <div ref={dropdownRef} className="p-3 border-t border-white/10 relative">
+        <div className="flex items-center gap-3 px-1">
+          <Button
+            size="icon"
+            variant="secondary"
+            className="h-9 w-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white"
+            onClick={() => {
+              onSelectItem('caixa-entrada');
+              if (isMobile) {
+                onClose();
+              }
+            }}
+          >
+            <Plus size={18} />
+          </Button>
+          <button
+            onClick={() => {
+              onOpenTalkMode();
+              if (isMobile) {
+                onClose();
+              }
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md text-zinc-200 hover:bg-zinc-800 transition-colors"
+          >
+            <div
+              className="rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-pink-500 flex-shrink-0"
+              style={{ width: '20px', height: '20px' }}
+            />
+            <span className="text-xs">Talk</span>
+          </button>
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            className="flex items-center justify-center"
+            aria-haspopup="menu"
+            aria-expanded={isDropdownOpen}
+          >
+            <Avatar className="h-8 w-8 bg-blue-600 text-white flex items-center justify-center text-xs font-medium">
+              <AvatarFallback className="bg-blue-600 text-white">G</AvatarFallback>
+            </Avatar>
+          </button>
+        </div>
+
+        {/* Dropdown menu */}
         {isDropdownOpen && (
-          <div className="absolute bottom-14 right-2 z-30 w-56 rounded-xl border border-white/10 bg-neutral-900/95 backdrop-blur-sm shadow-lg overflow-hidden">
-            <div className="px-3 py-2 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+          <div className="absolute bottom-16 right-3 z-30 w-48 rounded-lg border border-white/10 bg-zinc-900 shadow-lg overflow-hidden">
+            <div className="px-3 py-2 text-xs font-medium text-zinc-500 uppercase tracking-wide border-b border-white/10">
               Conta
             </div>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-200 hover:bg-white/5 transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5 transition-colors"
               onClick={() => {
                 onSelectItem('config');
                 setIsDropdownOpen(false);
@@ -268,12 +336,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }
               }}
             >
-              <SettingsIcon className="w-4 h-4 text-neutral-400" />
-              Configurações
+              <Settings size={16} className="text-zinc-400" />
+              Configuracoes
             </button>
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-neutral-200 hover:bg-white/5 transition-colors"
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-200 hover:bg-white/5 transition-colors"
               onClick={() => {
                 if (onLogout) {
                   onLogout();
@@ -286,13 +354,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }
               }}
             >
-              <LogOutIcon className="w-4 h-4 text-red-400" />
-              Fazer logout
+              <LogOut size={16} className="text-red-400" />
+              Sair
             </button>
           </div>
         )}
       </div>
-    </aside>
+    </div>
   );
 };
 

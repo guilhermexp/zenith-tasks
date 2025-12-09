@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       inputTokens: z.number().int().nonnegative().optional(),
       outputTokens: z.number().int().nonnegative().optional(),
       description: z.string().optional(),
-      metadata: z.record(z.any()).optional(),
+      metadata: z.record(z.string(), z.any()).optional(),
     })
     const parsed = ConsumeSchema.safeParse(body)
     if (!parsed.success) {

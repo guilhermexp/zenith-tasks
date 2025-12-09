@@ -17,12 +17,6 @@ const ConflictCheckRequestSchema = z.object({
       type: z.string(),
       dueDateISO: z.string().optional(),
       dueDate: z.string().optional(),
-      meetingDetails: z
-        .object({
-          date: z.string().optional(),
-          time: z.string().optional(),
-        })
-        .optional(),
       subtasks: z.array(z.any()).optional(),
     })
     .optional(),
@@ -103,7 +97,6 @@ export async function POST(request: NextRequest) {
         createdAt: new Date().toISOString(),
         dueDateISO: validatedRequest.newItem.dueDateISO,
         dueDate: validatedRequest.newItem.dueDate,
-        meetingDetails: validatedRequest.newItem.meetingDetails,
         subtasks: validatedRequest.newItem.subtasks,
       };
     }

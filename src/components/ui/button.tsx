@@ -4,16 +4,16 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-950 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-neutral-900 text-neutral-50 shadow hover:bg-neutral-900/90",
-        destructive: "bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/90",
-        outline: "border border-neutral-200 bg-white shadow-sm hover:bg-neutral-100 hover:text-neutral-900",
-        secondary: "bg-neutral-100 text-neutral-900 shadow-sm hover:bg-neutral-100/80",
-        ghost: "hover:bg-neutral-100 hover:text-neutral-900",
-        link: "text-neutral-900 underline-offset-4 hover:underline",
+        default: "bg-zinc-900 text-zinc-50 shadow hover:bg-zinc-900/90",
+        destructive: "bg-red-500 text-zinc-50 shadow-sm hover:bg-red-500/90",
+        outline: "border border-zinc-200 bg-white shadow-sm hover:bg-zinc-100 hover:text-zinc-900",
+        secondary: "bg-zinc-100 text-zinc-900 shadow-sm hover:bg-zinc-100/80",
+        ghost: "hover:bg-zinc-100 hover:text-zinc-900",
+        link: "text-zinc-900 underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",

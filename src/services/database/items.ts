@@ -8,7 +8,6 @@ import type {
 import { db } from '@/lib/db';
 import type { MindFlowItem as MindFlowItemDTO } from '@/types';
 import { logger } from '@/utils/logger';
-import { invalidateAnalyticsCacheOnTaskChange } from '@/lib/cache/analyticsCache';
 
 type RawItem = DbMindFlowItem & {
   subtasks?: DbSubtask[];
@@ -67,7 +66,6 @@ export class ItemsService {
             paymentMethod: item.paymentMethod ?? null,
             isPaid: item.isPaid ?? false,
             chatHistory: item.chatHistory ?? [],
-            meetingDetails: item.meetingDetails ?? null,
             notes: item.notes ?? null,
           })
           .returning();
@@ -99,9 +97,6 @@ export class ItemsService {
         ...result.created,
         subtasks: result.subtasks,
       });
-
-      // Invalidate analytics cache on task creation
-      invalidateAnalyticsCacheOnTaskChange(userId);
 
       return mapped;
     } catch (error) {
@@ -150,9 +145,6 @@ export class ItemsService {
         }
         if (updates.isPaid !== undefined) updateData.isPaid = updates.isPaid;
         if (updates.chatHistory !== undefined) updateData.chatHistory = updates.chatHistory ?? [];
-        if (updates.meetingDetails !== undefined) {
-          updateData.meetingDetails = updates.meetingDetails ?? null;
-        }
         if (updates.notes !== undefined) updateData.notes = updates.notes ?? null;
 
         if (Object.keys(updateData).length > 0) {
@@ -179,11 +171,6 @@ export class ItemsService {
           }
         }
       });
-
-      // Invalidate analytics cache on task update
-      if (item?.userId) {
-        invalidateAnalyticsCacheOnTaskChange(item.userId);
-      }
     } catch (error) {
       throw this.logAndWrapError('updateItem', error, { itemId });
     }
@@ -194,27 +181,11 @@ export class ItemsService {
    */
   static async deleteItem(itemId: string, userId?: string): Promise<void> {
     try {
-      // Get userId if not provided
-      let effectiveUserId = userId;
-      if (!effectiveUserId) {
-        const [item] = await db
-          .select({ userId: mindFlowItems.userId })
-          .from(mindFlowItems)
-          .where(eq(mindFlowItems.id, itemId))
-          .limit(1);
-        effectiveUserId = item?.userId;
-      }
-
       const conditions = userId
         ? and(eq(mindFlowItems.id, itemId), eq(mindFlowItems.userId, userId))
         : eq(mindFlowItems.id, itemId);
 
       await db.delete(mindFlowItems).where(conditions);
-
-      // Invalidate analytics cache on task deletion
-      if (effectiveUserId) {
-        invalidateAnalyticsCacheOnTaskChange(effectiveUserId);
-      }
     } catch (error) {
       throw this.logAndWrapError('deleteItem', error, { itemId });
     }
@@ -251,11 +222,6 @@ export class ItemsService {
           })
           .where(eq(mindFlowItems.id, itemId));
       });
-
-      // Invalidate analytics cache on task toggle (completion status change affects analytics)
-      if (userId) {
-        invalidateAnalyticsCacheOnTaskChange(userId);
-      }
     } catch (error) {
       throw this.logAndWrapError('toggleItem', error, { itemId });
     }
@@ -269,9 +235,6 @@ export class ItemsService {
       await db
         .delete(mindFlowItems)
         .where(and(eq(mindFlowItems.userId, userId), eq(mindFlowItems.completed, true)));
-
-      // Invalidate analytics cache after clearing completed tasks
-      invalidateAnalyticsCacheOnTaskChange(userId);
     } catch (error) {
       throw this.logAndWrapError('clearCompleted', error, { userId });
     }
@@ -341,7 +304,6 @@ export class ItemsService {
       paymentMethod: data.paymentMethod ?? undefined,
       isPaid: data.isPaid ?? false,
       notes: data.notes ?? undefined,
-      meetingDetails: (data.meetingDetails as MindFlowItemDTO['meetingDetails']) ?? undefined,
     };
   }
 

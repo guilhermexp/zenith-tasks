@@ -153,8 +153,8 @@ export type PlanStepProps = ComponentProps<"div"> & {
 
 const statusConfig = {
   pending: {
-    color: "text-neutral-600",
-    bgColor: "bg-neutral-800/30",
+    color: "text-zinc-600",
+    bgColor: "bg-zinc-800/30",
     icon: "○",
   },
   "in-progress": {
@@ -189,7 +189,7 @@ export const PlanStep = ({
       className={cn(
         "flex flex-col gap-2 p-3 rounded-md border",
         config.bgColor,
-        "border-neutral-800",
+        "border-zinc-800",
         className
       )}
       {...props}
@@ -199,13 +199,13 @@ export const PlanStep = ({
         <div className="flex-1">
           <h4 className={cn("font-medium text-sm", config.color)}>{title}</h4>
           {description && (
-            <p className="text-xs text-neutral-500 mt-1">{description}</p>
+            <p className="text-xs text-zinc-500 mt-1">{description}</p>
           )}
         </div>
       </div>
 
       {substeps && substeps.length > 0 && (
-        <div className="ml-6 space-y-1 border-l-2 border-neutral-800 pl-3">
+        <div className="ml-6 space-y-1 border-l-2 border-zinc-800 pl-3">
           {substeps.map((substep, index) => {
             const subConfig = statusConfig[substep.status];
             return (

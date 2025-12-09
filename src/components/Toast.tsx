@@ -53,7 +53,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       case 'warning':
         return 'bg-yellow-900/90 border-yellow-700 text-yellow-100';
       default:
-        return 'bg-neutral-900/90 border-neutral-700 text-neutral-100';
+        return 'bg-zinc-900/90 border-zinc-700 text-zinc-100';
     }
   };
 

@@ -71,17 +71,17 @@ export const KeyboardShortcutsHelp: React.FC<KeyboardShortcutsHelpProps> = ({
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-3 bg-neutral-800/50 rounded-lg hover:bg-neutral-800 transition-colors"
+                  className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
                 >
-                  <span className="text-neutral-300">{shortcut.description}</span>
+                  <span className="text-zinc-300">{shortcut.description}</span>
                   <div className="flex items-center gap-1">
                     {shortcut.keys.map((key, keyIndex) => (
                       <React.Fragment key={keyIndex}>
-                        <kbd className="px-3 py-1.5 text-sm font-medium text-white bg-neutral-700 rounded border border-neutral-600 shadow-sm">
+                        <kbd className="px-3 py-1.5 text-sm font-medium text-white bg-zinc-700 rounded border border-zinc-600 shadow-sm">
                           {key}
                         </kbd>
                         {keyIndex < shortcut.keys.length - 1 && (
-                          <span className="text-neutral-500 mx-1">+</span>
+                          <span className="text-zinc-500 mx-1">+</span>
                         )}
                       </React.Fragment>
                     ))}

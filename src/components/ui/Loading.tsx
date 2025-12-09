@@ -25,19 +25,19 @@ export const Loading: React.FC<LoadingProps> = ({
   const spinner = (
     <div className="flex flex-col items-center justify-center gap-4">
       <motion.div
-        className={`${sizeMap[size]} border-4 border-neutral-700 border-t-blue-500 rounded-full`}
+        className={`${sizeMap[size]} border-4 border-zinc-700 border-t-blue-500 rounded-full`}
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
       />
       {message && (
-        <p className="text-sm text-neutral-400 animate-pulse">{message}</p>
+        <p className="text-sm text-zinc-400 animate-pulse">{message}</p>
       )}
     </div>
   );
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-neutral-950">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-zinc-950">
         {spinner}
       </div>
     );
@@ -45,7 +45,7 @@ export const Loading: React.FC<LoadingProps> = ({
 
   if (overlay) {
     return (
-      <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm">
         {spinner}
       </div>
     );
@@ -86,7 +86,7 @@ export const LoadingDots: React.FC<{ size?: 'small' | 'medium' | 'large' }> = ({
 
 export const LoadingBar: React.FC<{ progress?: number }> = ({ progress }) => {
   return (
-    <div className="w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
+    <div className="w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
       <motion.div
         className="h-full bg-gradient-to-r from-blue-500 to-purple-500"
         initial={{ width: '0%' }}
@@ -114,7 +114,7 @@ export const LoadingSkeleton: React.FC<{
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className={`animate-pulse bg-neutral-800 rounded ${className}`}
+          className={`animate-pulse bg-zinc-800 rounded ${className}`}
         />
       ))}
     </>

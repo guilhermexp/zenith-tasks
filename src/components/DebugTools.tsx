@@ -142,8 +142,8 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-neutral-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+      <div className="bg-zinc-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-800">
           <div className="flex items-center gap-3">
             <Activity className="w-6 h-6 text-blue-400" />
             <h2 className="text-xl font-semibold text-white">Debug Tools</h2>
@@ -151,9 +151,9 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-neutral-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-neutral-400" />
+            <X className="w-5 h-5 text-zinc-400" />
           </button>
         </div>
 
@@ -170,7 +170,7 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
                 Refresh
               </button>
 
-              <label className="flex items-center gap-2 text-neutral-300">
+              <label className="flex items-center gap-2 text-zinc-300">
                 <input
                   type="checkbox"
                   checked={autoRefresh}
@@ -182,7 +182,7 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
             </div>
 
             {health && (
-              <div className="text-sm text-neutral-400">
+              <div className="text-sm text-zinc-400">
                 Last checked: {new Date(health.timestamp).toLocaleTimeString()}
                 {health.responseTime && ` • ${health.responseTime}ms`}
               </div>
@@ -206,16 +206,16 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Database */}
-                  <div className="bg-neutral-800 rounded-lg p-4">
+                  <div className="bg-zinc-800 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Database className="w-5 h-5 text-neutral-400" />
+                        <Database className="w-5 h-5 text-zinc-400" />
                         <span className="font-medium">Database</span>
                       </div>
                       {getStatusIcon(health.services.database.status)}
                     </div>
                     {health.services.database.latency && (
-                      <div className="text-sm text-neutral-400">
+                      <div className="text-sm text-zinc-400">
                         Latency: {health.services.database.latency}ms
                       </div>
                     )}
@@ -239,16 +239,16 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
                   </div>
 
                   {/* Auth */}
-                  <div className="bg-neutral-800 rounded-lg p-4">
+                  <div className="bg-zinc-800 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Server className="w-5 h-5 text-neutral-400" />
+                        <Server className="w-5 h-5 text-zinc-400" />
                         <span className="font-medium">Authentication</span>
                       </div>
                       {getStatusIcon(health.services.auth.status)}
                     </div>
                     {health.services.auth.userId && (
-                      <div className="text-sm text-neutral-400">
+                      <div className="text-sm text-zinc-400">
                         User: {health.services.auth.userId.substring(0, 8)}...
                       </div>
                     )}
@@ -260,16 +260,16 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
                   </div>
 
                   {/* AI */}
-                  <div className="bg-neutral-800 rounded-lg p-4">
+                  <div className="bg-zinc-800 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Brain className="w-5 h-5 text-neutral-400" />
+                        <Brain className="w-5 h-5 text-zinc-400" />
                         <span className="font-medium">AI Provider</span>
                       </div>
                       {getStatusIcon(health.services.ai.status)}
                     </div>
                     {health.services.ai.provider && (
-                      <div className="text-sm text-neutral-400">
+                      <div className="text-sm text-zinc-400">
                         Provider: {health.services.ai.provider}
                       </div>
                     )}
@@ -298,25 +298,25 @@ export default function DebugTools({ isOpen, onClose }: DebugToolsProps) {
               {/* Environment */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-white">Environment</h3>
-                <div className="bg-neutral-800 rounded-lg p-4 space-y-2">
+                <div className="bg-zinc-800 rounded-lg p-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-400">Node Version:</span>
+                    <span className="text-zinc-400">Node Version:</span>
                     <span className="text-white">{health.environment.nodeVersion}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-400">Platform:</span>
+                    <span className="text-zinc-400">Platform:</span>
                     <span className="text-white">{health.environment.platform}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-400">Uptime:</span>
+                    <span className="text-zinc-400">Uptime:</span>
                     <span className="text-white">{formatUptime(health.environment.uptime)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-400">Memory (Heap Used):</span>
+                    <span className="text-zinc-400">Memory (Heap Used):</span>
                     <span className="text-white">{formatBytes(health.environment.memoryUsage.heapUsed)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-400">Memory (Heap Total):</span>
+                    <span className="text-zinc-400">Memory (Heap Total):</span>
                     <span className="text-white">{formatBytes(health.environment.memoryUsage.heapTotal)}</span>
                   </div>
                 </div>

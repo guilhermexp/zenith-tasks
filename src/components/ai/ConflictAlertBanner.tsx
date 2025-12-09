@@ -284,14 +284,14 @@ export const ConflictAlertBanner: React.FC<ConflictAlertBannerProps> = ({
                     </div>
                     <button
                       onClick={() => handleDismiss(conflict.id)}
-                      className={`p-1 rounded hover:bg-neutral-700/50 ${styles.text} transition-colors flex-shrink-0`}
+                      className={`p-1 rounded hover:bg-zinc-700/50 ${styles.text} transition-colors flex-shrink-0`}
                       aria-label="Dispensar"
                     >
                       <XIcon className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <p className="text-sm text-neutral-300 mb-3">
+                  <p className="text-sm text-zinc-300 mb-3">
                     {conflict.description}
                   </p>
 
@@ -317,18 +317,18 @@ export const ConflictAlertBanner: React.FC<ConflictAlertBannerProps> = ({
 
                   {/* Expanded Suggestions */}
                   {isExpanded && conflict.suggestions && (
-                    <div className="mt-3 space-y-2 pl-4 border-l-2 border-neutral-700/50">
+                    <div className="mt-3 space-y-2 pl-4 border-l-2 border-zinc-700/50">
                       {conflict.suggestions.map((suggestion, index) => (
                         <div
                           key={index}
-                          className="flex items-start justify-between gap-3 p-3 bg-neutral-800/40 rounded-lg"
+                          className="flex items-start justify-between gap-3 p-3 bg-zinc-800/40 rounded-lg"
                         >
                           <div className="flex-1 min-w-0">
-                            <h5 className="text-xs font-semibold text-neutral-200 mb-1">
+                            <h5 className="text-xs font-semibold text-zinc-200 mb-1">
                               {getActionLabel(suggestion.action)}
                             </h5>
                             {suggestion.details && (
-                              <p className="text-xs text-neutral-400">
+                              <p className="text-xs text-zinc-400">
                                 {typeof suggestion.details === 'string'
                                   ? suggestion.details
                                   : JSON.stringify(suggestion.details)}

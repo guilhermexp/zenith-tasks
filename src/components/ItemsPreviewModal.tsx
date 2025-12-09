@@ -23,23 +23,23 @@ const ItemsPreviewModal: React.FC<Props> = ({ isOpen, items, onConfirm, onCancel
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onCancel} />
-      <div className="relative z-[1001] glass-card w-[min(520px,90vw)] p-4">
-        <h3 className="text-neutral-200 font-semibold mb-2">Adicionar itens</h3>
-        <p className="text-neutral-500 text-sm mb-3">Revise e selecione o que deseja criar.</p>
+      <div className="relative z-[1001] bg-zinc-900 rounded-xl border border-white/10 w-[min(520px,90vw)] p-4">
+        <h3 className="text-zinc-200 font-semibold mb-2">Adicionar itens</h3>
+        <p className="text-zinc-500 text-sm mb-3">Revise e selecione o que deseja criar.</p>
         <div className="max-h-[50vh] overflow-auto space-y-2">
           {items.map(i => (
             <label key={i.id} className="flex items-start gap-3 p-2 rounded-md hover:bg-white/5 cursor-pointer">
               <input type="checkbox" checked={!!selected[i.id]} onChange={() => toggle(i.id)} className="mt-1" />
               <div className="min-w-0">
-                <div className="text-sm text-neutral-200 truncate">{i.title}</div>
-                <div className="text-xs text-neutral-500">{i.type}{i.dueDate ? ` • ${i.dueDate}` : ''}</div>
+                <div className="text-sm text-zinc-200 truncate">{i.title}</div>
+                <div className="text-xs text-zinc-500">{i.type}{i.dueDate ? ` • ${i.dueDate}` : ''}</div>
               </div>
             </label>
           ))}
         </div>
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onCancel} className="px-3 py-1.5 rounded-md text-sm text-neutral-400 hover:text-neutral-200">Cancelar</button>
-          <button onClick={confirm} className="px-3 py-1.5 rounded-md text-sm bg-neutral-800 hover:bg-neutral-700 text-neutral-100">Confirmar</button>
+          <button onClick={onCancel} className="px-3 py-1.5 rounded-md text-sm text-zinc-400 hover:text-zinc-200">Cancelar</button>
+          <button onClick={confirm} className="px-3 py-1.5 rounded-md text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-100">Confirmar</button>
         </div>
       </div>
     </div>

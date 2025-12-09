@@ -200,7 +200,7 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
 
   if (loading) {
     return (
-      <div className={`h-10 bg-neutral-900 rounded-lg animate-pulse ${className}`} />
+      <div className={`h-10 bg-zinc-900 rounded-lg animate-pulse ${className}`} />
     );
   }
 
@@ -208,16 +208,16 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-neutral-900 hover:bg-neutral-800 rounded-lg border border-neutral-800 transition-colors min-w-0"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 transition-colors min-w-0"
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
           {currentModel && getModelIcon(currentModel)}
-          <span className="text-sm font-medium text-neutral-100 truncate">
+          <span className="text-sm font-medium text-zinc-100 truncate">
             {currentModel?.name || 'Modelo'}
           </span>
         </div>
         <ChevronDown
-          className={`h-3 w-3 text-neutral-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-3 w-3 text-zinc-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -227,9 +227,9 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute bottom-full mb-2 w-full min-w-[380px] max-h-[600px] bg-neutral-900 rounded-lg border border-neutral-800 shadow-2xl z-50 overflow-hidden">
+          <div className="absolute bottom-full mb-2 w-full min-w-[380px] max-h-[600px] bg-zinc-900 rounded-lg border border-zinc-800 shadow-2xl z-50 overflow-hidden">
             {models.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-neutral-400">
+              <div className="px-3 py-2 text-sm text-zinc-400">
                 {error || 'Nenhum modelo disponível'}
               </div>
             ) : (
@@ -238,8 +238,8 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
                   <button
                     key={model.id}
                     onClick={() => handleSelect(model.id)}
-                    className={`w-full text-left px-3 py-2 hover:bg-neutral-800 transition-colors border-b border-neutral-800/30 last:border-b-0 ${
-                      model.id === selectedModel ? 'bg-neutral-800/80' : ''
+                    className={`w-full text-left px-3 py-2 hover:bg-zinc-800 transition-colors border-b border-zinc-800/30 last:border-b-0 ${
+                      model.id === selectedModel ? 'bg-zinc-800/80' : ''
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -248,21 +248,21 @@ export function ModelSelector({ value, onChange, context = 'chat', className = '
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium text-neutral-100 truncate">
+                          <span className="text-sm font-medium text-zinc-100 truncate">
                             {model.name}
                           </span>
-                          <span className="text-xs text-neutral-500 flex-shrink-0">
+                          <span className="text-xs text-zinc-500 flex-shrink-0">
                             {model.provider === 'gateway' ? 'GTW' : model.provider.slice(0, 3).toUpperCase()}
                           </span>
                         </div>
                         {model.description && (
-                          <div className="text-xs text-neutral-400 truncate mt-0.5">
+                          <div className="text-xs text-zinc-400 truncate mt-0.5">
                             {model.description}
                           </div>
                         )}
                         <div className="flex items-center gap-2 mt-1">
                           {model.contextWindow && (
-                            <span className="text-xs px-1.5 py-0.5 bg-neutral-700 rounded text-neutral-300">
+                            <span className="text-xs px-1.5 py-0.5 bg-zinc-700 rounded text-zinc-300">
                               {model.contextWindow >= 1000000 
                                 ? `${(model.contextWindow / 1000000).toFixed(1)}M`
                                 : `${(model.contextWindow / 1000).toFixed(0)}k`

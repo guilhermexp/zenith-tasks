@@ -22,6 +22,14 @@ export interface ChatMessage {
   groundingMetadata?: GroundingChunk[];
 }
 
+export interface MeetingDetails {
+  duration?: number;
+  recordedAt?: string;
+  actionItems?: string[];
+  topics?: string[];
+  participants?: string[];
+}
+
 export interface MindFlowItem {
   id:string;
   title: string;
@@ -44,23 +52,12 @@ export interface MindFlowItem {
   isPaid?: boolean;
   // Campo de anotações
   notes?: string;
-  // Meeting fields
+  // Campos de reunião
   transcript?: {
     text: string;
     timestamp: string;
   };
-  meetingDetails?: {
-    date?: string;
-    time?: string;
-    duration?: number; // Duration in seconds
-    recordedAt?: string;
-    participants?: string[];
-    location?: string;
-    agenda?: string[];
-    links?: string[];
-    actionItems?: string[];
-    topics?: string[];
-  };
+  meetingDetails?: MeetingDetails;
 }
 
 export interface NavItem {

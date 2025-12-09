@@ -64,8 +64,8 @@ export type SourceProps = ComponentProps<"a"> & {
 export const Source = ({ href, title, excerpt, children, ...props }: SourceProps) => (
   <a
     className={cn(
-      "flex flex-col gap-1 p-3 rounded-md border border-neutral-800 bg-neutral-900/30 hover:bg-neutral-800/40 transition-colors",
-      "text-neutral-300 hover:text-neutral-100"
+      "flex flex-col gap-1 p-3 rounded-md border border-zinc-800 bg-zinc-900/30 hover:bg-zinc-800/40 transition-colors",
+      "text-zinc-300 hover:text-zinc-100"
     )}
     href={href}
     rel="noreferrer"
@@ -79,10 +79,10 @@ export const Source = ({ href, title, excerpt, children, ...props }: SourceProps
           <span className="font-medium text-sm">{title}</span>
         </div>
         {excerpt && (
-          <p className="text-xs text-neutral-500 line-clamp-2 mt-1">{excerpt}</p>
+          <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{excerpt}</p>
         )}
         {href && (
-          <span className="text-xs text-neutral-600 truncate">{href}</span>
+          <span className="text-xs text-zinc-600 truncate">{href}</span>
         )}
       </>
     )}

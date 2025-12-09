@@ -6,16 +6,15 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useToast } from "@/components/Toast";
 import { useItems } from "@/hooks/useItems";
+import { extractPlainText } from "@/utils/richText";
 import type { MindFlowItem, MindFlowItemType, NavItem } from "@/types";
 
 // Components
-import InsightsDashboard from "./analytics/InsightsDashboard";
 import CalendarPage from "./CalendarPage";
 import DebugTools from "./DebugTools";
 import DetailPanel from "./DetailPanel";
 import FinancePage from "./FinancePage";
 import {
-  BarChartIcon,
   BellIcon,
   CalendarIcon,
   CheckCircleIcon,
@@ -25,10 +24,8 @@ import {
   PageIcon,
   SettingsIcon,
   TrendingUpIcon,
-  UsersIcon,
 } from "./Icons";
 import ItemsPreviewModal from "./ItemsPreviewModal";
-import MeetingPage from "./MeetingPage";
 import Sidebar from "./Sidebar";
 import TalkModeModal from "./TalkModeModal";
 import TaskList from "./TaskList";
@@ -41,7 +38,9 @@ const App: React.FC = () => {
   // Clerk authentication
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  const hasClerkKeys = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "").startsWith("pk_");
+  const hasClerkKeys = (
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ""
+  ).startsWith("pk_");
   const router = useRouter();
 
   // Toast notifications
@@ -80,12 +79,30 @@ const App: React.FC = () => {
     }
   });
 
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window === "undefined") return 256;
+    try {
+      const raw = localStorage.getItem("sidebarWidth");
+      const n = raw ? parseInt(raw, 10) : NaN;
+      return Number.isFinite(n) && n >= 180 && n <= 400 ? n : 256;
+    } catch {
+      return 256;
+    }
+  });
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
       localStorage.setItem("detailPanelWidth", String(detailWidth));
     } catch {}
   }, [detailWidth]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem("sidebarWidth", String(sidebarWidth));
+    } catch {}
+  }, [sidebarWidth]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -120,15 +137,15 @@ const App: React.FC = () => {
 
   // Items are now loaded from Neon via useItems hook
 
-  // Filter items based on search query
+  // Filter items based on search query (handles HTML content)
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
 
     const query = searchQuery.toLowerCase();
     return items.filter(
       (item) =>
-        item.title.toLowerCase().includes(query) ||
-        item.summary?.toLowerCase().includes(query) ||
+        extractPlainText(item.title).toLowerCase().includes(query) ||
+        extractPlainText(item.summary).toLowerCase().includes(query) ||
         item.type.toLowerCase().includes(query),
     );
   }, [items, searchQuery]);
@@ -149,8 +166,6 @@ const App: React.FC = () => {
           return baseItems.filter((item) => item.type === "Nota");
         case "lembretes":
           return baseItems.filter((item) => item.type === "Lembrete");
-        case "reunioes":
-          return baseItems.filter((item) => item.type === "Reunião");
         default:
           return baseItems;
       }
@@ -172,7 +187,6 @@ const App: React.FC = () => {
     { id: "atualizacoes", label: "Atualizações", icon: TrendingUpIcon },
     { id: "calendario", label: "Calendário", icon: CalendarIcon },
     { id: "financas", label: "Finanças", icon: DollarSignIcon },
-    { id: "analytics", label: "Analytics", icon: BarChartIcon },
 
     { id: "views-header", label: "VIEWS", isHeader: true },
     {
@@ -198,12 +212,6 @@ const App: React.FC = () => {
       label: "Lembretes",
       icon: BellIcon,
       count: getItemsForNav("lembretes").length,
-    },
-    {
-      id: "reunioes",
-      label: "Reuniões",
-      icon: UsersIcon,
-      count: getItemsForNav("reunioes").length,
     },
   ];
 
@@ -290,12 +298,19 @@ const App: React.FC = () => {
   const normalizeTranscript = (input: string) => {
     if (!input) return "";
     let text = input
-      .replace(/\b(hm+|hum+|uh+|ah+|né|então tá|tá bom|beleza|okey|ok)\b/gi, " ")
+      .replace(
+        /\b(hm+|hum+|uh+|ah+|né|então tá|tá bom|beleza|okey|ok)\b/gi,
+        " ",
+      )
       .replace(/\btipo(?=\s*(assim|que|,|\.|$))/gi, " ")
       .replace(/\s{2,}/g, " ")
       .trim();
-    const boundaryRegex = /\b(além disso|também|outra coisa|outro ponto|por fim|finalmente|depois disso)\b/gi;
-    text = text.replace(boundaryRegex, (match) => `. ${match.charAt(0).toUpperCase()}${match.slice(1)}`);
+    const boundaryRegex =
+      /\b(além disso|também|outra coisa|outro ponto|por fim|finalmente|depois disso)\b/gi;
+    text = text.replace(
+      boundaryRegex,
+      (match) => `. ${match.charAt(0).toUpperCase()}${match.slice(1)}`,
+    );
     text = text.replace(/\.(\s*\.)+/g, ".");
     return text.trim();
   };
@@ -409,13 +424,15 @@ const App: React.FC = () => {
       onProgressUpdate();
 
       // Gerar itens a partir da transcrição
-      const cleanedTranscript = normalizeTranscript(transcription) || transcription;
+      const cleanedTranscript =
+        normalizeTranscript(transcription) || transcription;
       const analyzedItems = await analyzeTextWithAI(cleanedTranscript);
 
       const nowISO = new Date().toISOString();
       const idPrefix = `talk-mode-${Date.now()}`;
       const cryptoApi =
-        typeof globalThis !== "undefined" && typeof globalThis.crypto !== "undefined"
+        typeof globalThis !== "undefined" &&
+        typeof globalThis.crypto !== "undefined"
           ? globalThis.crypto
           : undefined;
       return analyzedItems.map((item, index) => {
@@ -428,7 +445,8 @@ const App: React.FC = () => {
           ...item,
           id: item.id?.trim() ? item.id : fallbackId,
           createdAt: item.createdAt || nowISO,
-          completed: typeof item.completed === "boolean" ? item.completed : false,
+          completed:
+            typeof item.completed === "boolean" ? item.completed : false,
         };
       });
     } catch (error: any) {
@@ -445,10 +463,16 @@ const App: React.FC = () => {
         const { id, createdAt, ...itemData } = item;
         await addItemToDb(itemData);
       }
-      showToast(`${itemsToCreate.length} item(ns) criado(s) com sucesso.`, "success");
+      showToast(
+        `${itemsToCreate.length} item(ns) criado(s) com sucesso.`,
+        "success",
+      );
     } catch (error) {
       console.error("Erro ao salvar itens transcritos:", error);
-      showToast("Não foi possível salvar todos os itens. Tente novamente.", "error");
+      showToast(
+        "Não foi possível salvar todos os itens. Tente novamente.",
+        "error",
+      );
       throw error;
     }
   };
@@ -469,30 +493,12 @@ const App: React.FC = () => {
     }
   };
 
-  // Meeting Functions
-  const addMeeting = async (meetingData: Partial<MindFlowItem>) => {
-    const newMeeting = await addItemToDb({
-      title: meetingData.title || `Reunião ${new Date().toLocaleDateString("pt-BR")}`,
-      type: "Reunião",
-      completed: false,
-      summary: meetingData.summary,
-      transcript: meetingData.transcript,
-      meetingDetails: meetingData.meetingDetails,
-    });
-    if (newMeeting) {
-      showToast("Reunião salva com sucesso!", "success");
-      setActiveItem(newMeeting);
-    }
-    return newMeeting;
-  };
-
   // Get current page title
   const getCurrentPageTitle = () => {
     const specialPages = {
       calendario: "Calendário",
       atualizacoes: "Atualizações",
       financas: "Finanças",
-      analytics: "Analytics",
       "caixa-entrada": "Caixa de Entrada",
     };
 
@@ -525,22 +531,13 @@ const App: React.FC = () => {
             onAddFinancialItem={addFinancialItem}
           />
         );
-      case "reunioes":
-        return (
-          <MeetingPage
-            items={items}
-            onAddMeeting={addMeeting}
-          />
-        );
-      case "analytics":
-        return <InsightsDashboard />;
       case "config":
         return (
-          <div className="flex-1 glass-card p-4 sm:p-6">
-            <h1 className="text-xl font-semibold text-neutral-100 mb-4">
+          <div className="flex-1 bg-black p-4 sm:p-6">
+            <h1 className="text-xl font-semibold text-zinc-100 mb-4">
               Configurações
             </h1>
-            <p className="text-neutral-400">
+            <p className="text-zinc-400">
               Em breve: configurações do aplicativo.
             </p>
           </div>
@@ -555,6 +552,7 @@ const App: React.FC = () => {
             onToggleItem={toggleItem}
             onSelectItem={setActiveItem}
             onDeleteItem={deleteItem}
+            onUpdateItem={updateItem}
             isLoading={isLoading}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onSetDueDate={setDueDate}
@@ -569,7 +567,7 @@ const App: React.FC = () => {
   // Check authentication status
   if (!isLoaded) {
     return (
-      <div className="h-screen flex items-center justify-center bg-neutral-950 text-white">
+      <div className="h-screen flex items-center justify-center bg-black text-white">
         Carregando...
       </div>
     );
@@ -581,7 +579,7 @@ const App: React.FC = () => {
   // }
 
   return (
-    <div className="h-screen overflow-hidden app-shell text-white flex gap-2 md:gap-3 p-1 md:p-2 lg:p-2">
+    <div className="h-screen overflow-hidden app-shell text-white flex">
       {/* Sidebar */}
       <Sidebar
         navItems={navItems}
@@ -593,6 +591,11 @@ const App: React.FC = () => {
         onOpenTalkMode={() => setIsTalkModeOpen(true)}
         searchQuery={searchQuery}
         onSearch={setSearchQuery}
+        width={sidebarWidth}
+        onResize={(w) => {
+          const clamped = Math.max(180, Math.min(400, Math.floor(w)));
+          setSidebarWidth(clamped);
+        }}
         onLogout={async () => {
           setIsSidebarOpen(false);
           if (!hasClerkKeys) {
@@ -604,7 +607,10 @@ const App: React.FC = () => {
             await signOut({ redirectUrl: "/sign-in" });
           } catch (error) {
             console.error("Erro ao finalizar sessão via Clerk:", error);
-            showToast("Não foi possível encerrar a sessão. Tente novamente.", "error");
+            showToast(
+              "Não foi possível encerrar a sessão. Tente novamente.",
+              "error",
+            );
             router.push("/sign-in");
           }
         }}
@@ -646,7 +652,7 @@ const App: React.FC = () => {
       {isMobileView &&
         activeItem &&
         !["calendario", "atualizacoes"].includes(activeNavItem) && (
-          <div className="fixed inset-0 z-40 flex flex-col bg-neutral-950/95 backdrop-blur-sm overflow-hidden">
+          <div className="fixed inset-0 z-40 flex flex-col bg-black/95 backdrop-blur-sm overflow-hidden">
             <DetailPanel
               item={items.find((i) => i.id === activeItem.id) || activeItem}
               onClose={() => setActiveItem(null)}

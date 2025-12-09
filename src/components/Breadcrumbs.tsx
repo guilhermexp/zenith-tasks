@@ -25,7 +25,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
 
   return (
     <nav
-      className={`flex items-center gap-2 text-sm text-neutral-400 ${className}`}
+      className={`flex items-center gap-2 text-sm text-zinc-400 ${className}`}
       aria-label="Breadcrumb"
     >
       <ol className="flex items-center gap-2 list-none">
@@ -55,7 +55,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
 
               {/* Separator */}
               {!isLast && (
-                <span className="text-neutral-600" aria-hidden="true">
+                <span className="text-zinc-600" aria-hidden="true">
                   {separator}
                 </span>
               )}

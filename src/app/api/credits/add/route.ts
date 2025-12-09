@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       amount: z.number().positive(),
       type: z.enum(['purchase', 'bonus', 'refund']).optional(),
       description: z.string().optional(),
-      metadata: z.record(z.any()).optional(),
+      metadata: z.record(z.string(), z.any()).optional(),
     })
     const parsed = AddSchema.safeParse(body)
     if (!parsed.success) {

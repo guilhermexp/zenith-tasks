@@ -171,7 +171,7 @@ export const PatternSuggestionToast: React.FC<PatternSuggestionToastProps> = ({
       case 'medium':
         return 'border-blue-500/30 bg-blue-500/10';
       case 'low':
-        return 'border-neutral-500/30 bg-neutral-800/40';
+        return 'border-zinc-500/30 bg-zinc-800/40';
     }
   };
 
@@ -214,17 +214,17 @@ export const PatternSuggestionToast: React.FC<PatternSuggestionToastProps> = ({
               <div className="flex items-start gap-2 flex-1 min-w-0">
                 <SparklesIcon className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-neutral-100 mb-1">
+                  <h4 className="text-sm font-semibold text-zinc-100 mb-1">
                     {suggestion.title}
                   </h4>
-                  <p className="text-xs text-neutral-400">
+                  <p className="text-xs text-zinc-400">
                     {suggestion.description}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => handleDismiss(suggestion.id)}
-                className="p-1 rounded hover:bg-neutral-700/50 text-neutral-500 hover:text-neutral-300 transition-colors flex-shrink-0"
+                className="p-1 rounded hover:bg-zinc-700/50 text-zinc-500 hover:text-zinc-300 transition-colors flex-shrink-0"
                 aria-label="Dispensar"
               >
                 <XIcon className="w-4 h-4" />
@@ -268,7 +268,7 @@ export const PatternSuggestionToast: React.FC<PatternSuggestionToastProps> = ({
               <button
                 onClick={() => handleRemindLater(suggestion.id)}
                 disabled={isLoading}
-                className="px-3 py-2 rounded-lg text-sm font-medium text-neutral-300 hover:bg-neutral-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 rounded-lg text-sm font-medium text-zinc-300 hover:bg-zinc-700/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Lembrar mais tarde"
               >
                 <ClockIcon className="w-4 h-4" />
@@ -281,7 +281,7 @@ export const PatternSuggestionToast: React.FC<PatternSuggestionToastProps> = ({
       {/* Show count if more suggestions available */}
       {suggestions.length > maxVisible && (
         <div className="text-center">
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-zinc-500">
             +{suggestions.length - maxVisible} sugestões ocultas
           </span>
         </div>

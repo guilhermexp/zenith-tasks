@@ -16,10 +16,10 @@ export function EmptyState({ className }: EmptyStateProps) {
       <div className="mb-4">
         <SiriOrb size="48px" colors={{ bg: "oklch(22.64% 0 0)" }} />
       </div>
-      <h3 className="text-neutral-300 text-xl font-medium mb-2">
+      <h3 className="text-zinc-300 text-xl font-medium mb-2">
         Capture um pensamento para começar
       </h3>
-      <p className="text-neutral-500 text-base max-w-xs">
+      <p className="text-zinc-500 text-base max-w-xs">
         Como posso ajudar você hoje? Digite abaixo ou pressione ESC para fechar.
       </p>
     </div>
