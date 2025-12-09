@@ -28,7 +28,7 @@ import {
 import ItemsPreviewModal from "./ItemsPreviewModal";
 import Sidebar from "./Sidebar";
 import TalkModeModal from "./TalkModeModal";
-import TaskList from "./TaskList";
+import TaskList, { type RecurrenceConfig } from "./TaskList";
 import { MorphSurface } from "./ui/AiInput";
 import UpdatesPage from "./UpdatesPage";
 
@@ -284,8 +284,8 @@ const App: React.FC = () => {
     }
   };
 
-  const setDueDate = async (itemId: string, date: Date | null) => {
-    await setDueDateInDb(itemId, date);
+  const setDueDate = async (itemId: string, date: Date | null, recurrence?: RecurrenceConfig) => {
+    await setDueDateInDb(itemId, date, recurrence);
   };
 
   const clearCompleted = async () => {
@@ -519,16 +519,18 @@ const App: React.FC = () => {
             items={items}
             onSelectItem={setActiveItem}
             onUpdateItem={updateItem}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           />
         );
       case "atualizacoes":
-        return <UpdatesPage items={items} onSelectItem={setActiveItem} />;
+        return <UpdatesPage items={items} onSelectItem={setActiveItem} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />;
       case "financas":
         return (
           <FinancePage
             items={items}
             onSelectItem={setActiveItem}
             onAddFinancialItem={addFinancialItem}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
           />
         );
       case "config":

@@ -183,7 +183,7 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
     <AnimatePresence mode="wait">
       <motion.div
         ref={ref}
-        className={`relative mx-auto my-10 flex w-full flex-col items-center ${hasEvents ? 'justify-center gap-8 lg:flex-row' : 'justify-center'}`}
+        className={`relative mx-auto my-10 flex w-full items-center ${hasEvents ? 'flex-col-reverse justify-center gap-8 lg:flex-row' : 'flex-col justify-center'}`}
         {...props}
       >
         <motion.div layout className={`w-full ${hasEvents ? 'max-w-lg' : 'max-w-2xl'}`}>
@@ -264,9 +264,11 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
                               <h3 className="mb-1 text-lg font-semibold text-white">
                                 {meeting.title}
                               </h3>
-                              <p className="mb-1 text-sm text-zinc-600">
-                                {meeting.participants.join(', ')}
-                              </p>
+                              {meeting.participants.length > 0 && meeting.participants.some(p => p && p.replace(/<[^>]*>/g, '').trim()) && (
+                                <p className="mb-1 text-sm text-zinc-600">
+                                  {meeting.participants.map(p => p.replace(/<[^>]*>/g, '').trim()).filter(Boolean).join(', ')}
+                                </p>
+                              )}
                             </motion.div>
                           ))}
                       </motion.div>

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { Menu } from 'lucide-react';
 
 import type { MindFlowItem, ActivityLogEntry } from '../types';
-import { 
+import {
   CheckCircleIcon, PlusIcon
 } from './Icons';
 
@@ -11,12 +12,14 @@ interface UpdatesPageProps {
   items: MindFlowItem[];
   activityLog?: ActivityLogEntry[];
   onSelectItem: (item: MindFlowItem) => void;
+  onToggleSidebar?: () => void;
 }
 
-const UpdatesPage: React.FC<UpdatesPageProps> = ({ 
-  items, 
-  activityLog = [], 
-  onSelectItem 
+const UpdatesPage: React.FC<UpdatesPageProps> = ({
+  items,
+  activityLog = [],
+  onSelectItem,
+  onToggleSidebar
 }) => {
   // Generate activity log from items if not provided
   const generatedActivityLog = useMemo(() => {
@@ -67,7 +70,15 @@ const UpdatesPage: React.FC<UpdatesPageProps> = ({
   return (
     <div className="h-full flex flex-col bg-black">
       {/* Header */}
-      <div className="px-4 h-10 flex items-center">
+      <div className="px-4 h-12 flex items-center gap-3 border-b border-white/5">
+        {onToggleSidebar && (
+          <button
+            onClick={onToggleSidebar}
+            className="md:hidden p-1.5 -ml-1.5 rounded-md hover:bg-white/10 text-zinc-400"
+          >
+            <Menu size={20} />
+          </button>
+        )}
         <h1 className="text-base font-medium text-zinc-100">Atualizações</h1>
       </div>
 

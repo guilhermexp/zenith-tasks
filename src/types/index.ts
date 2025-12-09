@@ -52,6 +52,12 @@ export interface MindFlowItem {
   isPaid?: boolean;
   // Campo de anotações
   notes?: string;
+  // Campos de recorrência
+  recurrenceType?: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+  recurrenceInterval?: number; // Ex: a cada 2 dias, 3 semanas
+  recurrenceEndDate?: string; // Data de término da recorrência
+  recurrenceDays?: string[]; // Para semanal: ['mon', 'wed', 'fri']
+  parentRecurrenceId?: string; // ID do item pai se for uma ocorrência gerada
   // Campos de reunião
   transcript?: {
     text: string;

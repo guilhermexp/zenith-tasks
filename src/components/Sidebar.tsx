@@ -56,10 +56,19 @@ const NavItemComponent = ({
   );
 };
 
-const SectionHeader = ({ label }: { label: string }) => (
-  <div className="px-3 py-2 mt-4 text-xs font-medium text-zinc-600 uppercase tracking-wider">
-    {label}
-  </div>
+const SectionHeader = ({ label, isFirst = false }: { label: string; isFirst?: boolean }) => (
+  <>
+    {!isFirst && (
+      <>
+        <div className="h-12" />
+        <div className="mx-3 border-t border-white/10" />
+        <div className="h-4" />
+      </>
+    )}
+    <div className={`px-3 py-2 text-xs font-medium text-zinc-600 uppercase tracking-wider ${isFirst ? 'mt-2' : ''}`}>
+      {label}
+    </div>
+  </>
 );
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -140,9 +149,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const renderNavItems = (items: NavItem[]) => {
+    let headerCount = 0;
     return items.map((item) => {
       if (item.isHeader) {
-        return <SectionHeader key={item.id} label={item.label} />;
+        headerCount++;
+        return <SectionHeader key={item.id} label={item.label} isFirst={headerCount === 1} />;
       }
 
       const isActive = !searchQuery && activeItem === item.id;
@@ -190,13 +201,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     <div
       ref={sidebarRef}
       className={`
-        relative flex flex-col h-full bg-black
+        flex flex-col h-full bg-black
         fixed inset-y-0 left-0 z-20
         transition-transform duration-300 ease-in-out
         md:relative md:translate-x-0
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}
-      style={{ width: !isMobile && width ? width : undefined, minWidth: 180, maxWidth: 400 }}
+      style={{
+        width: isMobile ? 280 : (width || 256),
+        minWidth: isMobile ? undefined : 180,
+        maxWidth: isMobile ? '85vw' : 400
+      }}
     >
       {/* Resize handle */}
       {!isMobile && onResize && (

@@ -146,6 +146,12 @@ export class ItemsService {
         if (updates.isPaid !== undefined) updateData.isPaid = updates.isPaid;
         if (updates.chatHistory !== undefined) updateData.chatHistory = updates.chatHistory ?? [];
         if (updates.notes !== undefined) updateData.notes = updates.notes ?? null;
+        // Campos de recorrência
+        if (updates.recurrenceType !== undefined) updateData.recurrenceType = updates.recurrenceType ?? null;
+        if (updates.recurrenceInterval !== undefined) updateData.recurrenceInterval = updates.recurrenceInterval ?? 1;
+        if (updates.recurrenceEndDate !== undefined) updateData.recurrenceEndDate = updates.recurrenceEndDate ?? null;
+        if (updates.recurrenceDays !== undefined) updateData.recurrenceDays = updates.recurrenceDays ?? null;
+        if (updates.parentRecurrenceId !== undefined) updateData.parentRecurrenceId = updates.parentRecurrenceId ?? null;
 
         if (Object.keys(updateData).length > 0) {
           updateData.updatedAt = new Date();
@@ -304,6 +310,12 @@ export class ItemsService {
       paymentMethod: data.paymentMethod ?? undefined,
       isPaid: data.isPaid ?? false,
       notes: data.notes ?? undefined,
+      // Campos de recorrência
+      recurrenceType: data.recurrenceType as MindFlowItemDTO['recurrenceType'] ?? undefined,
+      recurrenceInterval: data.recurrenceInterval ?? undefined,
+      recurrenceEndDate: data.recurrenceEndDate ?? undefined,
+      recurrenceDays: data.recurrenceDays ?? undefined,
+      parentRecurrenceId: data.parentRecurrenceId ?? undefined,
     };
   }
 

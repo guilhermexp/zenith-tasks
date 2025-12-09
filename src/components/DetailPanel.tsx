@@ -358,11 +358,38 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
                 {item.completed ? 'Concluído' : 'A fazer'}
               </span>
             </PropertyRow>
-            
+
             <PropertyRow icon={CalendarIcon} label="Vencimento">
               <span>{item.dueDate || 'Sem data'}</span>
             </PropertyRow>
-            
+
+            {/* Horário */}
+            {item.dueDateISO && new Date(item.dueDateISO).getHours() !== 0 && (
+              <PropertyRow icon={ClockIcon} label="Horário">
+                <span>
+                  {new Date(item.dueDateISO).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </PropertyRow>
+            )}
+
+            {/* Recorrência */}
+            {item.recurrenceType && (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2 text-zinc-500">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Recorrência</span>
+                </div>
+                <div className="font-medium text-orange-400">
+                  {item.recurrenceType === 'daily' && (item.recurrenceInterval === 1 ? 'Diário' : `A cada ${item.recurrenceInterval} dias`)}
+                  {item.recurrenceType === 'weekly' && (item.recurrenceInterval === 1 ? 'Semanal' : `A cada ${item.recurrenceInterval} semanas`)}
+                  {item.recurrenceType === 'monthly' && (item.recurrenceInterval === 1 ? 'Mensal' : `A cada ${item.recurrenceInterval} meses`)}
+                  {item.recurrenceType === 'yearly' && (item.recurrenceInterval === 1 ? 'Anual' : `A cada ${item.recurrenceInterval} anos`)}
+                </div>
+              </div>
+            )}
+
             <PropertyRow icon={TagIcon} label="Etiquetas">
               <span className="text-zinc-500">Nenhuma</span>
             </PropertyRow>

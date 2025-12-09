@@ -42,12 +42,15 @@ interface MainContentProps {
   onUpdateItem: (id: string, updates: Partial<MindFlowItem>) => void;
   isLoading: boolean;
   onToggleSidebar: () => void;
-  onSetDueDate: (itemId: string, date: Date | null) => void;
+  onSetDueDate: (itemId: string, date: Date | null, recurrence?: RecurrenceConfig) => void;
   onClearCompleted: () => void;
   onOpenTalkMode: () => void;
   searchQuery: string;
   onReorderItems?: (taskOrder: string[]) => void;
 }
+
+// Export RecurrenceConfig for use in App.tsx
+export type { RecurrenceConfig };
 
 const typeStyles: Record<
   MindFlowItemType,
@@ -81,13 +84,184 @@ const typeStyles: Record<
   },
 };
 
+// Tipos de recorrência
+type RecurrenceType = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' | null;
+
+interface RecurrenceConfig {
+  type: RecurrenceType;
+  interval: number;
+  endDate?: string;
+  days?: string[]; // Para semanal
+}
+
+const WEEKDAYS = [
+  { key: 'sun', label: 'D' },
+  { key: 'mon', label: 'S' },
+  { key: 'tue', label: 'T' },
+  { key: 'wed', label: 'Q' },
+  { key: 'thu', label: 'Q' },
+  { key: 'fri', label: 'S' },
+  { key: 'sat', label: 'S' },
+];
+
+const RecurrenceSelector: React.FC<{
+  value: RecurrenceConfig;
+  onChange: (config: RecurrenceConfig) => void;
+}> = ({ value, onChange }) => {
+  const [isExpanded, setIsExpanded] = useState(value.type !== null);
+
+  const handleTypeChange = (type: RecurrenceType) => {
+    if (type === null) {
+      onChange({ type: null, interval: 1 });
+      setIsExpanded(false);
+    } else {
+      onChange({ ...value, type, interval: value.interval || 1 });
+      setIsExpanded(true);
+    }
+  };
+
+  const handleIntervalChange = (interval: number) => {
+    onChange({ ...value, interval: Math.max(1, interval) });
+  };
+
+  const handleDayToggle = (day: string) => {
+    const currentDays = value.days || [];
+    const newDays = currentDays.includes(day)
+      ? currentDays.filter(d => d !== day)
+      : [...currentDays, day];
+    onChange({ ...value, days: newDays });
+  };
+
+  const getRecurrenceLabel = () => {
+    if (!value.type) return 'Não repete';
+    switch (value.type) {
+      case 'daily': return value.interval === 1 ? 'Diário' : `A cada ${value.interval} dias`;
+      case 'weekly': return value.interval === 1 ? 'Semanal' : `A cada ${value.interval} semanas`;
+      case 'monthly': return value.interval === 1 ? 'Mensal' : `A cada ${value.interval} meses`;
+      case 'yearly': return value.interval === 1 ? 'Anual' : `A cada ${value.interval} anos`;
+      case 'custom': return 'Personalizado';
+      default: return 'Não repete';
+    }
+  };
+
+  return (
+    <div className="border-t border-white/10 mt-2 pt-2">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between text-[10px] text-zinc-400 hover:text-zinc-200 transition-colors py-0.5"
+      >
+        <span className="flex items-center gap-1.5">
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>{getRecurrenceLabel()}</span>
+        </span>
+        <ChevronRightIcon className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+      </button>
+
+      {isExpanded && (
+        <div className="mt-1.5 space-y-1.5">
+          {/* Opções rápidas */}
+          <div className="flex flex-wrap gap-1">
+            {[
+              { type: null as RecurrenceType, label: 'Nunca' },
+              { type: 'daily' as RecurrenceType, label: 'Diário' },
+              { type: 'weekly' as RecurrenceType, label: 'Semanal' },
+              { type: 'monthly' as RecurrenceType, label: 'Mensal' },
+            ].map(({ type, label }) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => handleTypeChange(type)}
+                className={`px-1.5 py-0.5 text-[10px] rounded transition-colors ${
+                  value.type === type
+                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                    : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-zinc-200 border border-transparent'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Intervalo customizado */}
+          {value.type && value.type !== 'custom' && (
+            <div className="flex items-center gap-1.5 text-[10px]">
+              <span className="text-zinc-500">A cada</span>
+              <input
+                type="number"
+                min="1"
+                max="99"
+                value={value.interval}
+                onChange={(e) => handleIntervalChange(parseInt(e.target.value) || 1)}
+                className="w-10 bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-center text-zinc-200 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+              />
+              <span className="text-zinc-500">
+                {value.type === 'daily' && (value.interval === 1 ? 'dia' : 'dias')}
+                {value.type === 'weekly' && (value.interval === 1 ? 'sem' : 'sem')}
+                {value.type === 'monthly' && (value.interval === 1 ? 'mês' : 'meses')}
+                {value.type === 'yearly' && (value.interval === 1 ? 'ano' : 'anos')}
+              </span>
+            </div>
+          )}
+
+          {/* Seletor de dias para semanal */}
+          {value.type === 'weekly' && (
+            <div className="flex items-center gap-0.5">
+              {WEEKDAYS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleDayToggle(key)}
+                  className={`w-5 h-5 text-[10px] rounded-full transition-colors ${
+                    (value.days || []).includes(key)
+                      ? 'bg-orange-500/30 text-orange-400 border border-orange-500/40'
+                      : 'bg-white/5 text-zinc-500 hover:bg-white/10 hover:text-zinc-300 border border-transparent'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DatePickerModal: React.FC<{
   anchorEl: HTMLElement;
   onClose: () => void;
-  onSelect: (date: Date | null) => void;
-}> = ({ anchorEl, onClose, onSelect }) => {
-  const [displayDate, setDisplayDate] = useState(new Date());
+  onSelect: (date: Date | null, recurrence?: RecurrenceConfig) => void;
+  currentRecurrence?: RecurrenceConfig;
+  currentDate?: Date | null;
+}> = ({ anchorEl, onClose, onSelect, currentRecurrence, currentDate }) => {
+  const [displayDate, setDisplayDate] = useState(currentDate || new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(currentDate || null);
+  const [selectedHour, setSelectedHour] = useState<string>(
+    currentDate ? currentDate.getHours().toString().padStart(2, '0') : ''
+  );
+  const [selectedMinute, setSelectedMinute] = useState<string>(
+    currentDate ? currentDate.getMinutes().toString().padStart(2, '0') : ''
+  );
+  const [recurrence, setRecurrence] = useState<RecurrenceConfig>(
+    currentRecurrence || { type: null, interval: 1 }
+  );
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Combina data com horário
+  const getDateWithTime = (): Date | null => {
+    if (!selectedDate) return null;
+    const date = new Date(selectedDate);
+    if (selectedHour && selectedMinute) {
+      date.setHours(parseInt(selectedHour), parseInt(selectedMinute), 0, 0);
+    } else {
+      date.setHours(0, 0, 0, 0);
+    }
+    return date;
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -142,43 +316,45 @@ const DatePickerModal: React.FC<{
     <div
       ref={modalRef}
       style={style}
-      className="bg-zinc-900 border border-white/10 rounded-lg shadow-lg p-4 w-64 text-white"
+      className="bg-black border border-white/10 rounded-lg shadow-lg p-3 w-56 text-white"
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2">
         <button
           onClick={() => handleMonthChange(-1)}
-          className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+          className="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
         >
-          <ChevronLeftIcon className="w-5 h-5" />
+          <ChevronLeftIcon className="w-4 h-4" />
         </button>
-        <span className="font-medium text-sm text-zinc-200">
+        <span className="font-medium text-xs text-zinc-200">
           {displayDate
             .toLocaleString("pt-BR", { month: "long", year: "numeric" })
             .replace(/^\w/, (c) => c.toUpperCase())}
         </span>
         <button
           onClick={() => handleMonthChange(1)}
-          className="p-1.5 rounded-md hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+          className="p-1 rounded hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
         >
-          <ChevronRightIcon className="w-5 h-5" />
+          <ChevronRightIcon className="w-4 h-4" />
         </button>
       </div>
-      <div className="grid grid-cols-7 text-center text-xs font-medium text-zinc-600 mb-2 uppercase tracking-wider">
+      <div className="grid grid-cols-7 text-center text-[10px] font-medium text-zinc-600 mb-1 uppercase">
         {["D", "S", "T", "Q", "Q", "S", "S"].map((d, i) => (
           <div key={i}>{d}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7">
         {days.map((d, i) => {
           const isCurrentMonth = d.getMonth() === displayDate.getMonth();
           const isToday = d.toDateString() === new Date().toDateString();
+          const isSelected = selectedDate && d.toDateString() === selectedDate.toDateString();
           return (
             <div key={i} className="flex justify-center">
               <button
-                onClick={() => onSelect(d)}
-                className={`w-8 h-8 flex items-center justify-center text-sm rounded-md transition-colors
+                onClick={() => setSelectedDate(d)}
+                className={`w-7 h-7 flex items-center justify-center text-xs rounded transition-colors
                     ${isCurrentMonth ? "text-zinc-200 hover:bg-white/10" : "text-zinc-600"}
-                    ${isToday ? "bg-white/10 text-white font-medium" : ""}
+                    ${isToday && !isSelected ? "bg-white/10 text-white font-medium" : ""}
+                    ${isSelected ? "bg-orange-500/30 text-orange-400 ring-1 ring-orange-500/50" : ""}
                 `}
               >
                 {d.getDate()}
@@ -187,10 +363,70 @@ const DatePickerModal: React.FC<{
           );
         })}
       </div>
-      <div className="border-t border-white/10 mt-4 pt-3">
+
+      {/* Seletor de Horário */}
+      <div className="border-t border-white/10 mt-2 pt-2">
+        <div className="flex items-center gap-1.5">
+          <svg className="w-3 h-3 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-[10px] text-zinc-400">Horário</span>
+          <div className="flex items-center gap-1 ml-auto">
+            <input
+              type="text"
+              placeholder="--"
+              maxLength={2}
+              value={selectedHour}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 23)) {
+                  setSelectedHour(val);
+                }
+              }}
+              className="w-7 bg-white/5 border border-white/10 rounded px-1 py-0.5 text-center text-[10px] text-zinc-200 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+            />
+            <span className="text-zinc-500 text-[10px]">:</span>
+            <input
+              type="text"
+              placeholder="--"
+              maxLength={2}
+              value={selectedMinute}
+              onChange={(e) => {
+                const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+                  setSelectedMinute(val);
+                }
+              }}
+              className="w-7 bg-white/5 border border-white/10 rounded px-1 py-0.5 text-center text-[10px] text-zinc-200 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Seletor de Recorrência */}
+      <RecurrenceSelector value={recurrence} onChange={setRecurrence} />
+
+      {/* Botões de ação */}
+      <div className="border-t border-white/10 mt-2 pt-2 space-y-1.5">
+        <button
+          onClick={() => {
+            const dateWithTime = getDateWithTime();
+            if (dateWithTime) {
+              onSelect(dateWithTime, recurrence);
+            }
+          }}
+          disabled={!selectedDate}
+          className={`w-full text-center text-xs py-1.5 rounded transition-colors font-medium ${
+            selectedDate
+              ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 border border-orange-500/30"
+              : "bg-white/5 text-zinc-600 cursor-not-allowed border border-transparent"
+          }`}
+        >
+          Aplicar
+        </button>
         <button
           onClick={() => onSelect(null)}
-          className="w-full text-center text-sm text-zinc-500 hover:text-white py-2 hover:bg-white/5 rounded-md transition-colors"
+          className="w-full text-center text-xs text-zinc-500 hover:text-white py-1.5 hover:bg-white/5 rounded transition-colors"
         >
           Remover data
         </button>
@@ -426,6 +662,37 @@ const Item: React.FC<{
               >
                 <CalendarIcon className="w-3 h-3" />
                 <span>{getDueDateText(item.dueDate)}</span>
+                {/* Horário se definido */}
+                {item.dueDateISO && (() => {
+                  const d = new Date(item.dueDateISO);
+                  const h = d.getHours();
+                  const m = d.getMinutes();
+                  if (h !== 0 || m !== 0) {
+                    return <span className="text-zinc-500">às {h.toString().padStart(2, '0')}:{m.toString().padStart(2, '0')}</span>;
+                  }
+                  return null;
+                })()}
+                {/* Ícone e tipo de recorrência */}
+                {item.recurrenceType && (
+                  <>
+                    <svg className="w-3 h-3 text-orange-400/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" title="Tarefa recorrente">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span className="text-orange-400/60 text-[10px]">
+                      {item.recurrenceType === 'daily' && 'Diário'}
+                      {item.recurrenceType === 'weekly' && (() => {
+                        if (item.dueDateISO) {
+                          const d = new Date(item.dueDateISO);
+                          const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+                          return dias[d.getDay()];
+                        }
+                        return 'Semanal';
+                      })()}
+                      {item.recurrenceType === 'monthly' && 'Mensal'}
+                      {item.recurrenceType === 'yearly' && 'Anual'}
+                    </span>
+                  </>
+                )}
               </button>
               {isOverdue(item.dueDate) && (
                 <span className="text-xs text-orange-500/60">
@@ -596,11 +863,32 @@ const MainContent: React.FC<MainContentProps> = ({
     setDatePickerState({ itemId: null, anchorEl: null });
   };
 
-  const handleDateSelect = (date: Date | null) => {
+  const handleDateSelect = (date: Date | null, recurrence?: RecurrenceConfig) => {
     if (datePickerState.itemId) {
-      onSetDueDate(datePickerState.itemId, date);
+      onSetDueDate(datePickerState.itemId, date, recurrence);
     }
     handleCloseDatePicker();
+  };
+
+  // Get current item's recurrence config for the date picker
+  const getCurrentItemRecurrence = (): RecurrenceConfig | undefined => {
+    if (!datePickerState.itemId) return undefined;
+    const item = items.find(i => i.id === datePickerState.itemId);
+    if (!item || !item.recurrenceType) return undefined;
+    return {
+      type: item.recurrenceType,
+      interval: item.recurrenceInterval || 1,
+      endDate: item.recurrenceEndDate,
+      days: item.recurrenceDays,
+    };
+  };
+
+  // Get current item's date for the date picker
+  const getCurrentItemDate = (): Date | null => {
+    if (!datePickerState.itemId) return null;
+    const item = items.find(i => i.id === datePickerState.itemId);
+    if (!item || !item.dueDateISO) return null;
+    return new Date(item.dueDateISO);
   };
 
   const handlePrioritizationComplete = (result: PrioritizationResponse) => {
@@ -719,6 +1007,8 @@ const MainContent: React.FC<MainContentProps> = ({
           anchorEl={datePickerState.anchorEl}
           onClose={handleCloseDatePicker}
           onSelect={handleDateSelect}
+          currentRecurrence={getCurrentItemRecurrence()}
+          currentDate={getCurrentItemDate()}
         />
       )}
       {/* Prioritization Results Modal */}

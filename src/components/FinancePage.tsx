@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { Menu } from 'lucide-react';
 
 import type { MindFlowItem } from '../types';
 // Icons are defined inline in this file, not imported from Icons.tsx
@@ -9,12 +10,14 @@ interface FinancePageProps {
   items: MindFlowItem[];
   onSelectItem: (item: MindFlowItem) => void;
   onAddFinancialItem: (type: 'Entrada' | 'Saída') => void;
+  onToggleSidebar?: () => void;
 }
 
-const FinancePage: React.FC<FinancePageProps> = ({ 
-  items, 
-  onSelectItem, 
-  onAddFinancialItem 
+const FinancePage: React.FC<FinancePageProps> = ({
+  items,
+  onSelectItem,
+  onAddFinancialItem,
+  onToggleSidebar
 }) => {
   const [activeTab, setActiveTab] = useState<'transacoes' | 'status'>('transacoes');
   const [filter, setFilter] = useState<'todos' | 'entradas' | 'saidas' | 'cartoes' | 'assinaturas'>('todos');
@@ -72,8 +75,18 @@ const FinancePage: React.FC<FinancePageProps> = ({
   return (
     <div className="h-full flex flex-col bg-black">
       {/* Header */}
-      <div className="px-4 h-10 flex items-center justify-between">
-        <h1 className="text-base font-medium text-zinc-100">Finanças</h1>
+      <div className="px-4 h-12 flex items-center justify-between border-b border-white/5">
+        <div className="flex items-center gap-3">
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              className="md:hidden p-1.5 -ml-1.5 rounded-md hover:bg-white/10 text-zinc-400"
+            >
+              <Menu size={20} />
+            </button>
+          )}
+          <h1 className="text-base font-medium text-zinc-100">Finanças</h1>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-3">

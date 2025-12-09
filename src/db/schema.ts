@@ -30,6 +30,12 @@ export const mindFlowItems = pgTable('mind_flow_items', {
   isRecurring: boolean('is_recurring').default(false),
   paymentMethod: text('payment_method'),
   isPaid: boolean('is_paid').default(false),
+  // Campos de recorrência
+  recurrenceType: text('recurrence_type'), // 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom'
+  recurrenceInterval: integer('recurrence_interval').default(1), // Ex: a cada 2 dias, 3 semanas
+  recurrenceEndDate: text('recurrence_end_date'), // Data de término da recorrência
+  recurrenceDays: text('recurrence_days').array(), // Para semanal: ['mon', 'wed', 'fri']
+  parentRecurrenceId: text('parent_recurrence_id'), // ID do item pai se for uma ocorrência gerada
   chatHistory: jsonb('chat_history').default(sql`'[]'::jsonb`),
   meetingDetails: jsonb('meeting_details'),
   transcript: jsonb('transcript'),

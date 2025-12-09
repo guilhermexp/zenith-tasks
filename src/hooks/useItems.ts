@@ -297,7 +297,14 @@ export function useItems() {
     }
   }, [])
 
-  const setDueDate = useCallback(async (itemId: string, date: Date | null) => {
+  interface RecurrenceConfig {
+    type: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom' | null;
+    interval: number;
+    endDate?: string;
+    days?: string[];
+  }
+
+  const setDueDate = useCallback(async (itemId: string, date: Date | null, recurrence?: RecurrenceConfig) => {
     // Temporarily allow setting due date without user (test-user fallback in API)
     // if (!user) return
 
@@ -305,11 +312,20 @@ export function useItems() {
       const payload = date
         ? {
             dueDate: date.toLocaleDateString('pt-BR'),
-            dueDateISO: date.toISOString()
+            dueDateISO: date.toISOString(),
+            // Recurrence fields
+            recurrenceType: recurrence?.type || null,
+            recurrenceInterval: recurrence?.interval || null,
+            recurrenceEndDate: recurrence?.endDate || null,
+            recurrenceDays: recurrence?.days || null,
           }
         : {
             dueDate: null,
-            dueDateISO: null
+            dueDateISO: null,
+            recurrenceType: null,
+            recurrenceInterval: null,
+            recurrenceEndDate: null,
+            recurrenceDays: null,
           }
 
       const response = await fetch(`/api/items/${itemId}`, {
@@ -331,7 +347,11 @@ export function useItems() {
           ? {
               ...item,
               dueDate: date ? date.toLocaleDateString('pt-BR') : undefined,
-              dueDateISO: date ? date.toISOString() : undefined
+              dueDateISO: date ? date.toISOString() : undefined,
+              recurrenceType: recurrence?.type || undefined,
+              recurrenceInterval: recurrence?.interval || undefined,
+              recurrenceEndDate: recurrence?.endDate || undefined,
+              recurrenceDays: recurrence?.days || undefined,
             }
           : item
       ))
