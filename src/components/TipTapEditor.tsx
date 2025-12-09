@@ -373,13 +373,6 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
           outline: none;
         }
 
-        .tiptap-inline.tiptap-focused .ProseMirror {
-          background: rgba(23, 23, 23, 0.2);
-          border-radius: 0.25rem;
-          padding: 0.25rem 0.5rem;
-          margin: -0.25rem -0.5rem;
-        }
-
         /* Input variant styles */
         .tiptap-input .ProseMirror {
           padding: 0.5rem 0;
@@ -406,7 +399,6 @@ const TipTapEditor: React.FC<TipTapEditorProps> = ({
           color: rgb(115, 115, 115);
           pointer-events: none;
           height: 0;
-          font-style: italic;
         }
 
         /* Typography styles */

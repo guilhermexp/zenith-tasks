@@ -228,7 +228,7 @@ const InteractiveCalendar = React.forwardRef<HTMLDivElement, InteractiveCalendar
                 </p>
               </div>
               <motion.div
-                className="flex h-[620px] flex-col items-start justify-start overflow-hidden overflow-y-scroll rounded-xl border-2 border-[#323232] shadow-md"
+                className="flex h-[620px] flex-col items-start justify-start overflow-hidden overflow-y-scroll rounded-xl border-2 border-[#323232] shadow-md scrollbar-hide"
                 layout
               >
                 <AnimatePresence>

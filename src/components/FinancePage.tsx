@@ -72,27 +72,27 @@ const FinancePage: React.FC<FinancePageProps> = ({
   return (
     <div className="h-full flex flex-col bg-black">
       {/* Header */}
-      <div className="px-4 py-2 border-b border-white/10 flex items-center justify-between">
+      <div className="px-4 h-10 flex items-center justify-between">
         <h1 className="text-base font-medium text-zinc-100">Finanças</h1>
 
         {/* Tabs */}
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <button
             onClick={() => setActiveTab('transacoes')}
-            className={`pb-2 text-sm transition-colors relative ${
+            className={`text-xs transition-colors ${
               activeTab === 'transacoes'
-                ? 'text-zinc-300 border-b border-zinc-500'
-                : 'text-zinc-600 hover:text-zinc-400'
+                ? 'text-zinc-200'
+                : 'text-zinc-500 hover:text-zinc-400'
             }`}
           >
             Transações
           </button>
           <button
             onClick={() => setActiveTab('status')}
-            className={`pb-2 text-sm transition-colors relative ${
+            className={`text-xs transition-colors ${
               activeTab === 'status'
-                ? 'text-zinc-300 border-b border-zinc-500'
-                : 'text-zinc-600 hover:text-zinc-400'
+                ? 'text-zinc-200'
+                : 'text-zinc-500 hover:text-zinc-400'
             }`}
           >
             Status

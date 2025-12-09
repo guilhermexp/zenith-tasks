@@ -382,7 +382,7 @@ const Item: React.FC<{
 
   return (
     <div
-      className={`flex items-start py-3 group cursor-pointer transition-colors ${isActive ? "bg-white/10" : "hover:bg-white/5"}`}
+      className={`flex items-start py-1.5 px-2 -mx-2 rounded-lg group cursor-pointer transition-colors ${isActive ? "bg-white/5 ring-1 ring-white/10" : "hover:bg-white/[0.02]"}`}
       onClick={onSelect}
     >
       <div className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0 flex items-center justify-center">
@@ -509,9 +509,9 @@ const SmartInput: React.FC<{
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        placeholder="Nova tarefa"
+        placeholder=""
         disabled={isLoading}
-        className={`w-full bg-zinc-900 border border-white/10 rounded-lg pl-10 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-colors disabled:opacity-50 ${
+        className={`w-full bg-black/60 border border-white/5 rounded-lg pl-10 py-2.5 text-sm text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-zinc-700 transition-colors disabled:opacity-50 ${
           showSubmitButton ? "pr-12 md:pr-20" : "pr-4"
         }`}
       />
@@ -623,7 +623,7 @@ const MainContent: React.FC<MainContentProps> = ({
   return (
     <main className="flex-1 h-full flex flex-col overflow-hidden bg-black transition-all duration-300">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2 border-b border-white/10 flex-shrink-0">
+      <header className="flex items-center justify-between px-4 h-10 flex-shrink-0">
         <div className="flex items-center gap-3">
           <button
             onClick={onToggleSidebar}

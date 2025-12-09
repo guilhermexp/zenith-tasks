@@ -270,7 +270,7 @@ const DetailPanel: React.FC<DetailPanelProps> = ({
           className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize bg-transparent hover:bg-white/10 transition-colors"
         />
       )}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
+      <header className="flex items-center justify-between px-4 h-10 flex-shrink-0">
         <div className="flex items-center gap-2">
           <TypeIcon className="w-4 h-4 text-zinc-500" />
           <span className="text-sm text-zinc-400">{item.type}</span>

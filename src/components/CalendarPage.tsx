@@ -106,7 +106,7 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ items, onSelectItem, onUpda
       <div className="grid grid-cols-7 gap-1">
         {/* Day headers */}
         {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
-          <div key={dayName} className="p-3 text-center text-sm font-medium text-zinc-400">
+          <div key={dayName} className="py-1 text-center text-xs font-medium text-zinc-500">
             {dayName}
           </div>
         ))}
@@ -275,89 +275,84 @@ const CalendarPage: React.FC<CalendarPageProps> = ({ items, onSelectItem, onUpda
   return (
     <div className="h-full flex flex-col bg-black">
       {/* Header */}
-      <div className="px-4 py-2 border-b border-white/10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-base font-medium text-zinc-100">Calendário</h1>
-            <div className="flex bg-white/10/50 rounded-lg p-1">
-              {(['month', 'week', 'day', 'interactive'] as const).map((viewType) => (
-                <button
-                  key={viewType}
-                  onClick={() => setView(viewType)}
-                  className={`px-3 py-1 text-sm rounded transition-colors ${
-                    view === viewType
-                      ? 'bg-white/10 text-white'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  {viewType === 'month' ? 'Mês' : 
-                   viewType === 'week' ? 'Semana' : 
-                   viewType === 'day' ? 'Dia' : 
-                   'Interativo'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setCurrentDate(new Date())}
-              className="px-3 py-1.5 bg-white/10/50 hover:bg-white/10/50 text-zinc-200 text-sm rounded transition-colors"
-            >
-              Hoje
-            </button>
-            
-            <div className="flex items-center gap-2">
+      <div className="px-4 h-10 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-medium text-zinc-100">Calendário</h1>
+          <div className="flex bg-white/5 rounded p-0.5">
+            {(['month', 'week', 'day', 'interactive'] as const).map((viewType) => (
               <button
-                onClick={() => {
-                  if (view === 'month') navigateMonth(-1);
-                  else if (view === 'week') navigateWeek(-1);
-                  else if (view === 'day') navigateDay(-1);
-                  // Interactive view doesn't use navigation
-                }}
-                className={`p-1.5 rounded-full hover:bg-white/10/50 text-zinc-400 transition-colors ${
-                  view === 'interactive' ? 'opacity-50 cursor-not-allowed' : ''
+                key={viewType}
+                onClick={() => setView(viewType)}
+                className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                  view === viewType
+                    ? 'bg-white/10 text-white'
+                    : 'text-zinc-400 hover:text-white'
                 }`}
-                disabled={view === 'interactive'}
               >
-                <ChevronLeftIcon className="w-5 h-5" />
+                {viewType === 'month' ? 'Mês' :
+                 viewType === 'week' ? 'Sem' :
+                 viewType === 'day' ? 'Dia' :
+                 'Int'}
               </button>
-              
-              <h2 className="text-lg font-semibold text-zinc-100 min-w-[200px] text-center">
-                {view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                {view === 'week' && `Semana de ${currentDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}`}
-                {view === 'day' && currentDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                {view === 'interactive' && 'Visualização Interativa'}
-              </h2>
-              
-              <button
-                onClick={() => {
-                  if (view === 'month') navigateMonth(1);
-                  else if (view === 'week') navigateWeek(1);
-                  else if (view === 'day') navigateDay(1);
-                  // Interactive view doesn't use navigation
-                }}
-                className={`p-1.5 rounded-full hover:bg-white/10/50 text-zinc-400 transition-colors ${
-                  view === 'interactive' ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                disabled={view === 'interactive'}
-              >
-                <ChevronRightIcon className="w-5 h-5" />
-              </button>
-            </div>
+            ))}
           </div>
         </div>
 
+        {/* Navigation */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentDate(new Date())}
+            className="px-2 py-0.5 bg-white/5 hover:bg-white/10 text-zinc-300 text-xs rounded transition-colors"
+          >
+            Hoje
+          </button>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                if (view === 'month') navigateMonth(-1);
+                else if (view === 'week') navigateWeek(-1);
+                else if (view === 'day') navigateDay(-1);
+              }}
+              className={`p-1 rounded hover:bg-white/10 text-zinc-400 transition-colors ${
+                view === 'interactive' ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              disabled={view === 'interactive'}
+            >
+              <ChevronLeftIcon className="w-4 h-4" />
+            </button>
+
+            <span className="text-sm text-zinc-200 min-w-[140px] text-center">
+              {view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+              {view === 'week' && `Semana de ${currentDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })}`}
+              {view === 'day' && currentDate.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {view === 'interactive' && 'Interativo'}
+            </span>
+
+            <button
+              onClick={() => {
+                if (view === 'month') navigateMonth(1);
+                else if (view === 'week') navigateWeek(1);
+                else if (view === 'day') navigateDay(1);
+              }}
+              className={`p-1 rounded hover:bg-white/10 text-zinc-400 transition-colors ${
+                view === 'interactive' ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              disabled={view === 'interactive'}
+            >
+              <ChevronRightIcon className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Calendar Content */}
-      <div className="flex-1 p-6 overflow-auto overscroll-contain">
+      <div className="flex-1 px-4 pt-0 overflow-auto overscroll-contain">
         {view === 'month' && renderMonthView()}
         {view === 'week' && renderWeekView()}
         {view === 'day' && renderDayView()}
         {view === 'interactive' && (
-          <div className="h-full flex items-center justify-center">
+          <div className="h-full flex items-start justify-center">
             <InteractiveCalendar
               currentDate={currentDate}
               events={itemsWithDates.map((it) => ({

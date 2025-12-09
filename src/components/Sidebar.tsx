@@ -41,12 +41,12 @@ const NavItemComponent = ({
       onClick={onClick}
       className={`w-full flex items-center justify-between px-3 py-1.5 text-sm rounded-md transition-colors group ${
         isActive
-          ? "bg-white/10 text-white font-medium"
-          : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+          ? "bg-white/5 text-zinc-200"
+          : "text-zinc-400 hover:bg-white/[0.02] hover:text-zinc-300"
       }`}
     >
       <div className="flex items-center gap-3">
-        {Icon && <Icon size={18} className={isActive ? "text-red-500" : "text-zinc-500 group-hover:text-zinc-400"} />}
+        {Icon && <Icon size={18} className={isActive ? "text-orange-500" : "text-zinc-500 group-hover:text-zinc-400"} />}
         <span>{label}</span>
       </div>
       {count !== undefined && count > 0 && (
@@ -207,10 +207,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
       {/* Border on right */}
-      <div className="absolute right-0 top-0 h-full w-px bg-white/10" />
+      <div className="absolute right-0 top-0 h-full w-px bg-white/5" />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-2 py-2 border-b border-white/10">
+      <div className="flex items-center justify-between px-2 h-10">
         <button
           type="button"
           onClick={onClose}
@@ -268,7 +268,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-2 py-4">
+      <ScrollArea className="flex-1 px-2 pt-2">
         <div className="space-y-0.5">
           {renderNavItems(navItems)}
         </div>
@@ -277,19 +277,18 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer */}
       <div ref={dropdownRef} className="p-3 border-t border-white/10 relative">
         <div className="flex items-center gap-3 px-1">
-          <Button
-            size="icon"
-            variant="secondary"
-            className="h-9 w-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-white"
-            onClick={() => {
-              onSelectItem('caixa-entrada');
-              if (isMobile) {
-                onClose();
-              }
-            }}
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            className="flex items-center justify-center"
+            aria-haspopup="menu"
+            aria-expanded={isDropdownOpen}
           >
-            <Plus size={18} />
-          </Button>
+            <Avatar className="h-8 w-8 bg-blue-600 text-white flex items-center justify-center text-xs font-medium">
+              <AvatarFallback className="bg-blue-600 text-white">G</AvatarFallback>
+            </Avatar>
+          </button>
+          <div className="flex-1" />
           <button
             onClick={() => {
               onOpenTalkMode();
@@ -304,18 +303,6 @@ const Sidebar: React.FC<SidebarProps> = ({
               style={{ width: '20px', height: '20px' }}
             />
             <span className="text-xs">Talk</span>
-          </button>
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="flex items-center justify-center"
-            aria-haspopup="menu"
-            aria-expanded={isDropdownOpen}
-          >
-            <Avatar className="h-8 w-8 bg-blue-600 text-white flex items-center justify-center text-xs font-medium">
-              <AvatarFallback className="bg-blue-600 text-white">G</AvatarFallback>
-            </Avatar>
           </button>
         </div>
 

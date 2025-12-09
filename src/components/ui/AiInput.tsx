@@ -18,30 +18,18 @@ export function MorphSurface({
 }: MorphSurfaceProps) {
   return (
     <motion.div
-      className="bg-zinc-950 border border-zinc-800 rounded-full overflow-hidden shadow-lg shadow-black/20"
+      className="bg-black border border-white/5 rounded-full overflow-hidden shadow-lg shadow-black/20"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
       <footer className="mt-auto flex h-[44px] items-center justify-center whitespace-nowrap select-none">
-        <div className="flex items-center justify-center gap-2 px-3 max-sm:h-10 max-sm:px-2">
-          <div className="flex w-fit items-center gap-2">
-            <SiriOrb
-              size="24px"
-              colors={{
-                bg: "oklch(22.64% 0 0)",
-              }}
-            />
-          </div>
-
-          <Button
-            type="button"
-            className="flex h-fit flex-1 justify-center rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-zinc-400 bg-zinc-900/60 cursor-default min-w-[50px] sm:min-w-[60px]"
-            variant="ghost"
-            disabled
-            title={placeholder}
-          >
-            <span className="font-semibold text-sm sm:text-base">AI</span>
-          </Button>
+        <div className="flex items-center justify-center px-3 max-sm:h-10 max-sm:px-2" title={placeholder}>
+          <SiriOrb
+            size="24px"
+            colors={{
+              bg: "oklch(22.64% 0 0)",
+            }}
+          />
         </div>
       </footer>
     </motion.div>
